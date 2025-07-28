@@ -6,6 +6,8 @@ import { PrivateRoute } from "./route/PrivateRoute";
 import LoginPage from "./pages/login";
 import { isTokenExpired, useAuthStore } from "./store/authStore";
 import { useEffect } from "react";
+import ForgotPasswordPage from "./pages/forgotPassword";
+import ActivateAccountPage from "./pages/activateAccount";
 
 function App() {
   const { accessToken, logout } = useAuthStore();
@@ -20,6 +22,8 @@ function App() {
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/activate-account" element={<ActivateAccountPage />} />
 
       {/* private routes */}
       <Route element={<PrivateRoute />}>

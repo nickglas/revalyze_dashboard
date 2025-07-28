@@ -80,7 +80,7 @@ export default function LoginPage() {
             <Checkbox name="remember" size="sm">
               Remember me
             </Checkbox>
-            <Link className="text-default-500" href="#" size="sm">
+            <Link href="/forgot-password" size="sm">
               Forgot password?
             </Link>
           </div>
