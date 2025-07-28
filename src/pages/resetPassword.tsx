@@ -3,24 +3,31 @@ import { toast } from "react-toastify";
 import api from "@/util/axios";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Icon } from "@iconify/react";
 
 export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [searchParams] = useSearchParams();
+  const [isVisible, setIsVisible] = useState(false);
+
+  const toggleVisibility = () => setIsVisible(!isVisible);
   const token = searchParams.get("token");
   const navigate = useNavigate();
 
   //try to get the token from the url, if not found, redirect to login
-  if (!token) {
-    navigate("/login");
-  }
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+    }
+  }, [token, navigate]);
 
+  //validate token
   useEffect(() => {
     const validateToken = async () => {
       try {
         const result = await api.get(`/api/v1/reset-tokens/${token}`);
-
         if (!result || result.data.valid === false) {
           navigate("/login");
         }
@@ -29,8 +36,10 @@ export default function ResetPasswordPage() {
       }
     };
 
-    validateToken();
-  }, [token]);
+    if (token) {
+      validateToken();
+    }
+  }, [token, navigate]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -40,8 +49,10 @@ export default function ResetPasswordPage() {
     const repeatPassword = formData.get("repeat_password") as string;
 
     if (password !== repeatPassword) {
-      toast.error("Passwords do not match");
+      setPasswordError("Passwords do not match.");
       return;
+    } else {
+      setPasswordError(""); // clear previous error
     }
 
     if (!token) {
@@ -51,13 +62,15 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      await api.post("/api/v1/auth/reset-password", {
+      await api.post("/api/v1/auth/password-reset", {
         token,
-        newPassword: password,
+        password: password,
+        passwordConfirm: repeatPassword,
       });
 
       toast.success("Your password has been reset successfully.");
       setSubmitted(true);
+      navigate("/login");
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message || "Failed to reset password."
@@ -83,18 +96,53 @@ export default function ResetPasswordPage() {
             label="Password"
             name="password"
             placeholder="Enter your password"
-            type="password"
+            type={isVisible ? "text" : "password"}
             variant="bordered"
+            endContent={
+              <button type="button" onClick={toggleVisibility}>
+                {isVisible ? (
+                  <Icon
+                    className="pointer-events-none text-2xl text-default-400"
+                    icon="solar:eye-closed-linear"
+                  />
+                ) : (
+                  <Icon
+                    className="pointer-events-none text-2xl text-default-400"
+                    icon="solar:eye-bold"
+                  />
+                )}
+              </button>
+            }
           />
 
-          <Input
-            isRequired
-            label="Repeat password"
-            name="repeat_password"
-            placeholder="Confirm your password"
-            type="password"
-            variant="bordered"
-          />
+          <div className="flex w-full flex-col mb-4">
+            <Input
+              isRequired
+              label="Repeat password"
+              name="repeat_password"
+              placeholder="Confirm your password"
+              type={isVisible ? "text" : "password"}
+              variant="bordered"
+              endContent={
+                <button type="button" onClick={toggleVisibility}>
+                  {isVisible ? (
+                    <Icon
+                      className="pointer-events-none text-2xl text-default-400"
+                      icon="solar:eye-closed-linear"
+                    />
+                  ) : (
+                    <Icon
+                      className="pointer-events-none text-2xl text-default-400"
+                      icon="solar:eye-bold"
+                    />
+                  )}
+                </button>
+              }
+            />
+            {passwordError && (
+              <p className="text-sm text-red-500 mt-1 ml-1">{passwordError}</p>
+            )}
+          </div>
 
           <Button
             className="w-full"
