@@ -6,9 +6,13 @@ import axios from "axios";
 interface AuthState {
   user: string | null;
   accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
+
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  setTokens: (access: string, refresh: string) => void;
+  clearTokens: () => void;
 }
 
 interface JwtPayload {
@@ -32,6 +36,8 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       accessToken: null,
+      refreshToken: null,
+
       isAuthenticated: false,
 
       login: async (email, password) => {
@@ -40,24 +46,30 @@ export const useAuthStore = create<AuthState>()(
           { email, password }
         );
 
-        const { user, accessToken } = res.data;
+        const { accessToken, refreshToken } = res.data;
 
         set({
-          user,
           accessToken,
           isAuthenticated: true,
+          refreshToken,
         });
       },
 
       logout: () => {
         set({ user: null, accessToken: null, isAuthenticated: false });
       },
+
+      setTokens: (access, refresh) =>
+        set({ accessToken: access, refreshToken: refresh }),
+
+      clearTokens: () => set({ accessToken: null, refreshToken: null }),
     }),
     {
-      name: "auth-storage", // key in localStorage
+      name: "auth-storage",
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
     }
