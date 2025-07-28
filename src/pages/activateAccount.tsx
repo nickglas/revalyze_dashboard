@@ -13,7 +13,6 @@ export default function ActivateAccountPage() {
 
   useEffect(() => {
     if (!token) {
-      toast.error("Activation token missing.");
       navigate("/login");
     }
   }, [token]);

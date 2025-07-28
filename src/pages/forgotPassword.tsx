@@ -4,6 +4,7 @@ import api from "@/util/axios"; // your axios instance
 import { useState } from "react";
 
 export default function ForgotPasswordPage() {
+  const [loading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -12,11 +13,16 @@ export default function ForgotPasswordPage() {
     const email = formData.get("email") as string;
 
     try {
-      await api.post("/api/v1/auth/forgot-password", { email });
+      setIsLoading(true);
+      const result = await api.post("/api/v1/auth/password-reset-request", {
+        email,
+      });
       setSubmitted(true);
-      toast.success("Reset instructions sent to your email.");
+      toast.success(result.data.message);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Error sending reset email.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -48,9 +54,12 @@ export default function ForgotPasswordPage() {
             className="w-full"
             color="primary"
             type="submit"
-            isLoading={true}
+            isLoading={loading}
+            isDisabled={submitted}
           >
-            Request password reset
+            {submitted && "Already requested reset"}
+            {loading && !submitted && "Requesting reset"}
+            {!loading && !submitted && "Request password"}
           </Button>
         </Form>
       </div>
