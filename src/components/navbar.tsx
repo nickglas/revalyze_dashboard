@@ -28,7 +28,6 @@ import { useAuthStore } from "@/store/authStore";
 
 export const Navbar = () => {
   const logout = useAuthStore((state) => state.logout);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   const searchInput = (
     <Input

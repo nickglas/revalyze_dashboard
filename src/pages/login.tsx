@@ -3,23 +3,27 @@ import { Button, Input, Checkbox, Link, Form, Divider } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
+import { toast } from "react-toastify";
 
 export default function LoginPage() {
   const [isVisible, setIsVisible] = React.useState(false);
-  const { login, isAuthenticated } = useAuthStore();
+  const { login } = useAuthStore();
   const navigate = useNavigate();
 
   const toggleVisibility = () => setIsVisible(!isVisible);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    if (email && password) {
-      login(email);
+    try {
+      await login(email, password);
+      toast.success("Successfully authenticated");
       navigate("/");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Login failed");
     }
   };
 
