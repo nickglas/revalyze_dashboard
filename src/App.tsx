@@ -4,8 +4,18 @@ import IndexPage from "@/pages/index";
 import DocsPage from "@/pages/docs";
 import { PrivateRoute } from "./route/PrivateRoute";
 import LoginPage from "./pages/login";
+import { isTokenExpired, useAuthStore } from "./store/authStore";
+import { useEffect } from "react";
 
 function App() {
+  const { accessToken, logout } = useAuthStore();
+
+  useEffect(() => {
+    if (isTokenExpired(accessToken)) {
+      logout();
+    }
+  }, [accessToken]);
+
   return (
     <Routes>
       {/* Public routes */}
