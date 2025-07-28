@@ -1,17 +1,26 @@
-"use client";
-
 import React from "react";
 import { Button, Input, Checkbox, Link, Form, Divider } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/store/authStore";
 
-export default function Component() {
+export default function LoginPage() {
   const [isVisible, setIsVisible] = React.useState(false);
+  const { login, isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
 
   const toggleVisibility = () => setIsVisible(!isVisible);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log("handleSubmit");
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    if (email && password) {
+      login(email);
+      navigate("/");
+    }
   };
 
   return (
