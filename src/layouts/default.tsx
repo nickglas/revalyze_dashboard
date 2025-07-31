@@ -1,29 +1,37 @@
+import { Outlet } from "react-router-dom";
+import TopNav from "@/components/TopNav";
+import SideNav from "@/components/SideNav";
 import { Link } from "@heroui/link";
+import { Drawer, DrawerBody, DrawerContent } from "@heroui/react";
 
-import { Navbar } from "@/components/navbar";
-
-export default function DefaultLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout() {
   return (
-    <div className="relative flex flex-col h-screen">
-      <Navbar />
-      <main className="container mx-auto max-w-7xl px-6 flex-grow pt-16">
-        {children}
-      </main>
-      <footer className="w-full flex items-center justify-center py-3">
-        <Link
-          isExternal
-          className="flex items-center gap-1 text-current"
-          href="https://heroui.com"
-          title="heroui.com homepage"
-        >
-          <span className="text-default-600">Powered by</span>
-          <p className="text-primary">HeroUI</p>
-        </Link>
-      </footer>
+    <div className="flex flex-col h-screen">
+      <TopNav onMenuClick={() => {}} />
+
+      <div className="flex flex-1 overflow-hidden">
+        {/* Desktop Sidebar */}
+        <SideNav />
+
+        {/* Mobile Drawer Sidebar */}
+        <Drawer isOpen={false} onClose={() => {}}>
+          <DrawerContent className="w-64 bg-muted/30 border-r">
+            <DrawerBody className="flex flex-col gap-4 pt-6">
+              <Link href="/">Overview</Link>
+              <Link href="/settings">Settings</Link>
+              <Link href="#">Leaderboard</Link>
+              <Link href="#">Spreadsheets</Link>
+            </DrawerBody>
+          </DrawerContent>
+        </Drawer>
+
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-auto bg-[#131419] p-6">
+          <div className="w-full max-w-7xl mx-auto px-6">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

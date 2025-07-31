@@ -1,14 +1,13 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-
-import IndexPage from "@/pages/index";
-import DocsPage from "@/pages/docs";
-import { PrivateRoute } from "./route/PrivateRoute";
 import LoginPage from "./pages/login";
 import { isTokenExpired, useAuthStore } from "./store/authStore";
 import { useEffect } from "react";
 import ForgotPasswordPage from "./pages/forgotPassword";
 import ActivateAccountPage from "./pages/activateAccount";
 import ResetPasswordPage from "./pages/resetPassword";
+import DashboardLayout from "./layouts/default";
+import DashboardPage from "./pages/DashboardPage";
+import Users from "./pages/users";
 
 function App() {
   const { accessToken, logout } = useAuthStore();
@@ -28,9 +27,10 @@ function App() {
       <Route path="/activate-account" element={<ActivateAccountPage />} />
 
       {/* private routes */}
-      <Route element={<PrivateRoute />}>
-        <Route element={<IndexPage />} path="/" />
-        <Route path="/docs" element={<DocsPage />} />
+      <Route path="/" element={<DashboardLayout />}>
+        <Route index element={<DashboardPage />} />
+        <Route path="users" element={<Users />} />
+        {/* <Route path="settings" element={<SettingsPage />} /> */}
       </Route>
 
       {/* Catch-all: optional */}
