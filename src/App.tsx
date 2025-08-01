@@ -20,6 +20,7 @@ import ReviewConfigPage from "./pages/private/reviewConfigs";
 import ExternalCompaniesPage from "./pages/private/externalCompanies";
 import ContactsPage from "./pages/private/contacts";
 import CompanyPage from "./pages/private/company";
+import ExternalContactsPage from "./pages/private/externalContacts";
 
 // Placeholder components for routes not yet implemented
 const Placeholder = ({ name }: { name: string }) => (
@@ -63,7 +64,7 @@ function App() {
 
         {/* Client Management */}
         <Route path="external-companies" element={<ExternalCompaniesPage />} />
-        <Route path="contacts" element={<ContactsPage />} />
+        <Route path="contacts" element={<ExternalContactsPage />} />
 
         {/* Company Administration */}
         <Route path="companies" element={<CompanyPage />} />
