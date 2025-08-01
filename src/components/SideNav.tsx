@@ -89,10 +89,10 @@ export default function SideNav({ collapsed, setCollapsed }: SideNavProps) {
       <div className="flex flex-col gap-6">
         <div className="flex flex-col items-center justify-center p-4">
           <Avatar
-            size="sm"
-            src="https://i.pravatar.cc/150?u=a042581f4e29026704d"
-            isBordered
+            className="w-7 h-7 text-tiny"
+            src="https://i.pravatar.cc/150?u=a042581f4e29026024d"
           />
+
           <div
             className={`${collapsed ? "hidden" : "flex flex-col items-center mt-2"}`}
           >
