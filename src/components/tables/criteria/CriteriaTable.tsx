@@ -15,105 +15,84 @@ import {
   Chip,
   Pagination,
   Spinner,
-  Avatar,
   Tooltip,
-  Badge,
+  Switch,
 } from "@heroui/react";
 import { SearchIcon } from "@/components/icons";
 import { ChevronDownIcon, VerticalDotsIcon } from "../users/userTable";
 
-// Mock data based on contact.entity.ts
-const externalContactData = {
+// Mock data based on criterion.entity.ts
+const criteriaData = {
   data: [
     {
       _id: "687b85ef3d0b6f56ee5cfb76",
-      firstName: "Sarah",
-      lastName: "Johnson",
-      email: "s.johnson@acme.com",
-      phone: "+1 (555) 123-4567",
-      position: "Project Manager",
-      isActive: true,
-      externalCompanyId: "687d23483cb8c1c33f349900",
       companyId: "687b85ef3d0b6f56ee5cfb74",
+      title: "Product Knowledge",
+      description:
+        "Demonstrates thorough understanding of products and services",
+      isActive: true,
       createdAt: "2025-07-20T10:30:00.000Z",
       updatedAt: "2025-07-20T10:30:00.000Z",
     },
     {
       _id: "687d234d3cb8c1c33f349911",
-      firstName: "Michael",
-      lastName: "Chen",
-      email: "m.chen@globex.com",
-      phone: "+1 (555) 987-6543",
-      position: "Technical Director",
-      isActive: true,
-      externalCompanyId: "687d23483cb8c1c33f349901",
       companyId: "687b85ef3d0b6f56ee5cfb74",
+      title: "Communication Skills",
+      description:
+        "Clearly articulates thoughts and actively listens to customers",
+      isActive: true,
       createdAt: "2025-07-19T14:45:00.000Z",
       updatedAt: "2025-07-19T14:45:00.000Z",
     },
     {
       _id: "687d234f3cb8c1c33f349916",
-      firstName: "David",
-      lastName: "Wilson",
-      email: "d.wilson@initech.com",
-      phone: "+1 (555) 456-7890",
-      position: "Procurement Specialist",
-      isActive: false,
-      externalCompanyId: "687d23483cb8c1c33f349902",
       companyId: "687b85ef3d0b6f56ee5cfb74",
+      title: "Problem Solving",
+      description: "Effectively identifies and resolves customer issues",
+      isActive: false,
       createdAt: "2025-07-18T11:20:00.000Z",
       updatedAt: "2025-07-18T11:20:00.000Z",
     },
     {
       _id: "687d23513cb8c1c33f34991b",
-      firstName: "Priya",
-      lastName: "Patel",
-      email: "p.patel@umbrella.com",
-      phone: "+1 (555) 654-3210",
-      position: "Research Director",
-      isActive: true,
-      externalCompanyId: "687d23483cb8c1c33f349903",
       companyId: "687b85ef3d0b6f56ee5cfb74",
+      title: "Empathy",
+      description: "Shows understanding and compassion for customer situations",
+      isActive: true,
       createdAt: "2025-07-17T16:15:00.000Z",
       updatedAt: "2025-07-17T16:15:00.000Z",
     },
+    {
+      _id: "687d23513cb8c1c33f34991c",
+      companyId: "687b85ef3d0b6f56ee5cfb74",
+      title: "Efficiency",
+      description:
+        "Resolves issues in a timely manner without sacrificing quality",
+      isActive: true,
+      createdAt: "2025-07-16T09:10:00.000Z",
+      updatedAt: "2025-07-16T09:10:00.000Z",
+    },
   ],
   meta: {
-    total: 4,
+    total: 5,
     page: 1,
     limit: 10,
     pages: 1,
   },
 };
 
-// Mock external companies for mapping
-const externalCompanies: { [key: string]: string } = {
-  "687d23483cb8c1c33f349900": "Acme Corporation",
-  "687d23483cb8c1c33f349901": "Globex Industries",
-  "687d23483cb8c1c33f349902": "Initech Solutions",
-  "687d23483cb8c1c33f349903": "Umbrella Corp",
-};
-
 // Map API data to table format
-const externalContacts = externalContactData.data.map((contact) => ({
-  id: contact._id,
-  name: `${contact.firstName} ${contact.lastName}`,
-  firstName: contact.firstName,
-  lastName: contact.lastName,
-  email: contact.email,
-  phone: contact.phone,
-  position: contact.position,
-  company: externalCompanies[contact.externalCompanyId] || "Unknown Company",
-  status: contact.isActive ? "active" : "inactive",
-  createdAt: new Date(contact.createdAt),
+const criteria = criteriaData.data.map((criterion) => ({
+  id: criterion._id,
+  title: criterion.title,
+  description: criterion.description,
+  status: criterion.isActive ? "active" : "inactive",
+  createdAt: new Date(criterion.createdAt),
 }));
 
 export const columns = [
-  { name: "NAME", uid: "name", sortable: true },
-  { name: "EMAIL", uid: "email", sortable: true },
-  { name: "PHONE", uid: "phone", sortable: true },
-  { name: "POSITION", uid: "position", sortable: true },
-  { name: "COMPANY", uid: "company", sortable: true },
+  { name: "TITLE", uid: "title", sortable: true },
+  { name: "DESCRIPTION", uid: "description" },
   { name: "STATUS", uid: "status", sortable: true },
   { name: "CREATED AT", uid: "createdAt", sortable: true },
   { name: "ACTIONS", uid: "actions" },
@@ -128,23 +107,29 @@ export function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const statusColorMap = {
+const statusColorMap: Record<
+  string,
+  | "success"
+  | "danger"
+  | "default"
+  | "primary"
+  | "secondary"
+  | "warning"
+  | undefined
+> = {
   active: "success",
   inactive: "danger",
 };
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "name",
-  "email",
-  "phone",
-  "position",
-  "company",
+  "title",
+  "description",
   "status",
   "createdAt",
   "actions",
 ];
 
-export default function ExternalContactsTable() {
+export default function CriteriaTable() {
   const [filterValue, setFilterValue] = useState("");
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
@@ -169,26 +154,26 @@ export default function ExternalContactsTable() {
   }, [visibleColumns]);
 
   const filteredItems = React.useMemo(() => {
-    let filteredContacts = [...externalContacts];
+    let filteredCriteria = [...criteria];
 
     if (hasSearchFilter) {
-      filteredContacts = filteredContacts.filter(
-        (contact) =>
-          contact.name.toLowerCase().includes(filterValue.toLowerCase()) ||
-          contact.email.toLowerCase().includes(filterValue.toLowerCase()) ||
-          contact.position.toLowerCase().includes(filterValue.toLowerCase()) ||
-          contact.company.toLowerCase().includes(filterValue.toLowerCase())
+      filteredCriteria = filteredCriteria.filter(
+        (criterion) =>
+          criterion.title.toLowerCase().includes(filterValue.toLowerCase()) ||
+          criterion.description
+            .toLowerCase()
+            .includes(filterValue.toLowerCase())
       );
     }
 
     if (statusFilter !== "all") {
-      filteredContacts = filteredContacts.filter(
-        (contact) => contact.status === statusFilter
+      filteredCriteria = filteredCriteria.filter(
+        (criterion) => criterion.status === statusFilter
       );
     }
 
-    return filteredContacts;
-  }, [externalContacts, filterValue, statusFilter]);
+    return filteredCriteria;
+  }, [criteria, filterValue, statusFilter]);
 
   const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
 
@@ -215,119 +200,100 @@ export default function ExternalContactsTable() {
     });
   }, [sortDescriptor, items]);
 
-  const renderCell = React.useCallback((contact: any, columnKey: React.Key) => {
-    const cellValue = contact[columnKey as keyof typeof contact];
+  const toggleStatus = (id: string) => {
+    // In a real app, you would make an API call here
+    console.log(`Toggled status for criterion ${id}`);
+  };
 
-    switch (columnKey) {
-      case "name":
-        return (
-          <div className="flex items-center gap-3">
-            <Avatar
-              name={contact.name}
-              getInitials={(name: string) =>
-                `${contact.firstName[0]}${contact.lastName[0]}`
-              }
-            />
-            <div>
-              <p className="font-medium">{contact.name}</p>
-              <p className="text-gray-500 text-sm">{contact.position}</p>
+  const renderCell = React.useCallback(
+    (criterion: any, columnKey: React.Key) => {
+      const cellValue = criterion[columnKey as keyof typeof criterion];
+
+      switch (columnKey) {
+        case "title":
+          return (
+            <div className="flex flex-col">
+              <p className="font-bold">{criterion.title}</p>
+              <p className="text-gray-500 text-sm">
+                ID: {criterion.id.substring(0, 8)}...
+              </p>
             </div>
-          </div>
-        );
+          );
 
-      case "email":
-        return (
-          <div className="flex items-center">
-            <a
-              href={`mailto:${contact.email}`}
-              className="text-blue-500 hover:underline"
-            >
-              {contact.email}
-            </a>
-          </div>
-        );
+        case "description":
+          return (
+            <Tooltip content={criterion.description}>
+              <div className="max-w-[300px] truncate text-gray-600">
+                {criterion.description}
+              </div>
+            </Tooltip>
+          );
 
-      case "phone":
-        return (
-          <div className="flex items-center">
-            <a href={`tel:${contact.phone}`} className="text-gray-600">
-              {contact.phone}
-            </a>
-          </div>
-        );
+        case "status":
+          return (
+            <div className="flex items-center gap-3">
+              <Switch
+                isSelected={criterion.status === "active"}
+                onValueChange={() => toggleStatus(criterion.id)}
+                color="success"
+              />
+              <Chip
+                className="capitalize"
+                color={
+                  statusColorMap[
+                    criterion.status as keyof typeof statusColorMap
+                  ]
+                }
+                size="sm"
+                variant="flat"
+              >
+                {criterion.status}
+              </Chip>
+            </div>
+          );
 
-      case "position":
-        return <div className="text-gray-600">{contact.position}</div>;
+        case "createdAt":
+          return (
+            <div className="flex flex-col">
+              <p className="font-medium">
+                {criterion.createdAt.toLocaleDateString()}
+              </p>
+              <p className="text-gray-500 text-sm">
+                {criterion.createdAt.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+          );
 
-      case "company":
-        return (
-          <div className="flex items-center gap-2">
-            <Avatar name={contact.company} />
-            <span>{contact.company}</span>
-          </div>
-        );
+        case "actions":
+          return (
+            <div className="relative flex justify-end items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <VerticalDotsIcon className="text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu aria-label="Criterion Actions">
+                  <DropdownItem key="view">View Details</DropdownItem>
+                  <DropdownItem key="edit">Edit</DropdownItem>
+                  <DropdownItem key="reviews">View Reviews</DropdownItem>
+                  <DropdownItem key="delete" className="text-danger">
+                    Delete
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
 
-      case "status":
-        return (
-          <Chip
-            className="capitalize"
-            color={
-              statusColorMap[contact.status as keyof typeof statusColorMap] as
-                | "default"
-                | "primary"
-                | "secondary"
-                | "success"
-                | "warning"
-                | "danger"
-                | undefined
-            }
-            size="sm"
-            variant="flat"
-          >
-            {contact.status}
-          </Chip>
-        );
-
-      case "createdAt":
-        return (
-          <div className="flex flex-col">
-            <p className="font-medium">
-              {contact.createdAt.toLocaleDateString()}
-            </p>
-            <p className="text-gray-500 text-sm">
-              {contact.createdAt.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
-          </div>
-        );
-
-      case "actions":
-        return (
-          <div className="relative flex justify-end items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <VerticalDotsIcon className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu aria-label="Contact Actions">
-                <DropdownItem key="view">View Details</DropdownItem>
-                <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem key="transcripts">View Transcripts</DropdownItem>
-                <DropdownItem key="delete" className="text-danger">
-                  Delete
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
-
-      default:
-        return cellValue;
-    }
-  }, []);
+        default:
+          return cellValue;
+      }
+    },
+    []
+  );
 
   const onNextPage = React.useCallback(() => {
     if (page < pages) setPage(page + 1);
@@ -366,7 +332,7 @@ export default function ExternalContactsTable() {
           <Input
             isClearable
             className="w-full sm:max-w-[44%]"
-            placeholder="Search by name, email, position, or company..."
+            placeholder="Search by title or description..."
             startContent={<SearchIcon />}
             value={filterValue}
             onClear={() => setFilterValue("")}
@@ -403,15 +369,14 @@ export default function ExternalContactsTable() {
             </Dropdown>
 
             <Button color="primary" endContent={<span>+</span>}>
-              Add Contact
+              Add Criterion
             </Button>
           </div>
         </div>
 
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Showing {filteredItems.length} of {externalContactData.meta.total}{" "}
-            contacts
+            Showing {filteredItems.length} of {criteriaData.meta.total} criteria
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -443,7 +408,7 @@ export default function ExternalContactsTable() {
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {`Showing ${startItem} to ${endItem} of ${filteredItems.length} contacts`}
+          {`Showing ${startItem} to ${endItem} of ${filteredItems.length} criteria`}
         </span>
         <Pagination
           isCompact
@@ -486,7 +451,7 @@ export default function ExternalContactsTable() {
   return (
     <Table
       isHeaderSticky
-      aria-label="External Contacts table"
+      aria-label="Evaluation Criteria table"
       bottomContent={bottomContent}
       bottomContentPlacement="outside"
       classNames={{
@@ -495,12 +460,7 @@ export default function ExternalContactsTable() {
       sortDescriptor={sortDescriptor}
       topContent={topContent}
       topContentPlacement="outside"
-      onSortChange={(descriptor) =>
-        setSortDescriptor({
-          column: String(descriptor.column),
-          direction: descriptor.direction,
-        })
-      }
+      onSortChange={setSortDescriptor}
     >
       <TableHeader columns={headerColumns}>
         {(column) => (
@@ -514,9 +474,9 @@ export default function ExternalContactsTable() {
         )}
       </TableHeader>
       <TableBody
-        emptyContent={"No contacts found"}
+        emptyContent={"No criteria found"}
         items={sortedItems}
-        loadingContent={<Spinner label="Loading contacts..." />}
+        loadingContent={<Spinner label="Loading criteria..." />}
       >
         {(item) => (
           <TableRow key={item.id}>

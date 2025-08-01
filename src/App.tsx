@@ -18,9 +18,9 @@ import TranscriptsPage from "./pages/private/transcripts";
 import ReviewsPage from "./pages/private/reviews";
 import ReviewConfigPage from "./pages/private/reviewConfigs";
 import ExternalCompaniesPage from "./pages/private/externalCompanies";
-import ContactsPage from "./pages/private/contacts";
 import CompanyPage from "./pages/private/company";
 import ExternalContactsPage from "./pages/private/externalContacts";
+import CriteriaPage from "./pages/private/criteria";
 
 // Placeholder components for routes not yet implemented
 const Placeholder = ({ name }: { name: string }) => (
@@ -57,10 +57,7 @@ function App() {
         <Route path="transcripts" element={<TranscriptsPage />} />
         <Route path="reviews" element={<ReviewsPage />} />
         <Route path="review-configs" element={<ReviewConfigPage />} />
-        <Route
-          path="criteria"
-          element={<Placeholder name="Evaluation Criteria" />}
-        />
+        <Route path="criteria" element={<CriteriaPage />} />
 
         {/* Client Management */}
         <Route path="external-companies" element={<ExternalCompaniesPage />} />
