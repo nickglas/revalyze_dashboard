@@ -104,10 +104,7 @@ export default function DashboardPage() {
       {/* Resource Usage Gauges */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 overflow-hidden">
         {resourceUsage.map((resource, index) => (
-          <Card
-            key={index}
-            className="border border-default overflow-hidden bg-[#1e1e1e]"
-          >
+          <Card key={index} className="overflow-hidden bg-[#1e1e1e]">
             <CardHeader className="pb-0 pt-4 px-4">
               <h2 className="text-lg font-semibold">{resource.title}</h2>
             </CardHeader>
@@ -167,11 +164,11 @@ export default function DashboardPage() {
         </Card>
 
         {/* Review Status */}
-        <Card className="col-span-1 md:col-span-2 lg:col-span-2 xl:col-span-1 bg-[#1e1e1e]">
+        <Card className="col-span-1 md:col-span-2 lg:col-span-2 xl:col-span-1 bg-[#1e1e1e] overflow-hidden">
           <CardHeader className="pb-0 pt-4 px-4">
             <h2 className="text-lg font-semibold">Review Distribution</h2>
           </CardHeader>
-          <CardBody className="px-2">
+          <CardBody className="px-2 overflow-hidden">
             {isLoading ? (
               <Skeleton className="h-[300px] w-full rounded-lg" />
             ) : (

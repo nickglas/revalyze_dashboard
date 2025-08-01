@@ -1,14 +1,30 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import LoginPage from "./pages/login";
-import { isTokenExpired, useAuthStore } from "./store/authStore";
 import { useEffect } from "react";
-import ForgotPasswordPage from "./pages/forgotPassword";
-import ActivateAccountPage from "./pages/activateAccount";
-import ResetPasswordPage from "./pages/resetPassword";
+import { isTokenExpired, useAuthStore } from "./store/authStore";
+
+// Auth-related pages
+import LoginPage from "./pages/public/login";
+import ForgotPasswordPage from "./pages/public/forgotPassword";
+import ResetPasswordPage from "./pages/public/resetPassword";
+import ActivateAccountPage from "./pages/public/activateAccount";
+
+// Layout
 import DashboardLayout from "./layouts/default";
-import DashboardPage from "./pages/DashboardPage";
-import Users from "./pages/users";
-import TranscriptsPage from "./pages/transcripts";
+
+// CMS pages
+import DashboardPage from "./pages/private/dashboard";
+import Users from "./pages/private/users";
+import TranscriptsPage from "./pages/private/transcripts";
+import ReviewsPage from "./pages/private/reviews";
+import ReviewConfigPage from "./pages/private/reviewConfigs";
+import ExternalCompaniesPage from "./pages/private/externalCompanies";
+import ContactsPage from "./pages/private/contacts";
+import CompanyPage from "./pages/private/company";
+
+// Placeholder components for routes not yet implemented
+const Placeholder = ({ name }: { name: string }) => (
+  <div className="p-4 text-xl text-center">📄 {name} Page</div>
+);
 
 function App() {
   const { accessToken, logout } = useAuthStore();
@@ -27,15 +43,38 @@ function App() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/activate-account" element={<ActivateAccountPage />} />
 
-      {/* private routes */}
+      {/* Private routes inside layout */}
       <Route path="/" element={<DashboardLayout />}>
+        {/* Dashboards */}
         <Route index element={<DashboardPage />} />
-        <Route path="users" element={<Users />} />
+        <Route
+          path="insights"
+          element={<Placeholder name="Employee Insights" />}
+        />
+
+        {/* Conversation Analysis */}
         <Route path="transcripts" element={<TranscriptsPage />} />
-        {/* <Route path="settings" element={<SettingsPage />} /> */}
+        <Route path="reviews" element={<ReviewsPage />} />
+        <Route path="review-configs" element={<ReviewConfigPage />} />
+        <Route
+          path="criteria"
+          element={<Placeholder name="Evaluation Criteria" />}
+        />
+
+        {/* Client Management */}
+        <Route path="external-companies" element={<ExternalCompaniesPage />} />
+        <Route path="contacts" element={<ContactsPage />} />
+
+        {/* Company Administration */}
+        <Route path="companies" element={<CompanyPage />} />
+        <Route path="users" element={<Users />} />
+        <Route
+          path="subscriptions"
+          element={<Placeholder name="Subscriptions" />}
+        />
       </Route>
 
-      {/* Catch-all: optional */}
+      {/* Catch-all route */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
