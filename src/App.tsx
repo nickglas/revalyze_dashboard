@@ -8,6 +8,7 @@ import ResetPasswordPage from "./pages/resetPassword";
 import DashboardLayout from "./layouts/default";
 import DashboardPage from "./pages/DashboardPage";
 import Users from "./pages/users";
+import TranscriptsPage from "./pages/transcripts";
 
 function App() {
   const { accessToken, logout } = useAuthStore();
@@ -30,6 +31,7 @@ function App() {
       <Route path="/" element={<DashboardLayout />}>
         <Route index element={<DashboardPage />} />
         <Route path="users" element={<Users />} />
+        <Route path="transcripts" element={<TranscriptsPage />} />
         {/* <Route path="settings" element={<SettingsPage />} /> */}
       </Route>
 

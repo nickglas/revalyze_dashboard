@@ -11,6 +11,7 @@ export default function SideNav() {
   const navItems = [
     { href: "/", label: "Overview", icon: MdOutlineDashboard },
     { href: "/companies", label: "Companies", icon: LuBuilding2 },
+    { href: "/transcripts", label: "Transcripts", icon: LuBuilding2 },
     { href: "/users", label: "Users", icon: LuUsers },
   ];
 

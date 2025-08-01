@@ -1,7 +1,9 @@
 import { Avatar } from "@heroui/avatar";
+import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { FaCaretDown, FaCaretLeft } from "react-icons/fa";
 import { IoMdMenu } from "react-icons/io";
+import { ThemeSwitch } from "@/components/theme-switch";
 
 import {
   Dropdown,
@@ -50,9 +52,7 @@ export default function TopNav({ onMenuClick }: { onMenuClick: () => void }) {
                   size="sm"
                   as="button"
                   className="transition-transform"
-                  showFallback
-                  name="Samantha de Jong"
-                  src="https://images.unsplash.com/broken"
+                  src="https://i.pravatar.cc/150?u=a042581f4e29026704d"
                 />
                 <div className="flex flex-col">
                   <span className="font-semibold text-sm">
@@ -67,7 +67,7 @@ export default function TopNav({ onMenuClick }: { onMenuClick: () => void }) {
             <DropdownMenu aria-label="Profile Actions" variant="flat">
               <DropdownItem key="profile" className="h-14 gap-2">
                 <p className="font-semibold">Signed in as</p>
-                <p className="font-semibold">sdj@example.com</p>
+                <p className="font-semibold">zoey@example.com</p>
               </DropdownItem>
               <DropdownItem key="settings">My Settings</DropdownItem>
               <DropdownItem key="team_settings">Team Settings</DropdownItem>
