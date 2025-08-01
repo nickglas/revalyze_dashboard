@@ -6,7 +6,9 @@ export default function TranscriptsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl">Transcripts</h1>
       </div>
-      <div className="mt-4">{/* <TranscriptsTable /> */}</div>
+      <div className="mt-4">
+        <TranscriptsTable />
+      </div>
     </>
   );
 }
