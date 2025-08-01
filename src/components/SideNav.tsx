@@ -13,10 +13,10 @@ import {
   IoPeopleOutline,
   IoBusinessOutline,
 } from "react-icons/io5";
-import { RiContactsBook2Line, RiShieldCheckLine } from "react-icons/ri";
+import { RiContactsBook2Line } from "react-icons/ri";
 import { GrScorecard, GrDocumentConfig, GrCatalog } from "react-icons/gr";
-import { TbListDetails } from "react-icons/tb";
 import { Avatar } from "@heroui/avatar";
+import { Tooltip } from "@heroui/react";
 
 interface SideNavProps {
   collapsed: boolean;
@@ -82,20 +82,30 @@ export default function SideNav({ collapsed, setCollapsed }: SideNavProps) {
   return (
     <aside
       className={`h-full bg-[#1e1e1e] text-muted-foreground transition-all duration-200 py-4 ${
-        collapsed ? "w-16" : "w-52"
+        collapsed ? "w-16" : "w-50"
       } flex flex-col justify-between`}
     >
       {/* Top: Avatar and Navigation */}
       <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-center p-4">
+        <div className="flex flex-col items-center justify-center p-4">
           <Avatar
             size="sm"
             src="https://i.pravatar.cc/150?u=a042581f4e29026704d"
             isBordered
           />
+          <div
+            className={`${collapsed ? "hidden" : "flex flex-col items-center mt-2"}`}
+          >
+            <span className="text-sm text-foreground">Ashley young</span>
+            <span className="text-tiny text-gray-500">
+              Company adminstrator
+            </span>
+          </div>
         </div>
 
-        <nav className="flex flex-col gap-2 px-2">
+        <nav
+          className={`${collapsed ? "flex flex-col items-center gap-4 px-2" : "flex flex-col gap-2 px-2"}`}
+        >
           {sections.map((section) => (
             <div key={section.title}>
               {!collapsed && (
@@ -106,7 +116,8 @@ export default function SideNav({ collapsed, setCollapsed }: SideNavProps) {
               {section.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPath === item.href;
-                return (
+
+                const linkContent = (
                   <Link
                     key={item.href}
                     href={item.href}
@@ -117,6 +128,18 @@ export default function SideNav({ collapsed, setCollapsed }: SideNavProps) {
                     <Icon className="w-5 h-5" />
                     {!collapsed && <span>{item.label}</span>}
                   </Link>
+                );
+
+                return collapsed ? (
+                  <Tooltip
+                    key={item.href}
+                    content={item.label}
+                    placement="right"
+                  >
+                    {linkContent}
+                  </Tooltip>
+                ) : (
+                  linkContent
                 );
               })}
             </div>
