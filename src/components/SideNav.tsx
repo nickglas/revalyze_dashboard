@@ -17,6 +17,9 @@ import { RiContactsBook2Line } from "react-icons/ri";
 import { GrScorecard, GrDocumentConfig, GrCatalog } from "react-icons/gr";
 import { Avatar } from "@heroui/avatar";
 import { Tooltip } from "@heroui/react";
+import { FaGear } from "react-icons/fa6";
+import CompanySettingsModal from "./modals/company/companySettings";
+import CompanySettingsModalTest from "./modals/company/testSettings";
 
 interface SideNavProps {
   collapsed: boolean;
@@ -72,9 +75,10 @@ export default function SideNav({ collapsed, setCollapsed }: SideNavProps) {
     {
       title: "Company Administration",
       items: [
-        { href: "/companies", label: "Company Info", icon: LuBuilding2 },
+        { href: "/company", label: "Company Info", icon: LuBuilding2 },
         { href: "/users", label: "Users", icon: LuUsers },
-        { href: "/subscriptions", label: "Subscriptions", icon: GrCatalog },
+        { href: null, label: "Company Settings", icon: FaGear, isModal: true }, // custom marker
+        { href: null, label: "Company test", icon: FaGear, isModal: true }, // custom marker
       ],
     },
   ];
@@ -114,14 +118,23 @@ export default function SideNav({ collapsed, setCollapsed }: SideNavProps) {
                 </div>
               )}
               {section.items.map((item) => {
+                if (item.isModal) {
+                  return (
+                    <CompanySettingsModalTest
+                      key="company-settings"
+                      collapsed={collapsed}
+                    />
+                  );
+                }
+
                 const Icon = item.icon;
                 const isActive = currentPath === item.href;
 
                 const linkContent = (
                   <Link
                     key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-3 px-2 py-2 rounded-md transition-all text-sm hover:bg-muted/50 text-foreground ${
+                    href={item.href as string}
+                    className={`flex items-center gap-3 px-2 py-2 rounded-md transition-all text-sm hover:bg-muted/50 text-foreground${
                       isActive ? "bg-muted/70 text-white" : ""
                     }`}
                   >
@@ -148,18 +161,23 @@ export default function SideNav({ collapsed, setCollapsed }: SideNavProps) {
       </div>
 
       {/* Bottom: Collapse Toggle */}
-      <div className="flex items-center justify-center p-3">
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-2 rounded hover:bg-muted/50"
-        >
-          {collapsed ? (
-            <MdChevronRight className="w-5 h-5" />
-          ) : (
-            <MdChevronLeft className="w-5 h-5" />
-          )}
-        </button>
-      </div>
+      <Tooltip
+        content={`${collapsed ? "Open menu" : "Close menu"}`}
+        placement="right"
+      >
+        <div className="flex flex-col items-center  justify-center p-3">
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-2 rounded hover:bg-muted/50 hover:cursor-pointer"
+          >
+            {collapsed ? (
+              <MdChevronRight className="w-5 h-5" />
+            ) : (
+              <MdChevronLeft className="w-5 h-5" />
+            )}
+          </button>
+        </div>
+      </Tooltip>
     </aside>
   );
 }
