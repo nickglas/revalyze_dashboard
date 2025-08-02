@@ -22,6 +22,7 @@ import CompanyPage from "./pages/private/company";
 import ExternalContactsPage from "./pages/private/externalContacts";
 import CriteriaPage from "./pages/private/criteria";
 import EmployeeInsightsPage from "./pages/private/employeeInsight";
+import TeamInsightsPage from "./pages/private/teamInsight";
 
 // Placeholder components for routes not yet implemented
 const Placeholder = ({ name }: { name: string }) => (
@@ -49,7 +50,8 @@ function App() {
       <Route path="/" element={<DashboardLayout />}>
         {/* Dashboards */}
         <Route index element={<DashboardPage />} />
-        <Route path="insights" element={<EmployeeInsightsPage />} />
+        <Route path="employee-insights" element={<EmployeeInsightsPage />} />
+        <Route path="team-insights" element={<TeamInsightsPage />} />
 
         {/* Conversation Analysis */}
         <Route path="transcripts" element={<TranscriptsPage />} />

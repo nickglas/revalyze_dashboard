@@ -18,7 +18,6 @@ import { GrScorecard, GrDocumentConfig, GrCatalog } from "react-icons/gr";
 import { Avatar } from "@heroui/avatar";
 import { Tooltip } from "@heroui/react";
 import { FaGear } from "react-icons/fa6";
-import CompanySettingsModal from "./modals/company/companySettings";
 import CompanySettingsModalTest from "./modals/company/testSettings";
 
 interface SideNavProps {
@@ -32,10 +31,15 @@ export default function SideNav({ collapsed, setCollapsed }: SideNavProps) {
 
   const sections = [
     {
-      title: "Dashboard",
+      title: "Dashboard & insights",
       items: [
         { href: "/", label: "Overview", icon: MdOutlineDashboard },
-        { href: "/insights", label: "Employee Insights", icon: MdInsights },
+        {
+          href: "/employee-insights",
+          label: "Employee Insights",
+          icon: MdInsights,
+        },
+        { href: "/team-insights", label: "Team Insights", icon: MdInsights },
       ],
     },
     {
