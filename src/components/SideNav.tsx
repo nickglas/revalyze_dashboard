@@ -67,7 +67,7 @@ export default function SideNav({ collapsed, setCollapsed }: SideNavProps) {
     {
       title: "Client Management",
       items: [
-        { href: "/clients", label: "Clients", icon: IoPeopleOutline },
+        // { href: "/clients", label: "Clients", icon: IoPeopleOutline },
         {
           href: "/external-companies",
           label: "External Companies",
@@ -81,17 +81,17 @@ export default function SideNav({ collapsed, setCollapsed }: SideNavProps) {
       items: [
         { href: "/company", label: "Company Info", icon: LuBuilding2 },
         { href: "/users", label: "Users", icon: LuUsers },
-        { href: null, label: "Company Settings", icon: FaGear, isModal: true }, // custom marker
-        { href: null, label: "Company test", icon: FaGear, isModal: true }, // custom marker
+        // { href: null, label: "Company Settings", icon: FaGear, isModal: true }, // custom marker
+        // { href: null, label: "Company test", icon: FaGear, isModal: true }, // custom marker
       ],
     },
   ];
 
   return (
     <aside
-      className={`h-full bg-[#1e1e1e] text-muted-foreground transition-all duration-200 py-4 ${
+      className={`h-screen bg-[#1e1e1e] text-muted-foreground transition-all duration-200 py-4 ${
         collapsed ? "w-16" : "w-50"
-      } flex flex-col justify-between`}
+      } flex flex-col justify-between overflow-y-auto`}
     >
       {/* Top: Avatar and Navigation */}
       <div className="flex flex-col gap-6">
@@ -122,14 +122,14 @@ export default function SideNav({ collapsed, setCollapsed }: SideNavProps) {
                 </div>
               )}
               {section.items.map((item) => {
-                if (item.isModal) {
-                  return (
-                    <CompanySettingsModalTest
-                      key="company-settings"
-                      collapsed={collapsed}
-                    />
-                  );
-                }
+                // if (item.isModal) {
+                //   return (
+                //     <CompanySettingsModalTest
+                //       key="company-settings"
+                //       collapsed={collapsed}
+                //     />
+                //   );
+                // }
 
                 const Icon = item.icon;
                 const isActive = currentPath === item.href;

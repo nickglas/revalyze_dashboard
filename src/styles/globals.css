@@ -1,6 +1,60 @@
 @import "tailwindcss";
 @config "../../tailwind.config.js";
 
+/* Ensure html and body take full height */
+html,
+body {
+  height: 100%;
+  overflow: hidden; /* Prevent body scrolling */
+}
+
+/* Root container should take full height */
+#root {
+  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height for better mobile support */
+}
+
+/* Alternative: Use CSS custom properties for more control */
+:root {
+  --app-height: 100vh;
+  --app-height: 100dvh; /* Modern browsers */
+}
+
+/* Apply to your main container */
+.app-container {
+  height: var(--app-height);
+}
+
+/* For better zoom compatibility, you can also use */
+.viewport-fix {
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+}
+
+/* Ensure scrollbars are consistent * {
+  scrollbar-width: thin;
+} */
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 body {
   @apply font-sans;
 }

@@ -6,9 +6,9 @@ export default function DashboardLayout() {
   const [collapsed, setCollapsed] = useState(true);
 
   return (
-    <div className="flex h-screen bg-[#131419]">
+    <div className="flex min-h-screen bg-[#131419]">
       <SideNav collapsed={collapsed} setCollapsed={setCollapsed} />
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 max-h-screen overflow-y-auto p-6">
         <Outlet />
       </main>
     </div>

@@ -12,7 +12,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
       <Provider>
-        <main className="extended-dark text-foreground bg-background w-full h-[100vh]">
+        <main className="extended-dark text-foreground bg-background w-full">
           <App />
         </main>
         <ToastContainer position="bottom-right" autoClose={3000} theme="dark" />
