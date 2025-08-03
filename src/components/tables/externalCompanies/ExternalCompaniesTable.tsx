@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   TableHeader,
@@ -23,73 +23,9 @@ import {
   SearchIcon,
   VerticalDotsIcon,
 } from "../users/userTable";
-
-// Mock data based on external.company.entity.ts
-const externalCompanyData = {
-  data: [
-    {
-      _id: "687b85ef3d0b6f56ee5cfb76",
-      name: "Acme Corporation",
-      email: "contact@acme.com",
-      phone: "+1 (555) 123-4567",
-      address: "123 Business Ave, New York, NY 10001",
-      isActive: true,
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      createdAt: "2025-07-20T10:30:00.000Z",
-      updatedAt: "2025-07-20T10:30:00.000Z",
-    },
-    {
-      _id: "687d234d3cb8c1c33f349911",
-      name: "Globex Industries",
-      email: "info@globex.com",
-      phone: "+1 (555) 987-6543",
-      address: "456 Commerce St, San Francisco, CA 94105",
-      isActive: true,
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      createdAt: "2025-07-19T14:45:00.000Z",
-      updatedAt: "2025-07-19T14:45:00.000Z",
-    },
-    {
-      _id: "687d234f3cb8c1c33f349916",
-      name: "Initech Solutions",
-      email: "support@initech.com",
-      phone: "+1 (555) 456-7890",
-      address: "789 Technology Blvd, Austin, TX 78701",
-      isActive: false,
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      createdAt: "2025-07-18T11:20:00.000Z",
-      updatedAt: "2025-07-18T11:20:00.000Z",
-    },
-    {
-      _id: "687d23513cb8c1c33f34991b",
-      name: "Umbrella Corp",
-      email: "research@umbrella.com",
-      phone: "+1 (555) 654-3210",
-      address: "101 Raccoon City, PA 19103",
-      isActive: true,
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      createdAt: "2025-07-17T16:15:00.000Z",
-      updatedAt: "2025-07-17T16:15:00.000Z",
-    },
-  ],
-  meta: {
-    total: 4,
-    page: 1,
-    limit: 10,
-    pages: 1,
-  },
-};
-
-// Map API data to table format
-const externalCompanies = externalCompanyData.data.map((company) => ({
-  id: company._id,
-  name: company.name,
-  email: company.email,
-  phone: company.phone,
-  address: company.address,
-  status: company.isActive ? "active" : "inactive",
-  createdAt: new Date(company.createdAt),
-}));
+import { ExternalCompany } from "@/models/api/external.company.model";
+import { useExternalCompanyStore } from "@/store/externalCompanyStore";
+import AddExternalCompanyModal from "@/components/modals/externalCompanies/addExternalCompanyModal";
 
 export const columns = [
   { name: "NAME", uid: "name", sortable: true },
@@ -126,6 +62,8 @@ const INITIAL_VISIBLE_COLUMNS = [
 ];
 
 export default function ExternalCompaniesTable() {
+  const { companies, meta, isLoading, fetchCompanies } =
+    useExternalCompanyStore();
   const [filterValue, setFilterValue] = useState("");
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
@@ -140,6 +78,27 @@ export default function ExternalCompaniesTable() {
     direction: "descending",
   });
   const [page, setPage] = useState(1);
+
+  // Fetch data only if store is empty
+  useEffect(() => {
+    if (!companies || companies.length === 0) {
+      fetchCompanies(1, 1000); // Fetch all companies for client-side filtering
+    }
+  }, [companies, fetchCompanies]);
+
+  // Map API data to table format
+  const externalCompanies = React.useMemo(() => {
+    if (!companies) return [];
+    return companies.map((company) => ({
+      id: company._id,
+      name: company.name,
+      email: company.email,
+      phone: company.phone,
+      address: company.address,
+      status: company.isActive ? "active" : "inactive",
+      createdAt: new Date(company.createdAt),
+    }));
+  }, [companies]);
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -373,15 +332,13 @@ export default function ExternalCompaniesTable() {
               </DropdownMenu>
             </Dropdown>
 
-            <Button color="primary" endContent={<span>+</span>}>
-              Add Company
-            </Button>
+            <AddExternalCompanyModal />
           </div>
         </div>
 
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Showing {filteredItems.length} of {externalCompanyData.meta.total}{" "}
+            Showing {filteredItems.length} of {externalCompanies.length}{" "}
             companies
           </span>
           <label className="flex items-center text-default-400 text-small">
@@ -405,6 +362,7 @@ export default function ExternalCompaniesTable() {
     onSearchChange,
     onRowsPerPageChange,
     filteredItems.length,
+    externalCompanies.length,
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -454,7 +412,6 @@ export default function ExternalCompaniesTable() {
     onNextPage,
   ]);
 
-  // Handler to convert SortDescriptor.column to string
   const handleSortChange = (descriptor: {
     column: React.Key;
     direction: "ascending" | "descending";
@@ -493,6 +450,7 @@ export default function ExternalCompaniesTable() {
       <TableBody
         emptyContent={"No companies found"}
         items={sortedItems}
+        loadingState={isLoading ? "loading" : "idle"}
         loadingContent={<Spinner label="Loading companies..." />}
       >
         {(item) => (

@@ -22,7 +22,7 @@ import { SearchIcon } from "@/components/icons";
 import { ChevronDownIcon, VerticalDotsIcon } from "../users/userTable";
 import AddCriteriaModal from "@/components/modals/criteria/addCriteriaModal";
 import { useCriteriaStore } from "@/store/criteriaStore";
-import { Criterion } from "@/models/api/criteria.api";
+import { Criterion } from "@/models/api/criteria.api.model";
 import { useDisclosure } from "@heroui/modal";
 import ViewCriteriaModal from "@/components/modals/criteria/viewCriteriaModal";
 import EditCriteriaModal from "@/components/modals/criteria/editCriteriaModal";

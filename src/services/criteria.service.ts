@@ -1,5 +1,5 @@
 import api from "@/util/axios";
-import { Criterion } from "@/models/api/criteria.api";
+import { Criterion } from "@/models/api/criteria.api.model";
 import { PaginatedResponse } from "@/models/others/PaginatedResponse";
 
 export const getCriteria = async (

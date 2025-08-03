@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Criterion } from "@/models/api/criteria.api";
+import { Criterion } from "@/models/api/criteria.api.model";
 import { PaginationMeta } from "@/models/others/PaginationMeta";
 import * as service from "@/services/criteria.service";
 import { toast } from "react-toastify";

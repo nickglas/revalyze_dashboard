@@ -8,7 +8,7 @@ import {
   ModalFooter,
 } from "@heroui/modal";
 import { Button, Input, Textarea, Switch } from "@heroui/react";
-import { Criterion } from "@/models/api/criteria.api";
+import { Criterion } from "@/models/api/criteria.api.model";
 import { useCriteriaStore } from "@/store/criteriaStore";
 
 interface EditCriteriaModalProps {
