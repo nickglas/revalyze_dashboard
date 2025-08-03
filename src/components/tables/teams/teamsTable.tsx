@@ -20,7 +20,11 @@ import {
   Badge,
   Tooltip,
 } from "@heroui/react";
-import { ChevronDownIcon, SearchIcon } from "../users/userTable";
+import {
+  ChevronDownIcon,
+  SearchIcon,
+  VerticalDotsIcon,
+} from "../users/userTable";
 import AddTeamModal from "@/components/modals/teams/addTeamModal";
 // import AddTeamModal from "@/components/modals/teams/addTeamModal";
 
@@ -292,7 +296,12 @@ export default function TeamsTable() {
           );
         case "status":
           return (
-            <Chip className="capitalize" size="sm" variant="flat">
+            <Chip
+              className="capitalize"
+              size="sm"
+              variant="flat"
+              color={team.status === "active" ? "success" : "danger"}
+            >
               {team.status}
             </Chip>
           );
@@ -300,13 +309,19 @@ export default function TeamsTable() {
           return new Date(team.createdAt).toLocaleDateString();
         case "actions":
           return (
-            <div className="flex justify-end gap-2">
-              <Button size="sm" variant="flat">
-                Edit
-              </Button>
-              <Button size="sm" color="danger" variant="flat">
-                Archive
-              </Button>
+            <div className="relative flex justify-end items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <VerticalDotsIcon className="text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu>
+                  <DropdownItem key="view">View</DropdownItem>
+                  <DropdownItem key="edit">Edit</DropdownItem>
+                  <DropdownItem key="delete">Delete</DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
             </div>
           );
         default:

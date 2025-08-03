@@ -1,114 +1,189 @@
-// src/pages/insights/teams/index.tsx
 import { useState, useEffect } from "react";
 import {
   Card,
   CardHeader,
   CardBody,
   CardFooter,
-  Skeleton,
+  Tabs,
+  Tab,
+  Chip,
   Select,
   SelectItem,
   Button,
-  Tabs,
-  Tab,
-  Avatar,
-  Chip,
   Badge,
+  Skeleton,
+  Avatar,
+  Table,
+  TableHeader,
+  TableBody,
+  TableColumn,
+  TableRow,
+  TableCell,
 } from "@heroui/react";
+import { useNavigate, useParams } from "react-router-dom";
 import Chart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
 
-// Mock data structure
-interface Team {
-  id: string;
-  name: string;
-  manager: string;
-  memberCount: number;
-  avgPerformance: number;
-  avgSentiment: number;
-  reviewCompletion: number;
-  trend: { month: string; performance: number; sentiment: number }[];
-  criteriaScores: { criterion: string; score: number }[];
-}
-
-// Mock data
-const mockTeams: Team[] = [
+// Mock team data
+const teamsData = [
   {
-    id: "sales",
+    id: "team1",
     name: "Sales Team",
-    manager: "Sarah Johnson",
+    description: "Global sales and account management",
+    managerIds: ["mgr1", "mgr2"],
+    performance: 8.7,
+    sentiment: 7.9,
     memberCount: 12,
-    avgPerformance: 8.7,
-    avgSentiment: 7.9,
-    reviewCompletion: 85,
-    trend: [
-      { month: "Jan", performance: 7.8, sentiment: 7.2 },
-      { month: "Feb", performance: 8.1, sentiment: 7.5 },
-      { month: "Mar", performance: 8.4, sentiment: 7.7 },
-      { month: "Apr", performance: 8.7, sentiment: 7.9 },
+    reviewCount: 42,
+    positiveSentiment: 76,
+    criteria: [
+      { name: "Clarity", score: 8.2 },
+      { name: "Accuracy", score: 8.9 },
+      { name: "Structure", score: 7.8 },
+      { name: "Product Knowledge", score: 9.1 },
+      { name: "Solution Focus", score: 8.5 },
     ],
-    criteriaScores: [
-      { criterion: "Product Knowledge", score: 9.2 },
-      { criterion: "Communication", score: 8.5 },
-      { criterion: "Problem Solving", score: 8.1 },
-      { criterion: "Empathy", score: 7.8 },
-    ],
+    trends: {
+      month: [8.2, 8.4, 8.7],
+      quarter: [7.8, 8.2, 8.5],
+      year: [8.0, 8.3, 8.6],
+    },
+    reviewVolume: [20, 25, 30, 28, 32, 35, 38],
   },
   {
-    id: "support",
+    id: "team2",
     name: "Support Team",
-    manager: "Michael Chen",
-    memberCount: 15,
-    avgPerformance: 7.6,
-    avgSentiment: 6.8,
-    reviewCompletion: 72,
-    trend: [
-      { month: "Jan", performance: 7.2, sentiment: 6.4 },
-      { month: "Feb", performance: 7.4, sentiment: 6.5 },
-      { month: "Mar", performance: 7.5, sentiment: 6.7 },
-      { month: "Apr", performance: 7.6, sentiment: 6.8 },
+    description: "Technical support and troubleshooting",
+    managerIds: ["mgr3"],
+    performance: 7.3,
+    sentiment: 6.8,
+    memberCount: 8,
+    reviewCount: 35,
+    positiveSentiment: 62,
+    criteria: [
+      { name: "Clarity", score: 7.8 },
+      { name: "Accuracy", score: 8.2 },
+      { name: "Structure", score: 7.1 },
+      { name: "Product Knowledge", score: 8.4 },
+      { name: "Solution Focus", score: 7.6 },
     ],
-    criteriaScores: [
-      { criterion: "Product Knowledge", score: 8.3 },
-      { criterion: "Communication", score: 8.1 },
-      { criterion: "Problem Solving", score: 7.9 },
-      { criterion: "Empathy", score: 7.2 },
-    ],
+    trends: {
+      month: [7.0, 7.1, 7.3],
+      quarter: [6.8, 7.0, 7.2],
+      year: [6.5, 6.8, 7.0],
+    },
+    reviewVolume: [18, 22, 20, 25, 23, 28, 30],
   },
   {
-    id: "success",
-    name: "Customer Success",
-    manager: "Priya Patel",
-    memberCount: 10,
-    avgPerformance: 8.9,
-    avgSentiment: 8.3,
-    reviewCompletion: 92,
-    trend: [
-      { month: "Jan", performance: 8.2, sentiment: 7.8 },
-      { month: "Feb", performance: 8.5, sentiment: 8.0 },
-      { month: "Mar", performance: 8.7, sentiment: 8.1 },
-      { month: "Apr", performance: 8.9, sentiment: 8.3 },
+    id: "team3",
+    name: "Success Team",
+    description: "Customer onboarding and retention",
+    managerIds: ["mgr4", "mgr5"],
+    performance: 8.9,
+    sentiment: 8.5,
+    memberCount: 6,
+    reviewCount: 28,
+    positiveSentiment: 84,
+    criteria: [
+      { name: "Clarity", score: 8.8 },
+      { name: "Accuracy", score: 9.0 },
+      { name: "Structure", score: 8.5 },
+      { name: "Product Knowledge", score: 8.7 },
+      { name: "Solution Focus", score: 9.2 },
     ],
-    criteriaScores: [
-      { criterion: "Product Knowledge", score: 9.4 },
-      { criterion: "Communication", score: 9.1 },
-      { criterion: "Problem Solving", score: 8.8 },
-      { criterion: "Empathy", score: 8.7 },
+    trends: {
+      month: [8.6, 8.7, 8.9],
+      quarter: [8.3, 8.5, 8.7],
+      year: [8.0, 8.3, 8.6],
+    },
+    reviewVolume: [15, 18, 20, 22, 25, 24, 26],
+  },
+  {
+    id: "team4",
+    name: "Account Management",
+    description: "Client relationship management",
+    managerIds: ["mgr6"],
+    performance: 8.2,
+    sentiment: 7.7,
+    memberCount: 7,
+    reviewCount: 31,
+    positiveSentiment: 71,
+    criteria: [
+      { name: "Clarity", score: 8.0 },
+      { name: "Accuracy", score: 8.3 },
+      { name: "Structure", score: 7.9 },
+      { name: "Product Knowledge", score: 8.6 },
+      { name: "Solution Focus", score: 8.4 },
     ],
+    trends: {
+      month: [7.9, 8.1, 8.2],
+      quarter: [7.7, 7.9, 8.1],
+      year: [7.5, 7.8, 8.0],
+    },
+    reviewVolume: [17, 19, 22, 24, 26, 28, 30],
+  },
+];
+
+// Mock managers data
+const managersData = [
+  {
+    id: "mgr1",
+    name: "Sarah Johnson",
+    avatar: "https://i.pravatar.cc/150?u=sarah",
+  },
+  {
+    id: "mgr2",
+    name: "Michael Chen",
+    avatar: "https://i.pravatar.cc/150?u=michael",
+  },
+  {
+    id: "mgr3",
+    name: "Emma Rodriguez",
+    avatar: "https://i.pravatar.cc/150?u=emma",
+  },
+  {
+    id: "mgr4",
+    name: "David Wilson",
+    avatar: "https://i.pravatar.cc/150?u=david",
+  },
+  {
+    id: "mgr5",
+    name: "Priya Patel",
+    avatar: "https://i.pravatar.cc/150?u=priya",
+  },
+  {
+    id: "mgr6",
+    name: "Alex Thompson",
+    avatar: "https://i.pravatar.cc/150?u=alex",
   },
 ];
 
 // Sentiment Meter Component
-const SentimentMeter = ({ value }: { value: number }) => {
+const SentimentMeter = ({
+  value,
+  size = "md",
+}: {
+  value: number;
+  size?: "sm" | "md" | "lg";
+}) => {
   const getColor = (val: number) => {
     if (val >= 8) return "#10B981";
     if (val >= 5) return "#F59E0B";
     return "#EF4444";
   };
 
+  const sizeClasses = {
+    sm: "w-8 h-8 text-xs",
+    md: "w-12 h-12 text-sm",
+    lg: "w-16 h-16 text-base",
+  };
+
   return (
     <div className="relative">
-      <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
+      <svg
+        className={`${sizeClasses[size]} transform -rotate-90`}
+        viewBox="0 0 36 36"
+      >
         <circle
           cx="18"
           cy="18"
@@ -128,22 +203,88 @@ const SentimentMeter = ({ value }: { value: number }) => {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="font-bold text-sm">{value.toFixed(1)}</span>
+        <span
+          className={`font-bold ${size === "sm" ? "text-xs" : size === "md" ? "text-sm" : "text-base"}`}
+        >
+          {value.toFixed(1)}
+        </span>
       </div>
     </div>
   );
 };
 
-// Performance Trend Chart
-const PerformanceTrendChart = ({
-  teams,
-  timeRange,
-}: {
-  teams: Team[];
-  timeRange: string;
-}) => {
-  const categories = teams[0]?.trend.map((t) => t.month) || [];
+// Team Performance Comparison Chart
+const TeamPerformanceChart = ({ teams }: { teams: typeof teamsData }) => {
+  const options: ApexOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "70%",
+        borderRadius: 4,
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: function (val) {
+        return val.toFixed(1) + "/10";
+      },
+      style: {
+        fontSize: "12px",
+        fontWeight: 600,
+      },
+    },
+    stroke: {
+      width: 1,
+      colors: ["#1e1e1e"],
+    },
+    xaxis: {
+      categories: teams.map((t) => t.name),
+      labels: {
+        style: {
+          colors: "#a1a1aa",
+          fontSize: "12px",
+        },
+      },
+    },
+    yaxis: {
+      min: 0,
+      max: 10,
+      title: { text: "Performance Score" },
+      labels: { style: { colors: "#a1a1aa" } },
+    },
+    fill: {
+      opacity: 1,
+    },
+    colors: ["#3B82F6"],
+    grid: {
+      borderColor: "#27272a",
+      padding: { bottom: 20 },
+    },
+    tooltip: {
+      y: {
+        formatter: function (val) {
+          return val.toFixed(1) + "/10";
+        },
+      },
+    },
+  };
 
+  const series = [
+    {
+      name: "Performance",
+      data: teams.map((t) => t.performance),
+    },
+  ];
+
+  return <Chart options={options} series={series} type="bar" height={350} />;
+};
+
+// Review Volume Over Time Chart
+const ReviewVolumeChart = ({ teams }: { teams: typeof teamsData }) => {
   const options: ApexOptions = {
     chart: {
       type: "line",
@@ -153,19 +294,17 @@ const PerformanceTrendChart = ({
       width: 3,
       curve: "smooth",
     },
-    colors: ["#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899"],
+    colors: ["#3B82F6", "#10B981", "#F59E0B", "#8B5CF6"],
+    markers: {
+      size: 5,
+    },
     xaxis: {
-      categories,
+      categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
       labels: { style: { colors: "#a1a1aa" } },
     },
     yaxis: {
-      min: 5,
-      max: 10,
-      title: { text: "Performance Score" },
+      title: { text: "Review Volume" },
       labels: { style: { colors: "#a1a1aa" } },
-    },
-    markers: {
-      size: 5,
     },
     grid: {
       borderColor: "#27272a",
@@ -173,7 +312,9 @@ const PerformanceTrendChart = ({
     },
     tooltip: {
       y: {
-        formatter: (val) => `${val.toFixed(1)}/10`,
+        formatter: function (val) {
+          return val + " reviews";
+        },
       },
     },
     legend: {
@@ -184,86 +325,127 @@ const PerformanceTrendChart = ({
 
   const series = teams.map((team) => ({
     name: team.name,
-    data: team.trend.map((t) => t.performance),
+    data: team.reviewVolume,
   }));
 
   return <Chart options={options} series={series} type="line" height={350} />;
 };
 
-// Team Comparison Chart
-const TeamComparisonChart = ({ teams }: { teams: Team[] }) => {
+// Sentiment Distribution Chart
+const SentimentDistributionChart = () => {
   const options: ApexOptions = {
     chart: {
-      type: "bar",
-      toolbar: { show: false },
+      type: "donut",
     },
     plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "70%",
-      },
-    },
-    colors: ["#3B82F6", "#10B981", "#F59E0B"],
-    dataLabels: {
-      enabled: true,
-    },
-    xaxis: {
-      categories: ["Performance", "Sentiment", "Review Completion"],
-      labels: { style: { colors: "#a1a1aa" } },
-    },
-    yaxis: {
-      min: 0,
-      max: 100,
-      labels: { style: { colors: "#a1a1aa" } },
-    },
-    grid: {
-      borderColor: "#27272a",
-      padding: { bottom: 20 },
-    },
-    tooltip: {
-      y: {
-        formatter: function (val) {
-          return val + (val > 10 ? "%" : "/10");
+      pie: {
+        donut: {
+          size: "65%",
+          labels: {
+            show: true,
+            total: {
+              show: true,
+              label: "Total Sentiment",
+              color: "#a1a1aa",
+            },
+            value: {
+              color: "#ffffff",
+              fontSize: "24px",
+              fontWeight: 700,
+            },
+          },
         },
       },
     },
+    colors: ["#10B981", "#F59E0B", "#EF4444"],
+    labels: ["Positive", "Neutral", "Negative"],
+    dataLabels: {
+      enabled: false,
+    },
+    legend: {
+      position: "bottom",
+      labels: { colors: "#a1a1aa" },
+    },
+    responsive: [
+      {
+        breakpoint: 480,
+        options: {
+          chart: {
+            width: 200,
+          },
+          legend: {
+            position: "bottom",
+          },
+        },
+      },
+    ],
   };
 
-  const series = teams.map((team) => ({
-    name: team.name,
-    data: [team.avgPerformance, team.avgSentiment, team.reviewCompletion],
-  }));
+  const series = [65, 25, 10];
 
-  return <Chart options={options} series={series} type="bar" height={350} />;
+  return <Chart options={options} series={series} type="donut" height={350} />;
 };
 
 // Criteria Radar Chart
-const CriteriaRadarChart = ({ teams }: { teams: Team[] }) => {
-  const criteria = teams[0]?.criteriaScores.map((c) => c.criterion) || [];
+const CriteriaRadarChart = ({ teams }: { teams: typeof teamsData }) => {
+  // Extract criteria names from first team (assuming all teams have same criteria)
+  const criteria = teams[0].criteria.map((c) => c.name);
 
   const options: ApexOptions = {
     chart: {
       type: "radar",
       toolbar: { show: false },
+      dropShadow: {
+        enabled: true,
+        blur: 1,
+        left: 1,
+        top: 1,
+      },
     },
-    xaxis: {
-      categories,
+    dataLabels: {
+      enabled: true,
+      style: {
+        fontSize: "10px",
+        fontWeight: 600,
+      },
     },
-    yaxis: {
-      show: false,
-      min: 0,
-      max: 10,
+    plotOptions: {
+      radar: {
+        size: 120,
+        polygons: {
+          strokeColors: "#27272a",
+          fill: {
+            colors: ["#2a2a2a", "#1e1e1e"],
+          },
+        },
+      },
     },
+    colors: ["#3B82F6", "#10B981", "#F59E0B", "#8B5CF6"],
     markers: {
       size: 4,
+      strokeWidth: 2,
     },
-    fill: {
-      opacity: 0.1,
+    tooltip: {
+      y: {
+        formatter: function (val) {
+          return val.toFixed(1) + "/10";
+        },
+      },
     },
-    stroke: {
-      width: 2,
+    xaxis: {
+      categories: criteria,
+      labels: {
+        style: {
+          colors: "#a1a1aa",
+          fontSize: "10px",
+        },
+      },
     },
-    colors: ["#3B82F6", "#10B981", "#F59E0B"],
+    yaxis: {
+      min: 0,
+      max: 10,
+      show: false,
+    },
     legend: {
       position: "bottom",
       labels: { colors: "#a1a1aa" },
@@ -272,45 +454,167 @@ const CriteriaRadarChart = ({ teams }: { teams: Team[] }) => {
 
   const series = teams.map((team) => ({
     name: team.name,
-    data: team.criteriaScores.map((c) => c.score),
+    data: team.criteria.map((c) => c.score),
   }));
 
   return <Chart options={options} series={series} type="radar" height={400} />;
 };
 
+// Low Performing Teams Table
+const LowPerformingTeamsTable = ({ teams }: { teams: typeof teamsData }) => {
+  // Sort teams by performance ascending
+  const sortedTeams = [...teams].sort((a, b) => a.performance - b.performance);
+
+  return (
+    <Table className="w-full">
+      <TableHeader>
+        <TableColumn>Team</TableColumn>
+        <TableColumn>Avg Score</TableColumn>
+        <TableColumn>Review Count</TableColumn>
+        <TableColumn>Sentiment</TableColumn>
+        <TableColumn>Status</TableColumn>
+      </TableHeader>
+      <TableBody>
+        {sortedTeams
+          .filter((t) => t.performance < 8.0)
+          .map((team) => (
+            <TableRow
+              key={team.id}
+              className="hover:bg-[#2a2a2a] cursor-pointer"
+            >
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <div className="bg-gradient-to-br from-blue-600 to-indigo-800 rounded-lg w-8 h-8 flex items-center justify-center">
+                    <span className="text-sm font-bold text-white">
+                      {team.name.charAt(0)}
+                    </span>
+                  </div>
+                  <span>{team.name}</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <Badge color={team.performance >= 7.5 ? "warning" : "danger"}>
+                  {team.performance.toFixed(1)}/10
+                </Badge>
+              </TableCell>
+              <TableCell>{team.reviewCount}</TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <span>{team.positiveSentiment}%</span>
+                  <SentimentMeter value={team.sentiment} size="sm" />
+                </div>
+              </TableCell>
+              <TableCell>
+                <Chip
+                  color={team.performance >= 7.5 ? "warning" : "danger"}
+                  variant="dot"
+                >
+                  Needs attention
+                </Chip>
+              </TableCell>
+            </TableRow>
+          ))}
+      </TableBody>
+    </Table>
+  );
+};
+
+// Team Summary Card
+const TeamSummaryCard = ({ team }: { team: (typeof teamsData)[0] }) => {
+  return (
+    <Card className="bg-[#2a2a2a] hover:bg-[#333333] cursor-pointer">
+      <CardBody className="p-4 flex-grow flex flex-col justify-between">
+        <div>
+          {/* Top section */}
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h3 className="text-lg font-bold mb-1">{team.name}</h3>
+              <p className="text-sm text-gray-500 mb-3">{team.description}</p>
+
+              <div className="flex flex-col gap-2">
+                {team.managerIds.map((managerId) => {
+                  const manager = managersData.find((m) => m.id === managerId);
+                  return (
+                    manager && (
+                      <div key={manager.id} className="flex items-center gap-1">
+                        <Avatar size="md" src={manager.avatar} />
+                        <span className="text-xs text-gray-400">
+                          {manager.name}
+                        </span>
+                      </div>
+                    )
+                  );
+                })}
+              </div>
+            </div>
+
+            <SentimentMeter value={team.performance} size="md" />
+          </div>
+        </div>
+
+        {/* Bottom stats */}
+        <div className="grid grid-cols-3 gap-2 mt-3">
+          <div className="text-center">
+            <p className="text-xl font-bold">{team.performance.toFixed(1)}</p>
+            <p className="text-xs text-gray-500">Avg Score</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xl font-bold">{team.positiveSentiment}%</p>
+            <p className="text-xs text-gray-500">Pos. Sentiment</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xl font-bold">{team.reviewCount}</p>
+            <p className="text-xs text-gray-500">Reviews</p>
+          </div>
+        </div>
+      </CardBody>
+    </Card>
+  );
+};
+
+// Main Component
 export default function TeamInsightsPage() {
   const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<string>("quarter");
-  const [selectedTeams, setSelectedTeams] = useState<string[]>([
-    "sales",
-    "support",
-    "success",
-  ]);
   const [activeTab, setActiveTab] = useState("overview");
-  const [teamDetails, setTeamDetails] = useState<Team | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<any>(null);
+  const [timeRange, setTimeRange] = useState<"month" | "quarter" | "year">(
+    "quarter"
+  );
+  const [viewMode, setViewMode] = useState<
+    "performance" | "sentiment" | "volume"
+  >("performance");
+  const [showActiveOnly, setShowActiveOnly] = useState(true);
+  const { id } = useParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
+      if (id) {
+        const team = teamsData.find((t) => t.id === id) || teamsData[0];
+        setSelectedTeam(team);
+      }
     }, 1200);
+
     return () => clearTimeout(timer);
-  }, []);
+  }, [id]);
 
-  const filteredTeams = mockTeams.filter((team) =>
-    selectedTeams.includes(team.id)
-  );
-
-  const teamMetrics = [
-    { title: "Avg. Performance", value: "8.4/10", change: "+1.2%" },
-    { title: "Team Sentiment", value: "7.8/10", change: "+0.8%" },
-    { title: "Reviews Completed", value: "83%", change: "+12%" },
-    { title: "Team Members", value: "37", change: "+2" },
-  ];
+  // Filter teams based on active status
+  const filteredTeams = showActiveOnly
+    ? teamsData.filter((t) => t.performance >= 7.0)
+    : teamsData;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Team Performance Insights</h1>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={() => navigate(-1)}>
+            &larr; Back
+          </Button>
+          <h1 className="text-2xl font-bold">
+            {selectedTeam ? selectedTeam.name : "Team Insights"}
+          </h1>
+        </div>
         <Button color="primary" variant="solid">
           Generate Report
         </Button>
@@ -320,34 +624,15 @@ export default function TeamInsightsPage() {
       <Card className="bg-[#1e1e1e]">
         <CardBody className="p-4">
           <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex-1 min-w-[200px]">
-              <label className="text-sm text-gray-400 mb-1 block">
-                Select Teams
-              </label>
-              <Select
-                selectedKeys={selectedTeams}
-                onSelectionChange={(keys) =>
-                  setSelectedTeams(Array.from(keys) as string[])
-                }
-                className="w-full"
-              >
-                {mockTeams.map((team) => (
-                  <SelectItem key={team.id} value={team.id}>
-                    {team.name}
-                  </SelectItem>
-                ))}
-              </Select>
-            </div>
-
-            <div className="min-w-[150px]">
+            <div>
               <label className="text-sm text-gray-400 mb-1 block">
                 Time Range
               </label>
               <Select
-                selectedKeys={[timeRange]}
-                onSelectionChange={(keys) =>
-                  setTimeRange(Array.from(keys)[0] as string)
-                }
+                size="sm"
+                className="min-w-[120px]"
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value as any)}
               >
                 <SelectItem key="month" value="month">
                   Last Month
@@ -361,314 +646,460 @@ export default function TeamInsightsPage() {
               </Select>
             </div>
 
-            <div className="flex items-end">
+            <div>
+              <label className="text-sm text-gray-400 mb-1 block">
+                View Mode
+              </label>
+              <Select
+                size="sm"
+                className="min-w-[140px]"
+                value={viewMode}
+                onChange={(e) => setViewMode(e.target.value as any)}
+              >
+                <SelectItem key="performance" value="performance">
+                  Performance
+                </SelectItem>
+                <SelectItem key="sentiment" value="sentiment">
+                  Sentiment
+                </SelectItem>
+                <SelectItem key="volume" value="volume">
+                  Volume
+                </SelectItem>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2 mt-6">
+              <input
+                type="checkbox"
+                id="active-only"
+                checked={showActiveOnly}
+                onChange={(e) => setShowActiveOnly(e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-600"
+              />
+              <label htmlFor="active-only" className="text-sm text-gray-300">
+                Show active teams only
+              </label>
+            </div>
+
+            <div className="flex items-end ml-auto">
               <Button variant="flat">Apply Filters</Button>
             </div>
           </div>
         </CardBody>
       </Card>
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {teamMetrics.map((metric, index) => (
-          <Card key={index} className="bg-[#1e1e1e] shadow-sm">
-            <CardBody className="p-4">
-              {isLoading ? (
-                <Skeleton className="h-6 w-3/4 rounded-lg" />
-              ) : (
-                <>
-                  <div className="flex justify-between items-start">
-                    <h3 className="text-foreground text-lg font-medium">
-                      {metric.title}
-                    </h3>
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex items-center gap-2">
-                      <p className="text-2xl font-bold">{metric.value}</p>
-                      <p className="text-green-500 text-sm mt-1">
-                        {metric.change}
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
-            </CardBody>
-          </Card>
-        ))}
-      </div>
-
-      <Tabs
-        selectedKey={activeTab}
-        onSelectionChange={(key) => setActiveTab(key as string)}
-        className="bg-[#1e1e1e] rounded-lg p-2"
-      >
-        <Tab key="overview" title="Team Comparison" />
-        <Tab key="performance" title="Performance Trends" />
-        <Tab key="criteria" title="Criteria Analysis" />
-      </Tabs>
-
-      {activeTab === "overview" && (
-        <div className="grid grid-cols-1 gap-4">
+      {selectedTeam ? (
+        <>
+          {/* Team Profile Header */}
           <Card className="bg-[#1e1e1e]">
-            <CardHeader>
-              <h2 className="text-lg font-semibold">
-                Team Performance Comparison
-              </h2>
-            </CardHeader>
-            <CardBody>
-              {isLoading ? (
-                <Skeleton className="h-[350px] w-full rounded-lg" />
-              ) : (
-                <TeamComparisonChart teams={filteredTeams} />
-              )}
+            <CardBody className="p-6">
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="bg-gradient-to-br from-blue-600 to-indigo-800 rounded-xl w-24 h-24 flex items-center justify-center">
+                  <span className="text-3xl font-bold text-white">
+                    {selectedTeam.name.charAt(0)}
+                  </span>
+                </div>
+
+                <div className="flex-1 text-center md:text-left">
+                  {isLoading ? (
+                    <>
+                      <Skeleton className="h-8 w-64 mb-2 rounded-lg" />
+                      <Skeleton className="h-6 w-48 mb-4 rounded-lg" />
+                      <Skeleton className="h-6 w-32 rounded-lg" />
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-bold">
+                        {selectedTeam.name}
+                      </h2>
+                      <p className="text-lg text-gray-400 mb-2">
+                        {selectedTeam.description}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        <span className="text-gray-500">Managers: </span>
+                        {selectedTeam.managerIds.map((managerId: string) => {
+                          const manager = managersData.find(
+                            (m) => m.id === managerId
+                          );
+                          return (
+                            manager && (
+                              <div
+                                key={manager.id}
+                                className="flex items-center gap-2"
+                              >
+                                <Avatar size="sm" src={manager.avatar} />
+                                <span>{manager.name}</span>
+                              </div>
+                            )
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex gap-4 md:gap-8">
+                  <div className="text-center">
+                    {isLoading ? (
+                      <Skeleton className="h-16 w-16 rounded-full mx-auto mb-2" />
+                    ) : (
+                      <>
+                        <SentimentMeter
+                          value={selectedTeam.performance}
+                          size="lg"
+                        />
+                        <p className="mt-2 text-sm font-medium">
+                          {selectedTeam.performance}/10
+                        </p>
+                      </>
+                    )}
+                    <p className="text-sm text-gray-500">Performance</p>
+                  </div>
+                  <div className="text-center">
+                    {isLoading ? (
+                      <Skeleton className="h-16 w-16 rounded-full mx-auto mb-2" />
+                    ) : (
+                      <>
+                        <SentimentMeter
+                          value={selectedTeam.sentiment}
+                          size="lg"
+                        />
+                        <p className="mt-2 text-sm font-medium">
+                          {selectedTeam.sentiment}/10
+                        </p>
+                      </>
+                    )}
+                    <p className="text-sm text-gray-500">Sentiment</p>
+                  </div>
+                </div>
+              </div>
             </CardBody>
-            <CardFooter className="text-xs text-gray-500">
-              Comparison of key metrics across selected teams
-            </CardFooter>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredTeams.map((team) => (
-              <Card
-                key={team.id}
-                className="bg-[#1e1e1e] cursor-pointer hover:bg-[#2a2a2a]"
-                onClick={() => setTeamDetails(team)}
-              >
-                <CardBody className="p-4">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="bg-gray-700 rounded-lg p-2">
-                      <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center">
-                        <span className="font-bold">{team.name.charAt(0)}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">{team.name}</h3>
-                      <p className="text-gray-500 text-sm">
-                        Managed by {team.manager}
-                      </p>
-                    </div>
-                  </div>
+          {/* Tabs Navigation */}
+          <Tabs
+            selectedKey={activeTab}
+            onSelectionChange={(key) => setActiveTab(key as string)}
+            className="bg-[#1e1e1e] rounded-lg p-2"
+          >
+            <Tab key="overview" title="Overview" />
+            <Tab key="performance" title="Performance Analysis" />
+            <Tab key="trends" title="Performance Trends" />
+            <Tab key="criteria" title="Evaluation Criteria" />
+          </Tabs>
 
-                  <div className="flex justify-between gap-4">
-                    <div className="text-center">
-                      <SentimentMeter value={team.avgPerformance} />
-                      <p className="mt-2 text-sm">Performance</p>
-                    </div>
-                    <div className="text-center">
-                      <SentimentMeter value={team.avgSentiment} />
-                      <p className="mt-2 text-sm">Sentiment</p>
-                    </div>
-                    <div className="text-center flex flex-col justify-center">
-                      <div className="text-2xl font-bold">
-                        {team.reviewCompletion}%
-                      </div>
-                      <p className="text-sm">Reviews</p>
-                    </div>
-                  </div>
+          {/* Tab Content */}
+          {activeTab === "overview" && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Metrics Cards */}
+              <Card className="lg:col-span-3 bg-[#1e1e1e]">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">Key Metrics</h2>
+                </CardHeader>
+                <CardBody>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <Card className="bg-[#2a2a2a]">
+                      <CardBody className="p-4">
+                        <h3 className="text-md font-medium">
+                          Avg. Performance
+                        </h3>
+                        <div className="flex items-baseline gap-2 mt-2">
+                          <p className="text-2xl font-bold">
+                            {selectedTeam.performance.toFixed(1)}/10
+                          </p>
+                          <p className="text-green-500 font-medium">+0.4</p>
+                        </div>
+                      </CardBody>
+                    </Card>
 
-                  <div className="mt-4">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Members</span>
-                      <span>{team.memberCount}</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div
-                        className="bg-blue-500 h-2 rounded-full"
-                        style={{ width: `${(team.memberCount / 20) * 100}%` }}
-                      ></div>
-                    </div>
+                    <Card className="bg-[#2a2a2a]">
+                      <CardBody className="p-4">
+                        <h3 className="text-md font-medium">
+                          Positive Sentiment
+                        </h3>
+                        <div className="flex items-baseline gap-2 mt-2">
+                          <p className="text-2xl font-bold">
+                            {selectedTeam.positiveSentiment}%
+                          </p>
+                          <p className="text-green-500 font-medium">+5.2%</p>
+                        </div>
+                      </CardBody>
+                    </Card>
+
+                    <Card className="bg-[#2a2a2a]">
+                      <CardBody className="p-4">
+                        <h3 className="text-md font-medium">
+                          Reviews Completed
+                        </h3>
+                        <div className="flex items-baseline gap-2 mt-2">
+                          <p className="text-2xl font-bold">
+                            {selectedTeam.reviewCount}
+                          </p>
+                          <p className="text-green-500 font-medium">+12</p>
+                        </div>
+                      </CardBody>
+                    </Card>
+
+                    <Card className="bg-[#2a2a2a]">
+                      <CardBody className="p-4">
+                        <h3 className="text-md font-medium">Team Members</h3>
+                        <div className="flex items-baseline gap-2 mt-2">
+                          <p className="text-2xl font-bold">
+                            {selectedTeam.memberCount}
+                          </p>
+                          <p className="text-green-500 font-medium">+2</p>
+                        </div>
+                      </CardBody>
+                    </Card>
                   </div>
                 </CardBody>
               </Card>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {activeTab === "performance" && (
-        <div className="grid grid-cols-1 gap-4">
-          <Card className="bg-[#1e1e1e]">
-            <CardHeader>
-              <h2 className="text-lg font-semibold">Performance Trend</h2>
-            </CardHeader>
-            <CardBody>
-              {isLoading ? (
-                <Skeleton className="h-[350px] w-full rounded-lg" />
-              ) : (
-                <PerformanceTrendChart
-                  teams={filteredTeams}
-                  timeRange={timeRange}
-                />
-              )}
-            </CardBody>
-            <CardFooter className="text-xs text-gray-500">
-              Performance trends over time for selected teams
-            </CardFooter>
-          </Card>
-
-          <Card className="bg-[#1e1e1e]">
-            <CardHeader>
-              <h2 className="text-lg font-semibold">Sentiment Trend</h2>
-            </CardHeader>
-            <CardBody>
-              {isLoading ? (
-                <Skeleton className="h-[350px] w-full rounded-lg" />
-              ) : (
-                <PerformanceTrendChart
-                  teams={filteredTeams}
-                  timeRange={timeRange}
-                />
-              )}
-            </CardBody>
-            <CardFooter className="text-xs text-gray-500">
-              Sentiment trends over time for selected teams
-            </CardFooter>
-          </Card>
-        </div>
-      )}
-
-      {activeTab === "criteria" && (
-        <div className="grid grid-cols-1 gap-4">
-          <Card className="bg-[#1e1e1e]">
-            <CardHeader>
-              <h2 className="text-lg font-semibold">
-                Evaluation Criteria Comparison
-              </h2>
-            </CardHeader>
-            <CardBody>
-              {isLoading ? (
-                <Skeleton className="h-[400px] w-full rounded-lg" />
-              ) : (
-                <CriteriaRadarChart teams={filteredTeams} />
-              )}
-            </CardBody>
-            <CardFooter className="text-xs text-gray-500">
-              Comparison of evaluation criteria performance across teams
-            </CardFooter>
-          </Card>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredTeams.map((team) => (
-              <Card key={team.id} className="bg-[#1e1e1e]">
+              {/* Criteria Performance */}
+              <Card className="lg:col-span-2 bg-[#1e1e1e]">
                 <CardHeader>
                   <h2 className="text-lg font-semibold">
-                    {team.name} Criteria Scores
+                    Evaluation Criteria Performance
                   </h2>
                 </CardHeader>
                 <CardBody>
-                  <div className="space-y-4">
-                    {team.criteriaScores.map((criteria, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between"
-                      >
-                        <span className="text-sm">{criteria.criterion}</span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-32 bg-gray-700 rounded-full h-2.5">
-                            <div
-                              className="bg-blue-500 h-2.5 rounded-full"
-                              style={{ width: `${criteria.score * 10}%` }}
-                            ></div>
-                          </div>
-                          <Badge color="primary">
-                            {criteria.score.toFixed(1)}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  {isLoading ? (
+                    <Skeleton className="h-[300px] w-full rounded-lg" />
+                  ) : (
+                    <CriteriaRadarChart teams={[selectedTeam]} />
+                  )}
                 </CardBody>
               </Card>
-            ))}
+
+              {/* Sentiment Distribution */}
+              <Card className="bg-[#1e1e1e]">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">
+                    Sentiment Distribution
+                  </h2>
+                </CardHeader>
+                <CardBody>
+                  {isLoading ? (
+                    <Skeleton className="h-[300px] w-full rounded-lg" />
+                  ) : (
+                    <SentimentDistributionChart />
+                  )}
+                </CardBody>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === "performance" && (
+            <div className="grid grid-cols-1 gap-4">
+              <Card className="bg-[#1e1e1e]">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">
+                    Team Performance Comparison
+                  </h2>
+                </CardHeader>
+                <CardBody>
+                  {isLoading ? (
+                    <Skeleton className="h-[350px] w-full rounded-lg" />
+                  ) : (
+                    <TeamPerformanceChart teams={filteredTeams} />
+                  )}
+                </CardBody>
+                <CardFooter className="text-xs text-gray-500">
+                  Performance scores across {filteredTeams.length} teams
+                </CardFooter>
+              </Card>
+
+              <Card className="bg-[#1e1e1e]">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">
+                    Low Performing Teams
+                  </h2>
+                </CardHeader>
+                <CardBody>
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      {[1, 2].map((i) => (
+                        <Skeleton key={i} className="h-16 rounded-lg" />
+                      ))}
+                    </div>
+                  ) : (
+                    <LowPerformingTeamsTable teams={filteredTeams} />
+                  )}
+                </CardBody>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === "trends" && (
+            <div className="grid grid-cols-1 gap-4">
+              <Card className="bg-[#1e1e1e]">
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-lg font-semibold">
+                      Review Volume Over Time
+                    </h2>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={timeRange === "month" ? "solid" : "ghost"}
+                        onClick={() => setTimeRange("month")}
+                      >
+                        Weekly
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={timeRange === "quarter" ? "solid" : "ghost"}
+                        onClick={() => setTimeRange("quarter")}
+                      >
+                        Monthly
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  {isLoading ? (
+                    <Skeleton className="h-[350px] w-full rounded-lg" />
+                  ) : (
+                    <ReviewVolumeChart teams={filteredTeams} />
+                  )}
+                </CardBody>
+                <CardFooter className="text-xs text-gray-500">
+                  Review volume trends across teams over the last 7 days
+                </CardFooter>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === "criteria" && (
+            <div className="grid grid-cols-1 gap-4">
+              <Card className="bg-[#1e1e1e]">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">
+                    Criteria-Based Team Comparison
+                  </h2>
+                </CardHeader>
+                <CardBody>
+                  {isLoading ? (
+                    <Skeleton className="h-[400px] w-full rounded-lg" />
+                  ) : (
+                    <CriteriaRadarChart teams={filteredTeams} />
+                  )}
+                </CardBody>
+                <CardFooter className="text-xs text-gray-500">
+                  Performance across key evaluation criteria
+                </CardFooter>
+              </Card>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          {/* Team Overview */}
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {filteredTeams.map((team) => (
+                <TeamSummaryCard key={team.id} team={team} />
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card className="bg-[#1e1e1e]">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">
+                    Team Performance Comparison
+                  </h2>
+                </CardHeader>
+                <CardBody>
+                  {isLoading ? (
+                    <Skeleton className="h-[350px] w-full rounded-lg" />
+                  ) : (
+                    <TeamPerformanceChart teams={filteredTeams} />
+                  )}
+                </CardBody>
+                <CardFooter className="text-xs text-gray-500">
+                  Performance scores across {filteredTeams.length} teams
+                </CardFooter>
+              </Card>
+
+              <Card className="bg-[#1e1e1e]">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">
+                    Overall Sentiment Distribution
+                  </h2>
+                </CardHeader>
+                <CardBody>
+                  {isLoading ? (
+                    <Skeleton className="h-[350px] w-full rounded-lg" />
+                  ) : (
+                    <SentimentDistributionChart />
+                  )}
+                </CardBody>
+                <CardFooter className="text-xs text-gray-500">
+                  Aggregated sentiment across all teams
+                </CardFooter>
+              </Card>
+
+              <Card className="bg-[#1e1e1e] lg:col-span-2">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">
+                    Review Volume Over Time
+                  </h2>
+                </CardHeader>
+                <CardBody>
+                  {isLoading ? (
+                    <Skeleton className="h-[350px] w-full rounded-lg" />
+                  ) : (
+                    <ReviewVolumeChart teams={filteredTeams} />
+                  )}
+                </CardBody>
+                <CardFooter className="text-xs text-gray-500">
+                  Review volume trends across teams over the last 7 days
+                </CardFooter>
+              </Card>
+
+              <Card className="bg-[#1e1e1e] lg:col-span-2">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">
+                    Criteria-Based Team Comparison
+                  </h2>
+                </CardHeader>
+                <CardBody>
+                  {isLoading ? (
+                    <Skeleton className="h-[400px] w-full rounded-lg" />
+                  ) : (
+                    <CriteriaRadarChart teams={filteredTeams} />
+                  )}
+                </CardBody>
+                <CardFooter className="text-xs text-gray-500">
+                  Performance across key evaluation criteria
+                </CardFooter>
+              </Card>
+
+              <Card className="bg-[#1e1e1e] lg:col-span-2">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">
+                    Low Performing Teams
+                  </h2>
+                </CardHeader>
+                <CardBody>
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-16 rounded-lg" />
+                      ))}
+                    </div>
+                  ) : (
+                    <LowPerformingTeamsTable teams={filteredTeams} />
+                  )}
+                </CardBody>
+                <CardFooter className="text-xs text-gray-500">
+                  Teams with performance scores below 8.0/10
+                </CardFooter>
+              </Card>
+            </div>
           </div>
-        </div>
-      )}
-
-      {/* Team Detail View */}
-      {teamDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <Card className="bg-[#1e1e1e] w-full max-w-3xl">
-            <CardHeader className="flex justify-between items-center">
-              <h2 className="text-xl font-bold">{teamDetails.name}</h2>
-              <Button variant="ghost" onClick={() => setTeamDetails(null)}>
-                ✕
-              </Button>
-            </CardHeader>
-            <CardBody className="max-h-[70vh] overflow-y-auto">
-              <div className="flex flex-col md:flex-row gap-6 mb-6">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-2">Team Overview</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Manager:</span>
-                      <span>{teamDetails.manager}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Members:</span>
-                      <span>{teamDetails.memberCount}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Avg. Performance:</span>
-                      <span>{teamDetails.avgPerformance}/10</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Avg. Sentiment:</span>
-                      <span>{teamDetails.avgSentiment}/10</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Review Completion:</span>
-                      <span>{teamDetails.reviewCompletion}%</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-center mb-4">
-                    <SentimentMeter value={teamDetails.avgPerformance} />
-                    <p className="mt-2">Performance</p>
-                  </div>
-                  <div className="text-center">
-                    <SentimentMeter value={teamDetails.avgSentiment} />
-                    <p className="mt-2">Sentiment</p>
-                  </div>
-                </div>
-              </div>
-
-              <h3 className="text-lg font-semibold mb-4">Performance Trend</h3>
-              <PerformanceTrendChart
-                teams={[teamDetails]}
-                timeRange={timeRange}
-              />
-
-              <h3 className="text-lg font-semibold mt-6 mb-4">
-                Criteria Scores
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {teamDetails.criteriaScores.map((criteria, index) => (
-                  <Card key={index} className="bg-[#2a2a2a]">
-                    <CardBody>
-                      <div className="flex justify-between items-center">
-                        <span>{criteria.criterion}</span>
-                        <Badge color="primary">{criteria.score}/10</Badge>
-                      </div>
-                      <div className="mt-2 w-full bg-gray-700 rounded-full h-2">
-                        <div
-                          className="bg-blue-500 h-2 rounded-full"
-                          style={{ width: `${criteria.score * 10}%` }}
-                        ></div>
-                      </div>
-                    </CardBody>
-                  </Card>
-                ))}
-              </div>
-            </CardBody>
-            <CardFooter className="flex justify-end gap-2">
-              <Button variant="flat" onClick={() => setTeamDetails(null)}>
-                Close
-              </Button>
-              <Button color="primary">View Detailed Report</Button>
-            </CardFooter>
-          </Card>
-        </div>
+        </>
       )}
     </div>
   );

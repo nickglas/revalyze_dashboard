@@ -19,6 +19,7 @@ import {
   Avatar,
   Tabs,
   Tab,
+  Checkbox,
 } from "@heroui/react";
 
 interface User {
@@ -42,6 +43,7 @@ export default function AddTeamModal({ users }: AddTeamModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("members");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [index, setIndex] = useState(1);
 
   const filteredUsers = users.filter(
     (user) =>
@@ -119,7 +121,7 @@ export default function AddTeamModal({ users }: AddTeamModalProps) {
       <Button onPress={onOpen} variant="solid" color="primary">
         Add Team
       </Button>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="lg">
         <ModalContent>
           {(onClose) => (
             <form onSubmit={onSubmit}>
@@ -127,128 +129,97 @@ export default function AddTeamModal({ users }: AddTeamModalProps) {
                 Create New Team
               </ModalHeader>
               <ModalBody>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <Input
-                      isRequired
-                      errorMessage={errors.name}
-                      label="Team Name"
-                      labelPlacement="outside"
-                      name="name"
-                      placeholder="Enter team name"
-                      value={teamName}
-                      onChange={(e) => setTeamName(e.target.value)}
-                    />
+                <div className="pb-4">
+                  {index === 1 && (
+                    <div className="flex flex-col gap-4">
+                      <div className="space-y-4">
+                        <Input
+                          isRequired
+                          errorMessage={errors.name}
+                          label="Team Name"
+                          labelPlacement="outside"
+                          name="name"
+                          placeholder="Enter team name"
+                          value={teamName}
+                          onChange={(e) => setTeamName(e.target.value)}
+                        />
 
-                    <Textarea
-                      label="Description"
-                      labelPlacement="outside"
-                      name="description"
-                      placeholder="Describe the team's purpose or responsibilities"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                    />
+                        <Textarea
+                          label="Description"
+                          labelPlacement="outside"
+                          name="description"
+                          placeholder="Describe the team's purpose or responsibilities"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                        />
 
-                    <Switch
-                      defaultSelected
-                      color="primary"
-                      size="sm"
-                      isSelected={isActive}
-                    >
-                      Active Team
-                    </Switch>
-                  </div>
+                        <Switch
+                          defaultSelected
+                          color="primary"
+                          size="sm"
+                          isSelected={isActive}
+                        >
+                          Active Team
+                        </Switch>
+                      </div>
 
-                  <div className="border rounded-lg p-4">
-                    <Tabs
-                      selectedKey={activeTab}
-                      onSelectionChange={(key) => setActiveTab(key as string)}
-                      className="mb-4"
-                    >
-                      <Tab key="members" title="Members" />
-                      <Tab key="managers" title="Managers" />
-                    </Tabs>
-
-                    <div className="mb-4">
-                      <Input
-                        placeholder="Search users..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full"
-                      />
-                      {errors.members && (
-                        <p className="text-danger text-sm mt-1">
-                          {errors.members}
-                        </p>
-                      )}
-                      {errors.managers && (
-                        <p className="text-danger text-sm mt-1">
-                          {errors.managers}
-                        </p>
-                      )}
+                      <Button
+                        color="primary"
+                        size="md"
+                        onPress={() => setIndex(index + 1)}
+                      >
+                        Next step
+                      </Button>
                     </div>
+                  )}
 
-                    <div className="h-64 overflow-y-auto">
-                      {activeTab === "members" ? (
-                        <div className="space-y-2">
-                          {filteredUsers.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500">
-                              No users found
-                            </div>
-                          ) : (
-                            filteredUsers.map((user) => (
-                              <div
-                                key={user.id}
-                                className={`flex items-center justify-between p-2 rounded-lg cursor-pointer ${
-                                  selectedUsers.includes(user.id)
-                                    ? "bg-blue-50 dark:bg-blue-900/30"
-                                    : "hover:bg-gray-100 dark:hover:bg-gray-800"
-                                }`}
-                                onClick={() => handleUserSelect(user.id)}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <Avatar
-                                    size="sm"
-                                    name={user.name}
-                                    getInitials={(name) =>
-                                      name
-                                        .split(" ")
-                                        .map((n) => n[0])
-                                        .join("")
-                                    }
-                                  />
-                                  <div>
-                                    <p className="font-medium">{user.name}</p>
-                                    <p className="text-xs text-gray-500">
-                                      {user.email}
-                                    </p>
-                                  </div>
-                                </div>
-                                <input
-                                  type="checkbox"
-                                  checked={selectedUsers.includes(user.id)}
-                                  onChange={() => {}}
-                                  className="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
-                                />
+                  {index === 2 && (
+                    <div>
+                      <Tabs
+                        selectedKey={activeTab}
+                        onSelectionChange={(key) => setActiveTab(key as string)}
+                        className="mb-4"
+                        fullWidth
+                        color="primary"
+                      >
+                        <Tab key="members" title="Members" />
+                        <Tab key="managers" title="Managers" />
+                      </Tabs>
+
+                      <div className="mb-4">
+                        <Input
+                          placeholder="Search users..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full"
+                        />
+                        {errors.members && (
+                          <p className="text-danger text-sm mt-1">
+                            {errors.members}
+                          </p>
+                        )}
+                        {errors.managers && (
+                          <p className="text-danger text-sm mt-1">
+                            {errors.managers}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="h-64 over">
+                        {activeTab === "members" ? (
+                          <div className="space-y-2">
+                            {filteredUsers.length === 0 ? (
+                              <div className="text-center py-8 ">
+                                No users found
                               </div>
-                            ))
-                          )}
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {selectedUsers.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500">
-                              No members selected yet
-                            </div>
-                          ) : (
-                            selectedUsers.map((userId) => {
-                              const user = users.find((u) => u.id === userId);
-                              if (!user) return null;
-
-                              return (
+                            ) : (
+                              filteredUsers.map((user) => (
                                 <div
                                   key={user.id}
-                                  className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800"
+                                  className={`flex items-center justify-between p-2 rounded-lg cursor-pointer ${
+                                    selectedUsers.includes(user.id) ? "" : ""
+                                  }`}
+                                  onClick={() => handleUserSelect(user.id)}
                                 >
                                   <div className="flex items-center gap-3">
                                     <Avatar
@@ -268,61 +239,117 @@ export default function AddTeamModal({ users }: AddTeamModalProps) {
                                       </p>
                                     </div>
                                   </div>
-                                  <Switch
-                                    isSelected={selectedManagers.includes(
-                                      user.id
-                                    )}
-                                    isDisabled={
-                                      !selectedUsers.includes(user.id)
+                                  <Checkbox
+                                    size="md"
+                                    checked={
+                                      selectedUsers.find(
+                                        (x) => x === user.id
+                                      ) !== undefined
+                                        ? true
+                                        : false
                                     }
                                     onChange={() =>
-                                      handleManagerToggle(user.id)
+                                      setSelectedUsers([
+                                        ...selectedUsers,
+                                        user.id,
+                                      ])
                                     }
-                                    size="sm"
-                                    color="primary"
-                                  >
-                                    Manager
-                                  </Switch>
+                                  ></Checkbox>
                                 </div>
-                              );
-                            })
-                          )}
-                        </div>
-                      )}
-                    </div>
+                              ))
+                            )}
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {selectedUsers.length === 0 ? (
+                              <div className="text-center py-8 text-gray-500">
+                                No members selected yet
+                              </div>
+                            ) : (
+                              selectedUsers.map((userId) => {
+                                const user = users.find((u) => u.id === userId);
+                                if (!user) return null;
 
-                    <div className="mt-4">
-                      <p className="text-sm font-medium mb-2">
-                        Selected Managers:
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedManagers.map((managerId) => {
-                          const manager = users.find((u) => u.id === managerId);
-                          if (!manager) return null;
-                          return (
-                            <Chip
-                              key={managerId}
-                              color="primary"
-                              variant="flat"
-                              onClose={() => handleManagerToggle(managerId)}
-                            >
-                              {manager.name}
-                            </Chip>
-                          );
-                        })}
+                                return (
+                                  <div
+                                    key={user.id}
+                                    className="flex items-center justify-between p-2 rounded-lg "
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <Avatar
+                                        size="sm"
+                                        name={user.name}
+                                        getInitials={(name) =>
+                                          name
+                                            .split(" ")
+                                            .map((n) => n[0])
+                                            .join("")
+                                        }
+                                      />
+                                      <div>
+                                        <p className="font-medium">
+                                          {user.name}
+                                        </p>
+                                        <p className="text-xs ">{user.email}</p>
+                                      </div>
+                                    </div>
+                                    <Switch
+                                      isSelected={selectedManagers.includes(
+                                        user.id
+                                      )}
+                                      isDisabled={
+                                        !selectedUsers.includes(user.id)
+                                      }
+                                      onChange={() =>
+                                        handleManagerToggle(user.id)
+                                      }
+                                      size="sm"
+                                      color="primary"
+                                    >
+                                      Manager
+                                    </Switch>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="my-4">
+                        <p className="text-sm font-medium mb-2">
+                          Selected Managers:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedManagers.map((managerId) => {
+                            const manager = users.find(
+                              (u) => u.id === managerId
+                            );
+                            if (!manager) return null;
+                            return (
+                              <Chip
+                                key={managerId}
+                                color="primary"
+                                variant="flat"
+                                onClose={() => handleManagerToggle(managerId)}
+                              >
+                                {manager.name}
+                              </Chip>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="mt-8 flex justify-end gap-4">
+                        <Button variant="faded">Previous</Button>
+                        <Button color="primary" type="submit">
+                          Add team
+                        </Button>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </ModalBody>
-              <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Cancel
-                </Button>
-                <Button color="primary" type="submit">
-                  Create Team
-                </Button>
-              </ModalFooter>
             </form>
           )}
         </ModalContent>
