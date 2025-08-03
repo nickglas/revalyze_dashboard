@@ -19,6 +19,7 @@ import { Avatar } from "@heroui/avatar";
 import { Tooltip } from "@heroui/react";
 import { FaGear } from "react-icons/fa6";
 import CompanySettingsModalTest from "./modals/company/testSettings";
+import { HiOutlineUserGroup } from "react-icons/hi";
 
 interface SideNavProps {
   collapsed: boolean;
@@ -80,6 +81,7 @@ export default function SideNav({ collapsed, setCollapsed }: SideNavProps) {
       title: "Company Administration",
       items: [
         { href: "/company", label: "Company Info", icon: LuBuilding2 },
+        { href: "/teams", label: "Teams", icon: HiOutlineUserGroup },
         { href: "/users", label: "Users", icon: LuUsers },
         // { href: null, label: "Company Settings", icon: FaGear, isModal: true }, // custom marker
         // { href: null, label: "Company test", icon: FaGear, isModal: true }, // custom marker
