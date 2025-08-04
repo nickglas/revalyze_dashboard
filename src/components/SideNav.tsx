@@ -1,25 +1,21 @@
 import { Link } from "@heroui/link";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   MdOutlineDashboard,
   MdInsights,
   MdChevronLeft,
   MdChevronRight,
-  MdAdminPanelSettings,
 } from "react-icons/md";
 import { LuBuilding2, LuUsers, LuClipboardCheck } from "react-icons/lu";
-import {
-  IoDocumentOutline,
-  IoPeopleOutline,
-  IoBusinessOutline,
-} from "react-icons/io5";
+import { IoDocumentOutline, IoBusinessOutline } from "react-icons/io5";
 import { RiContactsBook2Line } from "react-icons/ri";
-import { GrScorecard, GrDocumentConfig, GrCatalog } from "react-icons/gr";
+import { GrScorecard, GrDocumentConfig } from "react-icons/gr";
 import { Avatar } from "@heroui/avatar";
 import { Tooltip } from "@heroui/react";
-import { FaGear } from "react-icons/fa6";
-import CompanySettingsModalTest from "./modals/company/testSettings";
+import { RiLogoutBoxLine } from "react-icons/ri";
+
 import { HiOutlineUserGroup } from "react-icons/hi";
+import { AuthService } from "@/services/auth.service";
 
 interface SideNavProps {
   collapsed: boolean;
@@ -28,7 +24,13 @@ interface SideNavProps {
 
 export default function SideNav({ collapsed, setCollapsed }: SideNavProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentPath = location.pathname;
+
+  const handleLogout = async () => {
+    await AuthService.logout();
+    navigate("/");
+  };
 
   const sections = [
     {
@@ -167,23 +169,33 @@ export default function SideNav({ collapsed, setCollapsed }: SideNavProps) {
       </div>
 
       {/* Bottom: Collapse Toggle */}
-      <Tooltip
-        content={`${collapsed ? "Open menu" : "Close menu"}`}
-        placement="right"
-      >
-        <div className="flex flex-col items-center  justify-center p-3">
+      <div className="flex flex-col items-center">
+        <Tooltip content="Log out" placement="right">
           <button
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={handleLogout}
             className="p-2 rounded hover:bg-muted/50 hover:cursor-pointer"
           >
-            {collapsed ? (
-              <MdChevronRight className="w-5 h-5" />
-            ) : (
-              <MdChevronLeft className="w-5 h-5" />
-            )}
+            <RiLogoutBoxLine className="w-5 h-5 hover:cursor-pointer hover:text-red-500" />
           </button>
-        </div>
-      </Tooltip>
+        </Tooltip>
+        <Tooltip
+          content={`${collapsed ? "Open menu" : "Close menu"}`}
+          placement="right"
+        >
+          <div className="flex flex-col items-center  justify-center p-3">
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="p-2 rounded hover:bg-muted/50 hover:cursor-pointer"
+            >
+              {collapsed ? (
+                <MdChevronRight className="w-5 h-5" />
+              ) : (
+                <MdChevronLeft className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+        </Tooltip>
+      </div>
     </aside>
   );
 }

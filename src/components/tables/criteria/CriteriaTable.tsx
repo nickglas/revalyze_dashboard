@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Table,
   TableHeader,
@@ -21,80 +21,16 @@ import {
 import { SearchIcon } from "@/components/icons";
 import { ChevronDownIcon, VerticalDotsIcon } from "../users/userTable";
 import AddCriteriaModal from "@/components/modals/criteria/addCriteriaModal";
-
-// Mock data based on criterion.entity.ts
-const criteriaData = {
-  data: [
-    {
-      _id: "687b85ef3d0b6f56ee5cfb76",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      title: "Product Knowledge",
-      description:
-        "Demonstrates thorough understanding of products and services",
-      isActive: true,
-      createdAt: "2025-07-20T10:30:00.000Z",
-      updatedAt: "2025-07-20T10:30:00.000Z",
-    },
-    {
-      _id: "687d234d3cb8c1c33f349911",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      title: "Communication Skills",
-      description:
-        "Clearly articulates thoughts and actively listens to customers",
-      isActive: true,
-      createdAt: "2025-07-19T14:45:00.000Z",
-      updatedAt: "2025-07-19T14:45:00.000Z",
-    },
-    {
-      _id: "687d234f3cb8c1c33f349916",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      title: "Problem Solving",
-      description: "Effectively identifies and resolves customer issues",
-      isActive: false,
-      createdAt: "2025-07-18T11:20:00.000Z",
-      updatedAt: "2025-07-18T11:20:00.000Z",
-    },
-    {
-      _id: "687d23513cb8c1c33f34991b",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      title: "Empathy",
-      description: "Shows understanding and compassion for customer situations",
-      isActive: true,
-      createdAt: "2025-07-17T16:15:00.000Z",
-      updatedAt: "2025-07-17T16:15:00.000Z",
-    },
-    {
-      _id: "687d23513cb8c1c33f34991c",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      title: "Efficiency",
-      description:
-        "Resolves issues in a timely manner without sacrificing quality",
-      isActive: true,
-      createdAt: "2025-07-16T09:10:00.000Z",
-      updatedAt: "2025-07-16T09:10:00.000Z",
-    },
-  ],
-  meta: {
-    total: 5,
-    page: 1,
-    limit: 10,
-    pages: 1,
-  },
-};
-
-// Map API data to table format
-const criteria = criteriaData.data.map((criterion) => ({
-  id: criterion._id,
-  title: criterion.title,
-  description: criterion.description,
-  status: criterion.isActive ? "active" : "inactive",
-  createdAt: new Date(criterion.createdAt),
-}));
+import { useCriteriaStore } from "@/store/criteriaStore";
+import { Criterion } from "@/models/api/criteria.api";
+import { useDisclosure } from "@heroui/modal";
+import ViewCriteriaModal from "@/components/modals/criteria/viewCriteriaModal";
+import EditCriteriaModal from "@/components/modals/criteria/editCriteriaModal";
 
 export const columns = [
   { name: "TITLE", uid: "title", sortable: true },
   { name: "DESCRIPTION", uid: "description" },
-  { name: "STATUS", uid: "status", sortable: true },
+  { name: "STATUS", uid: "isActive", sortable: true },
   { name: "CREATED AT", uid: "createdAt", sortable: true },
   { name: "ACTIONS", uid: "actions" },
 ];
@@ -108,34 +44,61 @@ export function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const statusColorMap: Record<
-  string,
-  | "success"
-  | "danger"
-  | "default"
-  | "primary"
-  | "secondary"
-  | "warning"
-  | undefined
-> = {
-  active: "success",
-  inactive: "danger",
-};
-
 const INITIAL_VISIBLE_COLUMNS = [
   "title",
   "description",
-  "status",
+  "isActive",
   "createdAt",
   "actions",
 ];
 
 export default function CriteriaTable() {
+  const {
+    criteria: storeCriteria,
+    meta,
+    isLoading,
+    fetchCriteria,
+    toggleCriterionStatus,
+  } = useCriteriaStore();
   const [filterValue, setFilterValue] = useState("");
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
   );
   const [statusFilter, setStatusFilter] = useState("all");
+
+  const handleSortChange = (descriptor: any) => {
+    setSortDescriptor({
+      column: String(descriptor.column),
+      direction: descriptor.direction,
+    });
+  };
+
+  const {
+    isOpen: isViewModalOpen,
+    onOpen: onViewModalOpen,
+    onOpenChange: onViewModalOpenChange,
+  } = useDisclosure();
+
+  const {
+    isOpen: isEditModalOpen,
+    onOpen: onEditModalOpen,
+    onOpenChange: onEditModalOpenChange,
+  } = useDisclosure();
+
+  const [selectedCriterion, setSelectedCriterion] = useState<Criterion | null>(
+    null
+  );
+
+  const handleEdit = (criterion: Criterion) => {
+    setSelectedCriterion(criterion);
+    onEditModalOpen();
+  };
+
+  const handleView = (criterion: Criterion) => {
+    setSelectedCriterion(criterion);
+    onViewModalOpen();
+  };
+
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [sortDescriptor, setSortDescriptor] = useState<{
     column: string;
@@ -146,15 +109,25 @@ export default function CriteriaTable() {
   });
   const [page, setPage] = useState(1);
 
+  // Fetch criteria only if store is empty
+  useEffect(() => {
+    if (!storeCriteria) {
+      fetchCriteria();
+    }
+  }, [storeCriteria, fetchCriteria]);
+
+  // Use original criteria directly
+  const criteria = storeCriteria || [];
+
   const hasSearchFilter = Boolean(filterValue);
 
-  const headerColumns = React.useMemo(() => {
+  const headerColumns = useMemo(() => {
     return columns.filter((column) =>
       Array.from(visibleColumns).includes(column.uid)
     );
   }, [visibleColumns]);
 
-  const filteredItems = React.useMemo(() => {
+  const filteredItems = useMemo(() => {
     let filteredCriteria = [...criteria];
 
     if (hasSearchFilter) {
@@ -168,8 +141,8 @@ export default function CriteriaTable() {
     }
 
     if (statusFilter !== "all") {
-      filteredCriteria = filteredCriteria.filter(
-        (criterion) => criterion.status === statusFilter
+      filteredCriteria = filteredCriteria.filter((criterion) =>
+        statusFilter === "active" ? criterion.isActive : !criterion.isActive
       );
     }
 
@@ -178,22 +151,34 @@ export default function CriteriaTable() {
 
   const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
 
-  const items = React.useMemo(() => {
+  const items = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
     return filteredItems.slice(start, end);
   }, [page, filteredItems, rowsPerPage]);
 
-  const sortedItems = React.useMemo(() => {
+  const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => {
       let first: any, second: any;
 
-      if (sortDescriptor.column === "createdAt") {
-        first = a.createdAt.getTime();
-        second = b.createdAt.getTime();
-      } else {
-        first = a[sortDescriptor.column as keyof typeof a];
-        second = b[sortDescriptor.column as keyof typeof b];
+      // Handle sorting for each column using original model properties
+      switch (sortDescriptor.column) {
+        case "title":
+        case "description":
+          first = a[sortDescriptor.column];
+          second = b[sortDescriptor.column];
+          break;
+        case "isActive":
+          first = a.isActive ? 1 : 0;
+          second = b.isActive ? 1 : 0;
+          break;
+        case "createdAt":
+          first = new Date(a.createdAt).getTime();
+          second = new Date(b.createdAt).getTime();
+          break;
+        default:
+          first = 0;
+          second = 0;
       }
 
       const cmp = first < second ? -1 : first > second ? 1 : 0;
@@ -201,21 +186,15 @@ export default function CriteriaTable() {
     });
   }, [sortDescriptor, items]);
 
-  const toggleStatus = (id: string) => {
-    console.log(`Toggled status for criterion ${id}`);
-  };
-
-  const renderCell = React.useCallback(
-    (criterion: any, columnKey: React.Key) => {
-      const cellValue = criterion[columnKey as keyof typeof criterion];
-
+  const renderCell = useCallback(
+    (criterion: Criterion, columnKey: React.Key) => {
       switch (columnKey) {
         case "title":
           return (
             <div className="flex flex-col">
               <p className="font-bold">{criterion.title}</p>
               <p className="text-gray-500 text-sm">
-                ID: {criterion.id.substring(0, 8)}...
+                ID: {criterion._id.substring(0, 8)}...
               </p>
             </div>
           );
@@ -229,37 +208,32 @@ export default function CriteriaTable() {
             </Tooltip>
           );
 
-        case "status":
+        case "isActive":
           return (
             <div className="flex items-center gap-3">
               <Switch
-                isSelected={criterion.status === "active"}
-                onValueChange={() => toggleStatus(criterion.id)}
+                onValueChange={() => toggleCriterionStatus(criterion)}
+                isSelected={criterion.isActive}
                 color="success"
               />
               <Chip
                 className="capitalize"
-                color={
-                  statusColorMap[
-                    criterion.status as keyof typeof statusColorMap
-                  ]
-                }
+                color={criterion.isActive ? "success" : "danger"}
                 size="sm"
                 variant="flat"
               >
-                {criterion.status}
+                {criterion.isActive ? "active" : "inactive"}
               </Chip>
             </div>
           );
 
         case "createdAt":
+          const date = new Date(criterion.createdAt);
           return (
             <div className="flex flex-col">
-              <p className="font-medium">
-                {criterion.createdAt.toLocaleDateString()}
-              </p>
+              <p className="font-medium">{date.toLocaleDateString()}</p>
               <p className="text-gray-500 text-sm">
-                {criterion.createdAt.toLocaleTimeString([], {
+                {date.toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
@@ -277,8 +251,18 @@ export default function CriteriaTable() {
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu aria-label="Criterion Actions">
-                  <DropdownItem key="view">View Details</DropdownItem>
-                  <DropdownItem key="edit">Edit</DropdownItem>
+                  <DropdownItem
+                    key="view"
+                    onPress={() => handleView(criterion)}
+                  >
+                    View Details
+                  </DropdownItem>
+                  <DropdownItem
+                    key="edit"
+                    onPress={() => handleEdit(criterion)}
+                  >
+                    Edit
+                  </DropdownItem>
                   <DropdownItem key="reviews">View Reviews</DropdownItem>
                   <DropdownItem key="delete" className="text-danger">
                     Delete
@@ -289,10 +273,10 @@ export default function CriteriaTable() {
           );
 
         default:
-          return cellValue;
+          return null;
       }
     },
-    []
+    [toggleCriterionStatus]
   );
 
   const onNextPage = React.useCallback(() => {
@@ -374,7 +358,9 @@ export default function CriteriaTable() {
 
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Showing {filteredItems.length} of {criteriaData.meta.total} criteria
+            {isLoading
+              ? "Loading criteria..."
+              : `Showing ${filteredItems.length} of ${meta?.total || 0} criteria`}
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -397,9 +383,13 @@ export default function CriteriaTable() {
     onSearchChange,
     onRowsPerPageChange,
     filteredItems.length,
+    isLoading,
+    meta?.total,
   ]);
 
   const bottomContent = React.useMemo(() => {
+    if (isLoading) return null;
+
     const startItem = (page - 1) * rowsPerPage + 1;
     const endItem = Math.min(page * rowsPerPage, filteredItems.length);
 
@@ -444,46 +434,60 @@ export default function CriteriaTable() {
     rowsPerPage,
     onPreviousPage,
     onNextPage,
+    isLoading,
   ]);
 
   return (
-    <Table
-      isHeaderSticky
-      aria-label="Evaluation Criteria table"
-      bottomContent={bottomContent}
-      bottomContentPlacement="outside"
-      classNames={{
-        wrapper: "max-h-[500px]",
-      }}
-      sortDescriptor={sortDescriptor}
-      topContent={topContent}
-      topContentPlacement="outside"
-      onSortChange={setSortDescriptor}
-    >
-      <TableHeader columns={headerColumns}>
-        {(column) => (
-          <TableColumn
-            key={column.uid}
-            align={column.uid === "actions" ? "center" : "start"}
-            allowsSorting={column.sortable}
-          >
-            {column.name}
-          </TableColumn>
-        )}
-      </TableHeader>
-      <TableBody
-        emptyContent={"No criteria found"}
-        items={sortedItems}
-        loadingContent={<Spinner label="Loading criteria..." />}
+    <>
+      <Table
+        isHeaderSticky
+        aria-label="Evaluation Criteria table"
+        bottomContent={bottomContent}
+        bottomContentPlacement="outside"
+        classNames={{
+          wrapper: "max-h-[500px]",
+        }}
+        sortDescriptor={sortDescriptor}
+        topContent={topContent}
+        topContentPlacement="outside"
+        onSortChange={handleSortChange}
       >
-        {(item) => (
-          <TableRow key={item.id}>
-            {(columnKey) => (
-              <TableCell>{renderCell(item, columnKey)}</TableCell>
-            )}
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+        <TableHeader columns={headerColumns}>
+          {(column) => (
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "center" : "start"}
+              allowsSorting={column.sortable}
+            >
+              {column.name}
+            </TableColumn>
+          )}
+        </TableHeader>
+        <TableBody
+          emptyContent={isLoading ? " " : "No criteria found"}
+          items={isLoading ? [] : sortedItems}
+          loadingContent={<Spinner label="Loading criteria..." />}
+          loadingState={isLoading ? "loading" : "idle"}
+        >
+          {(item) => (
+            <TableRow key={item._id}>
+              {(columnKey) => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+      <ViewCriteriaModal
+        isOpen={isViewModalOpen}
+        onOpenChange={onViewModalOpenChange}
+        criterion={selectedCriterion}
+      />
+      <EditCriteriaModal
+        isOpen={isEditModalOpen}
+        onOpenChange={onEditModalOpenChange}
+        criterion={selectedCriterion}
+      />
+    </>
   );
 }

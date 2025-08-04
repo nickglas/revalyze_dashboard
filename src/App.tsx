@@ -1,6 +1,6 @@
-import { Navigate, Route, Routes } from "react-router-dom";
-import { useEffect } from "react";
-import { isTokenExpired, useAuthStore } from "./store/authStore";
+// App.tsx
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 // Auth-related pages
 import LoginPage from "./pages/public/login";
@@ -14,30 +14,26 @@ import DashboardLayout from "./layouts/default";
 // CMS pages
 import DashboardPage from "./pages/private/dashboard";
 import Users from "./pages/private/users";
-import TranscriptsPage from "./pages/private/transcripts";
-import ReviewsPage from "./pages/private/reviews";
-import ReviewConfigPage from "./pages/private/reviewConfigs";
-import ExternalCompaniesPage from "./pages/private/externalCompanies";
-import CompanyPage from "./pages/private/company";
-import ExternalContactsPage from "./pages/private/externalContacts";
-import CriteriaPage from "./pages/private/criteria";
 import EmployeeInsightsPage from "./pages/private/employeeInsight";
 import TeamInsightsPage from "./pages/private/teamInsight";
+import TranscriptsPage from "./pages/private/transcripts";
+import ReviewsPage from "./pages/private/reviews";
+import ReviewConfigsPage from "./pages/private/reviewConfigs";
+import CriteriaPage from "./pages/private/criteria";
+import ExternalCompaniesPage from "./pages/private/externalCompanies";
+import ExternalContactsPage from "./pages/private/externalContacts";
+import CompanyPage from "./pages/private/company";
 import TeamsPage from "./pages/private/teams";
 
-// Placeholder components for routes not yet implemented
-const Placeholder = ({ name }: { name: string }) => (
-  <div className="p-4 text-xl text-center">📄 {name} Page</div>
-);
-
 function App() {
-  const { accessToken, logout } = useAuthStore();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  useEffect(() => {
-    if (isTokenExpired(accessToken)) {
-      logout();
-    }
-  }, [accessToken]);
+  if (isLoading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
 
   return (
     <Routes>
@@ -47,36 +43,32 @@ function App() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/activate-account" element={<ActivateAccountPage />} />
 
-      {/* Private routes inside layout */}
-      <Route path="/" element={<DashboardLayout />}>
-        {/* Dashboards */}
-        <Route index element={<DashboardPage />} />
-        <Route path="employee-insights" element={<EmployeeInsightsPage />} />
-        <Route path="team-insights" element={<TeamInsightsPage />} />
+      {/* Protected routes */}
+      {isAuthenticated ? (
+        <Route path="/" element={<DashboardLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="employee-insights" element={<EmployeeInsightsPage />} />
+          <Route path="team-insights" element={<TeamInsightsPage />} />
+          <Route path="transcripts" element={<TranscriptsPage />} />
+          <Route path="reviews" element={<ReviewsPage />} />
+          <Route path="review-configs" element={<ReviewConfigsPage />} />
+          <Route path="criteria" element={<CriteriaPage />} />
+          <Route
+            path="external-companies"
+            element={<ExternalCompaniesPage />}
+          />
+          <Route path="contacts" element={<ExternalContactsPage />} />
+          <Route path="company" element={<CompanyPage />} />
+          <Route path="users" element={<Users />} />
+          <Route path="teams" element={<TeamsPage />} />
+        </Route>
+      ) : null}
 
-        {/* Conversation Analysis */}
-        <Route path="transcripts" element={<TranscriptsPage />} />
-        <Route path="reviews" element={<ReviewsPage />} />
-        <Route path="review-configs" element={<ReviewConfigPage />} />
-        <Route path="criteria" element={<CriteriaPage />} />
-
-        {/* Client Management */}
-        <Route path="external-companies" element={<ExternalCompaniesPage />} />
-        <Route path="contacts" element={<ExternalContactsPage />} />
-
-        {/* Company Administration */}
-        <Route path="company" element={<CompanyPage />} />
-        <Route path="users" element={<Users />} />
-        <Route path="teams" element={<TeamsPage />} />
-
-        <Route
-          path="subscriptions"
-          element={<Placeholder name="Subscriptions" />}
-        />
-      </Route>
-
-      {/* Catch-all route */}
-      <Route path="*" element={<Navigate to="/" />} />
+      {/* Redirects */}
+      <Route
+        path="*"
+        element={<Navigate to={isAuthenticated ? "/" : "/login"} replace />}
+      />
     </Routes>
   );
 }

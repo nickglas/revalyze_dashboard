@@ -1,35 +1,19 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { jwtDecode } from "jwt-decode";
 import axios from "axios";
+import { isTokenExpired } from "@/util/jwt";
 
 interface AuthState {
   user: string | null;
   accessToken: string | null;
   refreshToken: string | null;
-  isAuthenticated: boolean;
 
+  checkAuth: () => Promise<boolean>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   setTokens: (access: string, refresh: string) => void;
   clearTokens: () => void;
 }
-
-interface JwtPayload {
-  exp: number;
-}
-
-export const isTokenExpired = (token: string | null): boolean => {
-  if (!token) return true;
-
-  try {
-    const decoded = jwtDecode<JwtPayload>(token);
-    const currentTime = Date.now() / 1000;
-    return decoded.exp < currentTime;
-  } catch (e) {
-    return true;
-  }
-};
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -38,7 +22,48 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
 
-      isAuthenticated: false,
+      async checkAuth() {
+        const { accessToken, refreshToken, setTokens, clearTokens } = get();
+
+        // 1. No tokens available
+        if (!accessToken && !refreshToken) {
+          return false;
+        }
+
+        // 2. Access token is valid
+        if (accessToken && !isTokenExpired(accessToken)) {
+          return true;
+        }
+
+        // 3. Try to refresh tokens
+        if (refreshToken) {
+          try {
+            const res = await axios.post(
+              `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/refresh`,
+              { refreshToken },
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              }
+            );
+
+            const { accessToken: newAccess, refreshToken: newRefresh } =
+              res.data;
+            setTokens(newAccess, newRefresh);
+            return true;
+          } catch (error) {
+            console.error("Token refresh failed:", error);
+            clearTokens();
+            return false;
+          }
+        }
+
+        // 4. Default case - no valid tokens
+        clearTokens();
+        return false;
+      },
 
       login: async (email, password) => {
         const res = await axios.post(
@@ -46,17 +71,14 @@ export const useAuthStore = create<AuthState>()(
           { email, password }
         );
 
-        const { accessToken, refreshToken } = res.data;
-
-        set({
-          accessToken,
-          isAuthenticated: true,
-          refreshToken,
-        });
+        const { accessToken, refreshToken, user } = res.data;
+        set({ user, accessToken, refreshToken });
       },
 
       logout: () => {
-        set({ user: null, accessToken: null, isAuthenticated: false });
+        // Clear tokens first to prevent any API calls during logout
+        get().clearTokens();
+        set({ user: null });
       },
 
       setTokens: (access, refresh) =>
@@ -70,7 +92,6 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
-        isAuthenticated: state.isAuthenticated,
       }),
     }
   )

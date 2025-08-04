@@ -1,21 +1,13 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Button, Input, Checkbox, Link, Form, Divider } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "react-toastify";
 
 export default function LoginPage() {
   const [isVisible, setIsVisible] = React.useState(false);
-  const { login, isAuthenticated } = useAuthStore();
-  const navigate = useNavigate();
+  const { login } = useAuthStore(); // Only use store login
   const toggleVisibility = () => setIsVisible(!isVisible);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/");
-    }
-  }, [isAuthenticated]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -26,7 +18,7 @@ export default function LoginPage() {
     try {
       await login(email, password);
       toast.success("Successfully authenticated");
-      navigate("/");
+      // Removed navigate - AuthProvider will handle redirect
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Login failed");
     }
