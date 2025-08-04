@@ -20,6 +20,7 @@ import {
 } from "@heroui/react";
 import { SearchIcon } from "@/components/icons";
 import { ChevronDownIcon, VerticalDotsIcon } from "../users/userTable";
+import AddCriteriaModal from "@/components/modals/criteria/addCriteriaModal";
 
 // Mock data based on criterion.entity.ts
 const criteriaData = {
@@ -201,7 +202,6 @@ export default function CriteriaTable() {
   }, [sortDescriptor, items]);
 
   const toggleStatus = (id: string) => {
-    // In a real app, you would make an API call here
     console.log(`Toggled status for criterion ${id}`);
   };
 
@@ -368,9 +368,7 @@ export default function CriteriaTable() {
               </DropdownMenu>
             </Dropdown>
 
-            <Button color="primary" endContent={<span>+</span>}>
-              Add Criterion
-            </Button>
+            <AddCriteriaModal />
           </div>
         </div>
 
