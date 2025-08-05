@@ -1,5 +1,4 @@
 // src/components/modals/criteria/viewCriteriaModal.tsx
-import React from "react";
 import {
   Modal,
   ModalContent,
@@ -35,17 +34,17 @@ export default function ViewCriteriaModal({
                   label="Title"
                   labelPlacement="outside"
                   value={criterion?.title || ""}
-                  readOnly
+                  isDisabled
                 />
 
                 <Textarea
                   label="Description"
                   labelPlacement="outside"
                   value={criterion?.description || ""}
-                  readOnly
+                  isDisabled
                 />
 
-                <Switch isReadOnly isSelected={criterion?.isActive || false}>
+                <Switch isDisabled isSelected={criterion?.isActive || false}>
                   Is active
                 </Switch>
               </div>

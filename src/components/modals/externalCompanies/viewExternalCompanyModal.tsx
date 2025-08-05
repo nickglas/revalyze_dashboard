@@ -34,31 +34,31 @@ export default function ViewExternalCompanyModal({
                   label="Company Name"
                   labelPlacement="outside"
                   value={company?.name || ""}
-                  readOnly
+                  isDisabled
                 />
 
                 <Input
                   label="Email"
                   labelPlacement="outside"
                   value={company?.email || ""}
-                  readOnly
+                  isDisabled
                 />
 
                 <Input
                   label="Phone"
                   labelPlacement="outside"
                   value={company?.phone || ""}
-                  readOnly
+                  isDisabled
                 />
 
                 <Textarea
                   label="Address"
                   labelPlacement="outside"
                   value={company?.address || ""}
-                  readOnly
+                  isDisabled
                 />
 
-                <Switch isReadOnly isSelected={company?.isActive || false}>
+                <Switch isDisabled isSelected={company?.isActive || false}>
                   Active Status
                 </Switch>
               </div>
