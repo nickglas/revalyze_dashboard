@@ -9,7 +9,6 @@ import {
 } from "@heroui/modal";
 import { Button, Input, Textarea, Switch, Form } from "@heroui/react";
 import { useExternalCompanyStore } from "@/store/externalCompanyStore";
-import { createExternalCompany } from "@/services/external.company.service";
 
 export default function AddExternalCompanyModal() {
   const { createCompany } = useExternalCompanyStore();
@@ -111,7 +110,7 @@ export default function AddExternalCompanyModal() {
 
     setIsSubmitting(true);
     try {
-      const newCompany = await createExternalCompany({
+      await createCompany({
         name: formData.name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
@@ -119,7 +118,6 @@ export default function AddExternalCompanyModal() {
         isActive: formData.isActive,
       });
 
-      createCompany(newCompany);
       onClose();
     } catch (error) {
       console.error("Failed to create company:", error);
