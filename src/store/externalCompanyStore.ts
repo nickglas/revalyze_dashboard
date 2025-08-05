@@ -18,6 +18,11 @@ interface ExternalCompanyState {
     address: string;
     isActive: boolean;
   }) => Promise<ExternalCompany>;
+
+  updateCompany: (
+    id: string,
+    updates: Partial<ExternalCompany>
+  ) => Promise<ExternalCompany>;
 }
 
 export const useExternalCompanyStore = create<ExternalCompanyState>()(
@@ -60,6 +65,27 @@ export const useExternalCompanyStore = create<ExternalCompanyState>()(
           return newExternalCompany;
         } catch (err: any) {
           toast.error(err?.response?.data?.message || "Failed to create");
+          throw err;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      updateCompany: async (id, updates) => {
+        set({ isLoading: true });
+        try {
+          const updated = await service.updateExternalCompany(id, updates);
+          toast.success("Criterion updated");
+          set((state) => ({
+            companies: state.companies
+              ? state.companies.map((c) =>
+                  c._id === updated._id ? updated : c
+                )
+              : null,
+          }));
+          return updated;
+        } catch (err: any) {
+          toast.error(err?.response?.data?.message || "Failed to update");
           throw err;
         } finally {
           set({ isLoading: false });

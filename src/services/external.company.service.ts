@@ -22,3 +22,11 @@ export const createExternalCompany = async (input: {
   const res = await api.post("/api/v1/external-companies", input);
   return res.data;
 };
+
+export const updateExternalCompany = async (
+  id: string,
+  updates: Partial<ExternalCompany>
+): Promise<ExternalCompany> => {
+  const res = await api.patch(`/api/v1/external-companies/${id}`, updates);
+  return res.data;
+};

@@ -17,6 +17,7 @@ import {
   Spinner,
   Avatar,
   Tooltip,
+  useDisclosure,
 } from "@heroui/react";
 import {
   ChevronDownIcon,
@@ -26,6 +27,8 @@ import {
 import { ExternalCompany } from "@/models/api/external.company.model";
 import { useExternalCompanyStore } from "@/store/externalCompanyStore";
 import AddExternalCompanyModal from "@/components/modals/externalCompanies/addExternalCompanyModal";
+import ViewExternalCompanyModal from "@/components/modals/externalCompanies/viewExternalCompanyModal";
+import EditExternalCompanyModal from "@/components/modals/externalCompanies/editExternalCompanyModal";
 
 export const columns = [
   { name: "NAME", uid: "name", sortable: true },
@@ -79,10 +82,28 @@ export default function ExternalCompaniesTable() {
   });
   const [page, setPage] = useState(1);
 
+  // Modal controls
+  const viewModal = useDisclosure();
+  const editModal = useDisclosure();
+  const [selectedCompany, setSelectedCompany] =
+    useState<ExternalCompany | null>(null);
+
+  // Handle view action
+  const handleView = (company: ExternalCompany) => {
+    setSelectedCompany(company);
+    viewModal.onOpen();
+  };
+
+  // Handle edit action
+  const handleEdit = (company: ExternalCompany) => {
+    setSelectedCompany(company);
+    editModal.onOpen();
+  };
+
   // Fetch data only if store is empty
   useEffect(() => {
     if (!companies || companies.length === 0) {
-      fetchCompanies(1, 1000); // Fetch all companies for client-side filtering
+      fetchCompanies(1, 1000);
     }
   }, [companies, fetchCompanies]);
 
@@ -154,110 +175,135 @@ export default function ExternalCompaniesTable() {
     });
   }, [sortDescriptor, items]);
 
-  const renderCell = React.useCallback((company: any, columnKey: React.Key) => {
-    const cellValue = company[columnKey as keyof typeof company];
+  const renderCell = React.useCallback(
+    (company: any, columnKey: React.Key) => {
+      const cellValue = company[columnKey as keyof typeof company];
 
-    switch (columnKey) {
-      case "name":
-        return (
-          <div className="flex items-center gap-3">
-            <Avatar
-              name={company.name}
-              getInitials={(name: string) =>
-                name
-                  .split(" ")
-                  .map((n: string) => n[0])
-                  .join("")
-              }
-            />
-            <span className="font-medium">{company.name}</span>
-          </div>
-        );
-
-      case "email":
-        return (
-          <div className="flex items-center">
-            <a
-              href={`mailto:${company.email}`}
-              className="text-blue-500 hover:underline"
-            >
-              {company.email}
-            </a>
-          </div>
-        );
-
-      case "phone":
-        return (
-          <div className="flex items-center">
-            <a href={`tel:${company.phone}`} className="text-gray-600">
-              {company.phone}
-            </a>
-          </div>
-        );
-
-      case "address":
-        return (
-          <Tooltip content={company.address}>
-            <div className="max-w-[200px] truncate text-gray-600">
-              {company.address}
+      switch (columnKey) {
+        case "name":
+          return (
+            <div className="flex items-center gap-3">
+              <Avatar
+                name={company.name}
+                getInitials={(name: string) =>
+                  name
+                    .split(" ")
+                    .map((n: string) => n[0])
+                    .join("")
+                }
+              />
+              <span className="font-medium">{company.name}</span>
             </div>
-          </Tooltip>
-        );
+          );
 
-      case "status":
-        return (
-          <Chip
-            className="capitalize"
-            color={
-              statusColorMap[company.status as keyof typeof statusColorMap]
-            }
-            size="sm"
-            variant="flat"
-          >
-            {company.status}
-          </Chip>
-        );
+        case "email":
+          return (
+            <div className="flex items-center">
+              <a
+                href={`mailto:${company.email}`}
+                className="text-blue-500 hover:underline"
+              >
+                {company.email}
+              </a>
+            </div>
+          );
 
-      case "createdAt":
-        return (
-          <div className="flex flex-col">
-            <p className="font-medium">
-              {company.createdAt.toLocaleDateString()}
-            </p>
-            <p className="text-gray-500 text-sm">
-              {company.createdAt.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
-          </div>
-        );
+        case "phone":
+          return (
+            <div className="flex items-center">
+              <a href={`tel:${company.phone}`} className="text-gray-600">
+                {company.phone}
+              </a>
+            </div>
+          );
 
-      case "actions":
-        return (
-          <div className="relative flex justify-end items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <VerticalDotsIcon className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu aria-label="Company Actions">
-                <DropdownItem key="view">View Details</DropdownItem>
-                <DropdownItem key="edit">Edit</DropdownItem>
-                <DropdownItem key="contacts">View Contacts</DropdownItem>
-                <DropdownItem key="delete" className="text-danger">
-                  Delete
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
+        case "address":
+          return (
+            <Tooltip content={company.address}>
+              <div className="max-w-[200px] truncate text-gray-600">
+                {company.address}
+              </div>
+            </Tooltip>
+          );
 
-      default:
-        return cellValue;
-    }
-  }, []);
+        case "status":
+          return (
+            <Chip
+              className="capitalize"
+              color={
+                statusColorMap[company.status as keyof typeof statusColorMap]
+              }
+              size="sm"
+              variant="flat"
+            >
+              {company.status}
+            </Chip>
+          );
+
+        case "createdAt":
+          return (
+            <div className="flex flex-col">
+              <p className="font-medium">
+                {company.createdAt.toLocaleDateString()}
+              </p>
+              <p className="text-gray-500 text-sm">
+                {company.createdAt.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+          );
+
+        case "actions":
+          return (
+            <div className="relative flex justify-end items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <VerticalDotsIcon className="text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu aria-label="Company Actions">
+                  <DropdownItem
+                    key="view"
+                    onPress={() =>
+                      handleView(
+                        companies?.find(
+                          (c) => c._id === company.id
+                        ) as ExternalCompany
+                      )
+                    }
+                  >
+                    View Details
+                  </DropdownItem>
+                  <DropdownItem
+                    key="edit"
+                    onPress={() =>
+                      handleEdit(
+                        companies?.find(
+                          (c) => c._id === company.id
+                        ) as ExternalCompany
+                      )
+                    }
+                  >
+                    Edit
+                  </DropdownItem>
+                  <DropdownItem key="contacts">View Contacts</DropdownItem>
+                  <DropdownItem key="delete" className="text-danger">
+                    Delete
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
+
+        default:
+          return cellValue;
+      }
+    },
+    [companies]
+  );
 
   const onNextPage = React.useCallback(() => {
     if (page < pages) setPage(page + 1);
@@ -423,44 +469,60 @@ export default function ExternalCompaniesTable() {
   };
 
   return (
-    <Table
-      isHeaderSticky
-      aria-label="External Companies table"
-      bottomContent={bottomContent}
-      bottomContentPlacement="outside"
-      classNames={{
-        wrapper: "max-h-[500px]",
-      }}
-      sortDescriptor={sortDescriptor}
-      topContent={topContent}
-      topContentPlacement="outside"
-      onSortChange={handleSortChange}
-    >
-      <TableHeader columns={headerColumns}>
-        {(column) => (
-          <TableColumn
-            key={column.uid}
-            align={column.uid === "actions" ? "center" : "start"}
-            allowsSorting={column.sortable}
-          >
-            {column.name}
-          </TableColumn>
-        )}
-      </TableHeader>
-      <TableBody
-        emptyContent={"No companies found"}
-        items={sortedItems}
-        loadingState={isLoading ? "loading" : "idle"}
-        loadingContent={<Spinner label="Loading companies..." />}
+    <>
+      <Table
+        isHeaderSticky
+        aria-label="External Companies table"
+        bottomContent={bottomContent}
+        bottomContentPlacement="outside"
+        classNames={{
+          wrapper: "max-h-[500px]",
+        }}
+        sortDescriptor={sortDescriptor}
+        topContent={topContent}
+        topContentPlacement="outside"
+        onSortChange={handleSortChange}
       >
-        {(item) => (
-          <TableRow key={item.id}>
-            {(columnKey) => (
-              <TableCell>{renderCell(item, columnKey)}</TableCell>
-            )}
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+        <TableHeader columns={headerColumns}>
+          {(column) => (
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "center" : "start"}
+              allowsSorting={column.sortable}
+            >
+              {column.name}
+            </TableColumn>
+          )}
+        </TableHeader>
+        <TableBody
+          emptyContent={"No companies found"}
+          items={sortedItems}
+          loadingState={isLoading ? "loading" : "idle"}
+          loadingContent={<Spinner label="Loading companies..." />}
+        >
+          {(item) => (
+            <TableRow key={item.id}>
+              {(columnKey) => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+
+      {/* View Modal */}
+      <ViewExternalCompanyModal
+        isOpen={viewModal.isOpen}
+        onOpenChange={viewModal.onOpenChange}
+        company={selectedCompany}
+      />
+
+      {/* Edit Modal */}
+      <EditExternalCompanyModal
+        isOpen={editModal.isOpen}
+        onOpenChange={editModal.onOpenChange}
+        company={selectedCompany}
+      />
+    </>
   );
 }
