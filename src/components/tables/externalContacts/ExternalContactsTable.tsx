@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   TableHeader,
@@ -17,96 +17,15 @@ import {
   Spinner,
   Avatar,
   Tooltip,
-  Badge,
+  useDisclosure,
 } from "@heroui/react";
 import { SearchIcon } from "@/components/icons";
 import { ChevronDownIcon, VerticalDotsIcon } from "../users/userTable";
-
-// Mock data based on contact.entity.ts
-const externalContactData = {
-  data: [
-    {
-      _id: "687b85ef3d0b6f56ee5cfb76",
-      firstName: "Sarah",
-      lastName: "Johnson",
-      email: "s.johnson@acme.com",
-      phone: "+1 (555) 123-4567",
-      position: "Project Manager",
-      isActive: true,
-      externalCompanyId: "687d23483cb8c1c33f349900",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      createdAt: "2025-07-20T10:30:00.000Z",
-      updatedAt: "2025-07-20T10:30:00.000Z",
-    },
-    {
-      _id: "687d234d3cb8c1c33f349911",
-      firstName: "Michael",
-      lastName: "Chen",
-      email: "m.chen@globex.com",
-      phone: "+1 (555) 987-6543",
-      position: "Technical Director",
-      isActive: true,
-      externalCompanyId: "687d23483cb8c1c33f349901",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      createdAt: "2025-07-19T14:45:00.000Z",
-      updatedAt: "2025-07-19T14:45:00.000Z",
-    },
-    {
-      _id: "687d234f3cb8c1c33f349916",
-      firstName: "David",
-      lastName: "Wilson",
-      email: "d.wilson@initech.com",
-      phone: "+1 (555) 456-7890",
-      position: "Procurement Specialist",
-      isActive: false,
-      externalCompanyId: "687d23483cb8c1c33f349902",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      createdAt: "2025-07-18T11:20:00.000Z",
-      updatedAt: "2025-07-18T11:20:00.000Z",
-    },
-    {
-      _id: "687d23513cb8c1c33f34991b",
-      firstName: "Priya",
-      lastName: "Patel",
-      email: "p.patel@umbrella.com",
-      phone: "+1 (555) 654-3210",
-      position: "Research Director",
-      isActive: true,
-      externalCompanyId: "687d23483cb8c1c33f349903",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      createdAt: "2025-07-17T16:15:00.000Z",
-      updatedAt: "2025-07-17T16:15:00.000Z",
-    },
-  ],
-  meta: {
-    total: 4,
-    page: 1,
-    limit: 10,
-    pages: 1,
-  },
-};
-
-// Mock external companies for mapping
-const externalCompanies: { [key: string]: string } = {
-  "687d23483cb8c1c33f349900": "Acme Corporation",
-  "687d23483cb8c1c33f349901": "Globex Industries",
-  "687d23483cb8c1c33f349902": "Initech Solutions",
-  "687d23483cb8c1c33f349903": "Umbrella Corp",
-};
-
-// Map API data to table format
-const externalContacts = externalContactData.data.map((contact) => ({
-  id: contact._id,
-  name: `${contact.firstName} ${contact.lastName}`,
-  firstName: contact.firstName,
-  lastName: contact.lastName,
-  email: contact.email,
-  phone: contact.phone,
-  position: contact.position,
-  company: externalCompanies[contact.externalCompanyId] || "Unknown Company",
-  status: contact.isActive ? "active" : "inactive",
-  createdAt: new Date(contact.createdAt),
-}));
+import { useContactStore } from "@/store/contactStore";
+import { Contact } from "@/models/api/contact.api.model";
+import ViewExternalContactModal from "@/components/modals/contacts/viewExternalContactModal";
+import EditExternalContactModal from "@/components/modals/contacts/editExternalContactModal";
+import AddExternalContactModal from "@/components/modals/contacts/addExternalContactModal";
 
 export const columns = [
   { name: "NAME", uid: "name", sortable: true },
@@ -145,6 +64,7 @@ const INITIAL_VISIBLE_COLUMNS = [
 ];
 
 export default function ExternalContactsTable() {
+  const { contacts, meta, isLoading, fetchContacts } = useContactStore();
   const [filterValue, setFilterValue] = useState("");
   const [visibleColumns, setVisibleColumns] = useState(
     new Set(INITIAL_VISIBLE_COLUMNS)
@@ -159,6 +79,48 @@ export default function ExternalContactsTable() {
     direction: "descending",
   });
   const [page, setPage] = useState(1);
+
+  // Modal controls
+  const viewModal = useDisclosure();
+  const editModal = useDisclosure();
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+
+  // Handle view action
+  const handleView = (contact: Contact) => {
+    setSelectedContact(contact);
+    viewModal.onOpen();
+  };
+
+  // Handle edit action
+  const handleEdit = (contact: Contact) => {
+    setSelectedContact(contact);
+    editModal.onOpen();
+  };
+
+  // Fetch data only if store is empty
+  useEffect(() => {
+    if (!contacts || contacts.length === 0) {
+      fetchContacts(1, 1000); // Fetch all contacts for client-side filtering
+    }
+  }, [contacts, fetchContacts]);
+
+  // Map API data to table format
+  const externalContacts = React.useMemo(() => {
+    if (!contacts) return [];
+    return contacts.map((contact) => ({
+      id: contact._id,
+      name: `${contact.firstName} ${contact.lastName}`,
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+      email: contact.email,
+      phone: contact.phone,
+      position: contact.position,
+      company: contact.externalCompany?.name || "Unknown Company",
+      status: contact.isActive ? "active" : "inactive",
+      createdAt: new Date(contact.createdAt),
+      rawContact: contact, // Keep reference to original contact
+    }));
+  }, [contacts]);
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -313,8 +275,18 @@ export default function ExternalContactsTable() {
                 </Button>
               </DropdownTrigger>
               <DropdownMenu aria-label="Contact Actions">
-                <DropdownItem key="view">View Details</DropdownItem>
-                <DropdownItem key="edit">Edit</DropdownItem>
+                <DropdownItem
+                  key="view"
+                  onPress={() => handleView(contact.rawContact)}
+                >
+                  View Details
+                </DropdownItem>
+                <DropdownItem
+                  key="edit"
+                  onPress={() => handleEdit(contact.rawContact)}
+                >
+                  Edit
+                </DropdownItem>
                 <DropdownItem key="transcripts">View Transcripts</DropdownItem>
                 <DropdownItem key="delete" className="text-danger">
                   Delete
@@ -402,16 +374,15 @@ export default function ExternalContactsTable() {
               </DropdownMenu>
             </Dropdown>
 
-            <Button color="primary" endContent={<span>+</span>}>
-              Add Contact
-            </Button>
+            <AddExternalContactModal />
           </div>
         </div>
 
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Showing {filteredItems.length} of {externalContactData.meta.total}{" "}
-            contacts
+            {isLoading
+              ? "Loading contacts..."
+              : `Showing ${filteredItems.length} of ${meta?.total || 0} contacts`}
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -434,9 +405,13 @@ export default function ExternalContactsTable() {
     onSearchChange,
     onRowsPerPageChange,
     filteredItems.length,
+    isLoading,
+    meta?.total,
   ]);
 
   const bottomContent = React.useMemo(() => {
+    if (isLoading) return null;
+
     const startItem = (page - 1) * rowsPerPage + 1;
     const endItem = Math.min(page * rowsPerPage, filteredItems.length);
 
@@ -481,51 +456,69 @@ export default function ExternalContactsTable() {
     rowsPerPage,
     onPreviousPage,
     onNextPage,
+    isLoading,
   ]);
 
   return (
-    <Table
-      isHeaderSticky
-      aria-label="External Contacts table"
-      bottomContent={bottomContent}
-      bottomContentPlacement="outside"
-      classNames={{
-        wrapper: "max-h-[500px]",
-      }}
-      sortDescriptor={sortDescriptor}
-      topContent={topContent}
-      topContentPlacement="outside"
-      onSortChange={(descriptor) =>
-        setSortDescriptor({
-          column: String(descriptor.column),
-          direction: descriptor.direction,
-        })
-      }
-    >
-      <TableHeader columns={headerColumns}>
-        {(column) => (
-          <TableColumn
-            key={column.uid}
-            align={column.uid === "actions" ? "center" : "start"}
-            allowsSorting={column.sortable}
-          >
-            {column.name}
-          </TableColumn>
-        )}
-      </TableHeader>
-      <TableBody
-        emptyContent={"No contacts found"}
-        items={sortedItems}
-        loadingContent={<Spinner label="Loading contacts..." />}
+    <>
+      <Table
+        isHeaderSticky
+        aria-label="External Contacts table"
+        bottomContent={bottomContent}
+        bottomContentPlacement="outside"
+        classNames={{
+          wrapper: "max-h-[500px]",
+        }}
+        sortDescriptor={sortDescriptor}
+        topContent={topContent}
+        topContentPlacement="outside"
+        onSortChange={(descriptor) =>
+          setSortDescriptor({
+            column: String(descriptor.column),
+            direction: descriptor.direction,
+          })
+        }
       >
-        {(item) => (
-          <TableRow key={item.id}>
-            {(columnKey) => (
-              <TableCell>{renderCell(item, columnKey)}</TableCell>
-            )}
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+        <TableHeader columns={headerColumns}>
+          {(column) => (
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "center" : "start"}
+              allowsSorting={column.sortable}
+            >
+              {column.name}
+            </TableColumn>
+          )}
+        </TableHeader>
+        <TableBody
+          emptyContent={isLoading ? " " : "No contacts found"}
+          items={isLoading ? [] : sortedItems}
+          loadingContent={<Spinner label="Loading contacts..." />}
+          loadingState={isLoading ? "loading" : "idle"}
+        >
+          {(item) => (
+            <TableRow key={item.id}>
+              {(columnKey) => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+
+      {/* View Modal */}
+      <ViewExternalContactModal
+        isOpen={viewModal.isOpen}
+        onOpenChange={viewModal.onOpenChange}
+        contact={selectedContact}
+      />
+
+      {/* Edit Modal */}
+      <EditExternalContactModal
+        isOpen={editModal.isOpen}
+        onOpenChange={editModal.onOpenChange}
+        contact={selectedContact}
+      />
+    </>
   );
 }

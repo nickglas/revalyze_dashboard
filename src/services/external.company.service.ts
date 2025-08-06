@@ -23,6 +23,17 @@ export const createExternalCompany = async (input: {
   return res.data;
 };
 
+export const searchCompanies = async (
+  query: string,
+  page = 1,
+  limit = 10
+): Promise<PaginatedResponse<ExternalCompany>> => {
+  const res = await api.get(
+    `/api/v1/external-companies/search?query=${query}&page=${page}&limit=${limit}`
+  );
+  return res.data;
+};
+
 export const updateExternalCompany = async (
   id: string,
   updates: Partial<ExternalCompany>
