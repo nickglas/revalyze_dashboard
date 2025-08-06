@@ -1,5 +1,5 @@
 // src/components/modals/teams/addTeamModal.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   ModalContent,
@@ -8,349 +8,263 @@ import {
   ModalFooter,
   useDisclosure,
 } from "@heroui/modal";
-import {
-  Button,
-  Input,
-  Textarea,
-  Switch,
-  Select,
-  SelectItem,
-  Chip,
-  Avatar,
-  Tabs,
-  Tab,
-  Checkbox,
-} from "@heroui/react";
+import { Button, Input, Textarea, Switch, Form } from "@heroui/react";
+import { useTeamStore } from "@/store/teamStore";
+import SearchUsers from "@/components/data/users/searchUsers";
+import { User } from "@/models/api/user.model";
+import { ManagerSelection } from "@/components/managerSelection";
+import { toast } from "react-toastify";
+import { CreateTeamDTO, TeamMemberDTO } from "@/models/dto/create.team.dto";
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+export default function AddTeamModal() {
+  const [tab, setTab] = useState(0);
+  const { createTeam } = useTeamStore();
+  const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-interface AddTeamModalProps {
-  users: User[];
-}
+  const [postData, setPostData] = useState<CreateTeamDTO>({
+    name: "",
+    description: "",
+    isActive: true,
+    users: [],
+  });
 
-export default function AddTeamModal({ users }: AddTeamModalProps) {
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const [teamName, setTeamName] = useState("");
-  const [description, setDescription] = useState("");
-  const [isActive, setIsActive] = useState(true);
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [selectedManagers, setSelectedManagers] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("members");
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [index, setIndex] = useState(1);
-
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleUserSelect = (userId: string) => {
-    if (selectedUsers.includes(userId)) {
-      // Remove user and also remove as manager if selected
-      setSelectedUsers(selectedUsers.filter((id) => id !== userId));
-      setSelectedManagers(selectedManagers.filter((id) => id !== userId));
-    } else {
-      setSelectedUsers([...selectedUsers, userId]);
+  useEffect(() => {
+    if (!isOpen) {
+      setPostData({
+        name: "",
+        description: "",
+        isActive: true,
+        users: [],
+      });
+      setErrors({});
     }
-  };
+  }, [isOpen]);
 
-  const handleManagerToggle = (userId: string) => {
-    if (selectedManagers.includes(userId)) {
-      setSelectedManagers(selectedManagers.filter((id) => id !== userId));
-    } else {
-      setSelectedManagers([...selectedManagers, userId]);
-    }
-  };
-
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validation
-    const newErrors: { [key: string]: string } = {};
-
-    if (!teamName.trim()) {
-      newErrors.name = "Team name is required";
-    }
-
-    if (selectedUsers.length === 0) {
-      newErrors.members = "Please select at least one team member";
-    }
-
-    if (selectedManagers.length === 0) {
-      newErrors.managers = "Please select at least one manager";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+  const handleAddUser = (user: User) => {
+    if (
+      postData?.users.find((selectedUser) => selectedUser.userId === user._id)
+    ) {
+      toast.warn("This user is already selected");
       return;
     }
 
-    // Clear errors
-    setErrors({});
+    const copy = { ...postData };
 
-    // Prepare data
-    const teamData = {
-      name: teamName,
-      description,
-      isActive,
-      members: selectedUsers,
-      managers: selectedManagers,
-    };
+    copy.users?.push({
+      isManager: false,
+      userId: user._id,
+      email: user.email,
+      name: user.name,
+    });
 
-    // Save and close
-    onOpenChange();
+    setPostData(copy);
+  };
 
-    // Reset form
-    setTeamName("");
-    setDescription("");
-    setIsActive(true);
-    setSelectedUsers([]);
-    setSelectedManagers([]);
-    setSearchTerm("");
+  const handleManagerToggle = (userId: string) => {
+    const copy = { ...postData };
+    const user = copy.users.find((x) => x.userId === userId);
+    if (user) {
+      user.isManager = !user.isManager;
+    }
+    console.warn(copy);
+    setPostData(copy);
+  };
+
+  const validateField = (name: string, value: string | boolean) => {
+    if (name === "name") {
+      if (!value) return "Name is required.";
+      if (typeof value === "string" && value.length < 2)
+        return "Name must be at least 2 characters.";
+      if (typeof value === "string" && value.length > 50)
+        return "Name cannot exceed 50 characters.";
+    }
+
+    if (name === "description" && typeof value === "string") {
+      if (value && value.length > 500)
+        return "Description cannot exceed 500 characters.";
+    }
+
+    return "";
+  };
+
+  const handleChange = (name: string, value: string | boolean) => {
+    setPostData((prev) => ({ ...prev, [name]: value }));
+    const error = validateField(name, value);
+    setErrors((prev) => ({ ...prev, [name]: error }));
+  };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    // Validate all fields
+    Object.entries(postData).forEach(([key, value]) => {
+      if (key !== "users") {
+        // Don't validate users array
+        const error = validateField(key, value);
+        if (error) newErrors[key] = error;
+      }
+    });
+
+    // Special validation for name
+    if (!postData.name.trim()) {
+      newErrors.name = "Name is required.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+    setIsSubmitting(true);
+
+    try {
+      await createTeam({
+        ...postData,
+        name: postData.name.trim(),
+        description: postData.description?.trim() || "",
+      });
+      onClose();
+    } catch (error) {
+      console.error("Creation failed:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRemoveUser = (userId: string) => {
+    let copy = { ...postData };
+    copy.users = copy.users.filter((user) => user.userId !== userId);
+    setPostData(copy);
   };
 
   return (
     <>
       <Button onPress={onOpen} variant="solid" color="primary">
-        Add Team
+        Add team
       </Button>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="lg">
         <ModalContent>
           {(onClose) => (
-            <form onSubmit={onSubmit}>
+            <>
               <ModalHeader className="flex flex-col gap-1">
-                Create New Team
+                Create team
               </ModalHeader>
               <ModalBody>
-                <div className="pb-4">
-                  {index === 1 && (
-                    <div className="flex flex-col gap-4">
-                      <div className="space-y-4">
+                <Form id="criteria-form" onSubmit={handleSubmit}>
+                  <div className="flex flex-col w-full gap-4">
+                    {tab === 0 && (
+                      <>
                         <Input
                           isRequired
+                          isInvalid={!!errors.name}
                           errorMessage={errors.name}
-                          label="Team Name"
+                          label="Name"
                           labelPlacement="outside"
                           name="name"
-                          placeholder="Enter team name"
-                          value={teamName}
-                          onChange={(e) => setTeamName(e.target.value)}
+                          placeholder="Enter the new team's name"
+                          value={postData.name}
+                          onValueChange={(value) => handleChange("name", value)}
+                          validationBehavior="aria"
                         />
 
                         <Textarea
+                          isInvalid={!!errors.description}
+                          errorMessage={errors.description}
                           label="Description"
                           labelPlacement="outside"
-                          name="description"
-                          placeholder="Describe the team's purpose or responsibilities"
-                          value={description}
-                          onChange={(e) => setDescription(e.target.value)}
+                          placeholder="Enter team description (optional)"
+                          value={postData.description}
+                          onValueChange={(value) =>
+                            handleChange("description", value)
+                          }
+                          validationBehavior="aria"
                         />
 
                         <Switch
-                          defaultSelected
-                          color="primary"
-                          size="sm"
-                          isSelected={isActive}
+                          isSelected={postData.isActive}
+                          onValueChange={(value) =>
+                            handleChange("isActive", value)
+                          }
                         >
-                          Active Team
+                          Is active
                         </Switch>
-                      </div>
+                      </>
+                    )}
 
-                      <Button
-                        color="primary"
-                        size="md"
-                        onPress={() => setIndex(index + 1)}
-                      >
-                        Next step
-                      </Button>
-                    </div>
-                  )}
-
-                  {index === 2 && (
-                    <div>
-                      <Tabs
-                        selectedKey={activeTab}
-                        onSelectionChange={(key) => setActiveTab(key as string)}
-                        className="mb-4"
-                        fullWidth
-                        color="primary"
-                      >
-                        <Tab key="members" title="Members" />
-                        <Tab key="managers" title="Managers" />
-                      </Tabs>
-
-                      <div className="mb-4">
-                        <Input
-                          placeholder="Search users..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full"
+                    {tab === 1 && (
+                      <div className="flex flex-col gap-6">
+                        <SearchUsers
+                          required={false}
+                          onChange={(selectedUser) => {
+                            if (selectedUser) {
+                              handleAddUser(selectedUser);
+                            }
+                          }}
                         />
-                        {errors.members && (
-                          <p className="text-danger text-sm mt-1">
-                            {errors.members}
-                          </p>
-                        )}
-                        {errors.managers && (
-                          <p className="text-danger text-sm mt-1">
-                            {errors.managers}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="h-64 over">
-                        {activeTab === "members" ? (
-                          <div className="space-y-2">
-                            {filteredUsers.length === 0 ? (
-                              <div className="text-center py-8 ">
-                                No users found
-                              </div>
-                            ) : (
-                              filteredUsers.map((user) => (
-                                <div
-                                  key={user.id}
-                                  className={`flex items-center justify-between p-2 rounded-lg cursor-pointer ${
-                                    selectedUsers.includes(user.id) ? "" : ""
-                                  }`}
-                                  onClick={() => handleUserSelect(user.id)}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <Avatar
-                                      size="sm"
-                                      name={user.name}
-                                      getInitials={(name) =>
-                                        name
-                                          .split(" ")
-                                          .map((n) => n[0])
-                                          .join("")
-                                      }
-                                    />
-                                    <div>
-                                      <p className="font-medium">{user.name}</p>
-                                      <p className="text-xs text-gray-500">
-                                        {user.email}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <Checkbox
-                                    size="md"
-                                    checked={
-                                      selectedUsers.find(
-                                        (x) => x === user.id
-                                      ) !== undefined
-                                        ? true
-                                        : false
-                                    }
-                                    onChange={() =>
-                                      setSelectedUsers([
-                                        ...selectedUsers,
-                                        user.id,
-                                      ])
-                                    }
-                                  ></Checkbox>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            {selectedUsers.length === 0 ? (
-                              <div className="text-center py-8 text-gray-500">
-                                No members selected yet
-                              </div>
-                            ) : (
-                              selectedUsers.map((userId) => {
-                                const user = users.find((u) => u.id === userId);
-                                if (!user) return null;
-
-                                return (
-                                  <div
-                                    key={user.id}
-                                    className="flex items-center justify-between p-2 rounded-lg "
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <Avatar
-                                        size="sm"
-                                        name={user.name}
-                                        getInitials={(name) =>
-                                          name
-                                            .split(" ")
-                                            .map((n) => n[0])
-                                            .join("")
-                                        }
-                                      />
-                                      <div>
-                                        <p className="font-medium">
-                                          {user.name}
-                                        </p>
-                                        <p className="text-xs ">{user.email}</p>
-                                      </div>
-                                    </div>
-                                    <Switch
-                                      isSelected={selectedManagers.includes(
-                                        user.id
-                                      )}
-                                      isDisabled={
-                                        !selectedUsers.includes(user.id)
-                                      }
-                                      onChange={() =>
-                                        handleManagerToggle(user.id)
-                                      }
-                                      size="sm"
-                                      color="primary"
-                                    >
-                                      Manager
-                                    </Switch>
-                                  </div>
-                                );
-                              })
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="my-4">
-                        <p className="text-sm font-medium mb-2">
-                          Selected Managers:
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedManagers.map((managerId) => {
-                            const manager = users.find(
-                              (u) => u.id === managerId
-                            );
-                            if (!manager) return null;
-                            return (
-                              <Chip
-                                key={managerId}
-                                color="primary"
-                                variant="flat"
-                                onClose={() => handleManagerToggle(managerId)}
-                              >
-                                {manager.name}
-                              </Chip>
-                            );
-                          })}
+                        <div className="flex flex-col gap-2">
+                          <span className="text-sm">User selection</span>
+                          <ManagerSelection
+                            users={postData.users}
+                            onUserDiscard={(userId: string) =>
+                              handleRemoveUser(userId)
+                            }
+                            onManagerToggle={(userId: string) => {
+                              console.warn("first");
+                              handleManagerToggle(userId);
+                            }}
+                          />
                         </div>
                       </div>
+                    )}
+                  </div>
+                </Form>
+              </ModalBody>
+              <ModalFooter>
+                <div className="flex items-center justify-end gap-4 w-full">
+                  {tab === 0 && (
+                    <>
+                      <Button
+                        color="danger"
+                        variant="light"
+                        onPress={onClose}
+                        disabled={isSubmitting}
+                      >
+                        Cancel
+                      </Button>
+                      <Button color="primary" onPress={() => setTab(tab + 1)}>
+                        Next step
+                      </Button>
+                    </>
+                  )}
 
-                      <div className="mt-8 flex justify-end gap-4">
-                        <Button variant="faded">Previous</Button>
-                        <Button color="primary" type="submit">
-                          Add team
-                        </Button>
-                      </div>
-                    </div>
+                  {tab === 1 && (
+                    <>
+                      <Button
+                        color="danger"
+                        variant="light"
+                        onPress={() => setTab(tab - 1)}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        color="primary"
+                        type="submit"
+                        form="criteria-form"
+                        isLoading={isSubmitting}
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? "Adding..." : "Add team"}
+                      </Button>
+                    </>
                   )}
                 </div>
-              </ModalBody>
-            </form>
+              </ModalFooter>
+            </>
           )}
         </ModalContent>
       </Modal>

@@ -1,4 +1,4 @@
-// src/components/modals/teams/addTeamModal.tsx
+// src/components/modals/teams/addCriteria.tsx
 import React, { useState, useEffect } from "react";
 import {
   Modal,

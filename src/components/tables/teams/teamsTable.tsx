@@ -1,5 +1,4 @@
-// src/components/tables/teams/teamsTable.tsx
-import React from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Table,
   TableHeader,
@@ -19,6 +18,7 @@ import {
   Avatar,
   Badge,
   Tooltip,
+  useDisclosure,
 } from "@heroui/react";
 import {
   ChevronDownIcon,
@@ -26,94 +26,16 @@ import {
   VerticalDotsIcon,
 } from "../users/userTable";
 import AddTeamModal from "@/components/modals/teams/addTeamModal";
-// import AddTeamModal from "@/components/modals/teams/addTeamModal";
-
-// Mock data structure
-interface TeamMember {
-  id: string;
-  name: string;
-  role: string;
-}
-
-interface Team {
-  id: string;
-  name: string;
-  manager: string;
-  memberCount: number;
-  status: "active" | "inactive" | "archived";
-  createdAt: string;
-  members: TeamMember[];
-}
-
-// Mock data
-const teams: Team[] = [
-  {
-    id: "1",
-    name: "Sales Team",
-    manager: "Sarah Johnson",
-    memberCount: 12,
-    status: "active",
-    createdAt: "2025-01-15",
-    members: [
-      { id: "u1", name: "John Doe", role: "Sales Rep" },
-      { id: "u2", name: "Jane Smith", role: "Sales Manager" },
-    ],
-  },
-  {
-    id: "2",
-    name: "Support Team",
-    manager: "Michael Chen",
-    memberCount: 8,
-    status: "active",
-    createdAt: "2025-02-20",
-    members: [
-      { id: "u3", name: "Alex Thompson", role: "Support Specialist" },
-      { id: "u4", name: "Emma Wilson", role: "Support Lead" },
-    ],
-  },
-  {
-    id: "3",
-    name: "Customer Success",
-    manager: "Priya Patel",
-    memberCount: 6,
-    status: "active",
-    createdAt: "2025-03-10",
-    members: [
-      { id: "u5", name: "David Kim", role: "Success Manager" },
-      { id: "u6", name: "Taylor Brown", role: "Onboarding Specialist" },
-    ],
-  },
-  {
-    id: "4",
-    name: "Marketing Team",
-    manager: "Jamie Smith",
-    memberCount: 5,
-    status: "inactive",
-    createdAt: "2024-11-05",
-    members: [
-      { id: "u7", name: "Chris Evans", role: "Marketing Coordinator" },
-      { id: "u8", name: "Morgan Reed", role: "Content Specialist" },
-    ],
-  },
-  {
-    id: "5",
-    name: "Product Development",
-    manager: "Alex Rodriguez",
-    memberCount: 15,
-    status: "active",
-    createdAt: "2025-04-22",
-    members: [
-      { id: "u9", name: "Sam Carter", role: "Frontend Developer" },
-      { id: "u10", name: "Jordan Lee", role: "UX Designer" },
-    ],
-  },
-];
+import { useTeamStore } from "@/store/teamStore";
+import { Team } from "@/models/api/team.api.model";
+import ViewTeamModal from "@/components/modals/teams/viewTeamModal";
+import EditTeamModal from "@/components/modals/teams/editTeamModal";
 
 export const columns = [
   { name: "TEAM NAME", uid: "name", sortable: true },
   { name: "MANAGER", uid: "manager", sortable: true },
   { name: "MEMBERS", uid: "members", sortable: true },
-  { name: "STATUS", uid: "status", sortable: true },
+  { name: "STATUS", uid: "isActive", sortable: true },
   { name: "CREATED AT", uid: "createdAt", sortable: true },
   { name: "ACTIONS", uid: "actions" },
 ];
@@ -121,7 +43,6 @@ export const columns = [
 export const statusOptions = [
   { name: "Active", uid: "active" },
   { name: "Inactive", uid: "inactive" },
-  { name: "Archived", uid: "archived" },
 ];
 
 export const memberCountOptions = [
@@ -136,106 +57,115 @@ export function capitalize(s: string) {
 
 const statusColorMap = {
   active: "success",
-  inactive: "warning",
-  archived: "danger",
+  inactive: "danger",
 };
 
 const INITIAL_VISIBLE_COLUMNS = [
   "name",
   "manager",
   "members",
-  "status",
+  "isActive",
+  "createdAt",
   "actions",
 ];
 
+interface TeamTableRow {
+  id: string;
+  name: string;
+  manager: string;
+  managerId: string;
+  memberCount: number;
+  isActive: boolean;
+  createdAt: Date;
+  users: {
+    user: {
+      _id: string;
+      name: string;
+      email: string;
+    };
+    isManager: boolean;
+  }[];
+}
+
 export default function TeamsTable() {
-  const [filterValue, setFilterValue] = React.useState("");
-  const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
-  );
-
-  const [statusFilter, setStatusFilter] = React.useState("all");
-  const [sizeFilter, setSizeFilter] = React.useState("all");
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [sortDescriptor, setSortDescriptor] = React.useState({
+  const { teams, meta, isLoading, fetchTeams } = useTeamStore();
+  const [filterValue, setFilterValue] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [page, setPage] = useState(1);
+  const [sortDescriptor, setSortDescriptor] = useState({
     column: "name",
-    direction: "ascending",
+    direction: "ascending" as "ascending" | "descending",
   });
-  const [page, setPage] = React.useState(1);
-  const [showColumnSelector, setShowColumnSelector] = React.useState(false);
 
-  const hasSearchFilter = Boolean(filterValue);
+  // Modal controls
+  const viewModal = useDisclosure();
+  const editModal = useDisclosure();
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
-  const headerColumns = React.useMemo(() => {
-    return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+  // Handle view action
+  const handleView = (team: Team) => {
+    setSelectedTeam(team);
+    viewModal.onOpen();
+  };
+
+  // Handle edit action
+  const handleEdit = (team: Team) => {
+    setSelectedTeam(team);
+    editModal.onOpen();
+  };
+
+  // Fetch data when page, rowsPerPage, or filters change
+  useEffect(() => {
+    fetchTeams(
+      {
+        name: filterValue || undefined,
+        isActive:
+          statusFilter !== "all" ? statusFilter === "active" : undefined,
+        sortBy: sortDescriptor.column,
+        sortOrder: sortDescriptor.direction === "ascending" ? "asc" : "desc",
+      },
+      page,
+      rowsPerPage
     );
-  }, [visibleColumns]);
+  }, [
+    page,
+    rowsPerPage,
+    statusFilter,
+    filterValue,
+    sortDescriptor,
+    fetchTeams,
+  ]);
 
-  const filteredItems = React.useMemo(() => {
-    let filteredTeams = [...teams];
-
-    if (hasSearchFilter) {
-      filteredTeams = filteredTeams.filter(
-        (team) =>
-          team.name.toLowerCase().includes(filterValue.toLowerCase()) ||
-          team.manager.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    }
-
-    if (statusFilter !== "all") {
-      filteredTeams = filteredTeams.filter(
-        (team) => team.status === statusFilter
-      );
-    }
-
-    if (sizeFilter !== "all") {
-      filteredTeams = filteredTeams.filter((team) => {
-        if (sizeFilter === "small") return team.memberCount <= 5;
-        if (sizeFilter === "medium")
-          return team.memberCount > 5 && team.memberCount <= 10;
-        if (sizeFilter === "large") return team.memberCount > 10;
-        return true;
-      });
-    }
-
-    return filteredTeams;
-  }, [teams, filterValue, statusFilter, sizeFilter]);
-
-  const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
-
-  const items = React.useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return filteredItems.slice(start, end);
-  }, [page, filteredItems, rowsPerPage]);
-
-  const sortedItems = React.useMemo(() => {
-    return [...items].sort((a, b) => {
-      const first = a[sortDescriptor.column as keyof Team];
-      const second = b[sortDescriptor.column as keyof Team];
-
-      // Handle different data types
-      if (typeof first === "string" && typeof second === "string") {
-        const cmp = first.localeCompare(second);
-        return sortDescriptor.direction === "descending" ? -cmp : cmp;
-      }
-
-      if (typeof first === "number" && typeof second === "number") {
-        const cmp = first - second;
-        return sortDescriptor.direction === "descending" ? -cmp : cmp;
-      }
-
-      // Fallback for dates
-      const dateA = new Date(a.createdAt).getTime();
-      const dateB = new Date(b.createdAt).getTime();
-      const cmp = dateA - dateB;
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
+  const handleSortChange = (descriptor: any) => {
+    setSortDescriptor({
+      column: descriptor.column,
+      direction: descriptor.direction,
     });
-  }, [sortDescriptor, items]);
+    setPage(1);
+  };
 
-  const renderCell = React.useCallback(
-    (team: Team, columnKey: string | number) => {
+  // Map API data to table format
+  const tableRows = useMemo<TeamTableRow[]>(() => {
+    if (!teams) return [];
+
+    return teams.map((team) => {
+      const manager = team.users.find((u) => u.isManager)?.user;
+      return {
+        id: team._id,
+        name: team.name,
+        manager: manager?.name || "No manager",
+        managerId: manager?._id || "",
+        memberCount: team.users.length,
+        isActive: team.isActive,
+        createdAt: new Date(team.createdAt),
+        users: team.users,
+      };
+    });
+  }, [teams]);
+
+  const renderCell = useCallback(
+    (team: TeamTableRow, columnKey: string | number) => {
       switch (columnKey) {
         case "name":
           return (
@@ -249,7 +179,9 @@ export default function TeamsTable() {
               </div>
               <div>
                 <p className="font-semibold">{team.name}</p>
-                <p className="text-gray-500 text-sm">ID: {team.id}</p>
+                <p className="text-gray-500 text-sm">
+                  ID: {team.id.substring(0, 8)}...
+                </p>
               </div>
             </div>
           );
@@ -273,12 +205,12 @@ export default function TeamsTable() {
           return (
             <div className="flex items-center">
               <div className="flex -space-x-2">
-                {team.members.slice(0, 3).map((member, index) => (
-                  <Tooltip key={index} content={member.name}>
+                {team.users.slice(0, 3).map((member, index) => (
+                  <Tooltip key={index} content={member.user.name}>
                     <Avatar
                       size="sm"
                       className="border-2 border-white"
-                      name={member.name}
+                      name={member.user.name}
                       getInitials={(name) =>
                         name
                           .split(" ")
@@ -294,19 +226,31 @@ export default function TeamsTable() {
               </div>
             </div>
           );
-        case "status":
+        case "isActive":
           return (
             <Chip
               className="capitalize"
               size="sm"
               variant="flat"
-              color={team.status === "active" ? "success" : "danger"}
+              color={team.isActive ? "success" : "danger"}
             >
-              {team.status}
+              {team.isActive ? "active" : "inactive"}
             </Chip>
           );
         case "createdAt":
-          return new Date(team.createdAt).toLocaleDateString();
+          return (
+            <div className="flex flex-col">
+              <p className="font-medium">
+                {team.createdAt.toLocaleDateString()}
+              </p>
+              <p className="text-gray-500 text-sm">
+                {team.createdAt.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+          );
         case "actions":
           return (
             <div className="relative flex justify-end items-center gap-2">
@@ -317,8 +261,18 @@ export default function TeamsTable() {
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu>
-                  <DropdownItem key="view">View</DropdownItem>
-                  <DropdownItem key="edit">Edit</DropdownItem>
+                  <DropdownItem
+                    key="view"
+                    onPress={() => handleView(team as unknown as Team)}
+                  >
+                    View
+                  </DropdownItem>
+                  <DropdownItem
+                    key="edit"
+                    onPress={() => handleEdit(team as unknown as Team)}
+                  >
+                    Edit
+                  </DropdownItem>
                   <DropdownItem key="delete">Delete</DropdownItem>
                 </DropdownMenu>
               </Dropdown>
@@ -328,52 +282,29 @@ export default function TeamsTable() {
           return null;
       }
     },
-    []
+    [handleView, handleEdit]
   );
 
-  const onNextPage = React.useCallback(() => {
-    if (page < pages) setPage(page + 1);
-  }, [page, pages]);
-
-  const onPreviousPage = React.useCallback(() => {
-    if (page > 1) setPage(page - 1);
-  }, [page]);
-
-  const onRowsPerPageChange = React.useCallback(
+  const onRowsPerPageChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setRowsPerPage(Number(e.target.value));
+      const newRowsPerPage = Number(e.target.value);
+      setRowsPerPage(newRowsPerPage);
       setPage(1);
     },
     []
   );
 
-  const onSearchChange = React.useCallback((value: string) => {
-    if (value) {
-      setFilterValue(value);
-      setPage(1);
-    } else {
-      setFilterValue("");
-    }
+  const onSearchChange = useCallback((value: string) => {
+    setFilterValue(value);
+    setPage(1);
   }, []);
 
-  const onClear = React.useCallback(() => {
+  const onClear = useCallback(() => {
     setFilterValue("");
     setPage(1);
   }, []);
 
-  const toggleColumn = (columnUid: string) => {
-    setVisibleColumns((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(columnUid)) {
-        newSet.delete(columnUid);
-      } else {
-        newSet.add(columnUid);
-      }
-      return newSet;
-    });
-  };
-
-  const topContent = React.useMemo(() => {
+  const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
@@ -388,7 +319,7 @@ export default function TeamsTable() {
           />
           <div className="flex gap-3">
             <Dropdown>
-              <DropdownTrigger>
+              <DropdownTrigger className="hidden sm:flex">
                 <Button
                   endContent={<ChevronDownIcon className="text-small" />}
                   variant="flat"
@@ -399,113 +330,37 @@ export default function TeamsTable() {
               <DropdownMenu
                 disallowEmptySelection
                 aria-label="Status Filter"
-                closeOnSelect={false}
                 selectedKeys={new Set([statusFilter])}
                 selectionMode="single"
                 onSelectionChange={(keys) =>
-                  setStatusFilter((Array.from(keys)[0] as string) || "all")
+                  setStatusFilter(String(Array.from(keys)[0] || "all"))
                 }
               >
                 <DropdownItem key="all">All Statuses</DropdownItem>
-                {statusOptions.map((status) => (
-                  <DropdownItem key={status.uid} className="capitalize">
-                    {capitalize(status.name)}
-                  </DropdownItem>
-                ))}
+                <>
+                  {statusOptions.map((status) => (
+                    <DropdownItem key={status.uid} className="capitalize">
+                      {capitalize(status.name)}
+                    </DropdownItem>
+                  ))}
+                </>
               </DropdownMenu>
             </Dropdown>
-
-            <Dropdown>
-              <DropdownTrigger>
-                <Button
-                  endContent={<ChevronDownIcon className="text-small" />}
-                  variant="flat"
-                >
-                  Team Size
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Size Filter"
-                closeOnSelect={false}
-                selectedKeys={new Set([sizeFilter])}
-                selectionMode="single"
-                onSelectionChange={(keys) =>
-                  setSizeFilter((Array.from(keys)[0] as string) || "all")
-                }
-              >
-                <DropdownItem key="all">All Sizes</DropdownItem>
-                {memberCountOptions.map((size) => (
-                  <DropdownItem key={size.uid} className="capitalize">
-                    {size.name}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-
-            <Dropdown
-              isOpen={showColumnSelector}
-              onOpenChange={setShowColumnSelector}
-            >
-              <DropdownTrigger>
-                <Button variant="flat">Columns</Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={visibleColumns}
-                selectionMode="multiple"
-                onSelectionChange={setVisibleColumns}
-              >
-                {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize">
-                    {capitalize(column.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-
-            <AddTeamModal
-              users={[
-                {
-                  id: "1",
-                  name: "Nick Glas",
-                  email: "nickglas@hotmail.nl",
-                  role: "company admin",
-                },
-                {
-                  id: "2",
-                  name: "John Doe",
-                  email: "johndoe@hotmail.nl",
-                  role: "employee",
-                },
-                {
-                  id: "3",
-                  name: "Jacky Martens",
-                  email: "j.martens@gmail.nl",
-                  role: "company admin",
-                },
-                {
-                  id: "4",
-                  name: "Hunter Glas",
-                  email: "hunter.g@outlook.com",
-                  role: "company admin",
-                },
-              ]}
-            />
+            <AddTeamModal />
           </div>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {filteredItems.length} teams
+            {isLoading
+              ? "Loading teams..."
+              : `Showing ${teams?.length || 0} of ${meta?.total || 0} teams`}
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
               className="bg-transparent outline-none text-default-400 text-small"
               onChange={onRowsPerPageChange}
-              defaultValue="5"
+              value={rowsPerPage}
             >
               <option value="5">5</option>
               <option value="10">10</option>
@@ -518,22 +373,25 @@ export default function TeamsTable() {
   }, [
     filterValue,
     statusFilter,
-    sizeFilter,
-    visibleColumns,
     onRowsPerPageChange,
     onSearchChange,
-    filteredItems.length,
-    showColumnSelector,
+    teams,
+    isLoading,
+    meta?.total,
+    rowsPerPage,
   ]);
 
-  const bottomContent = React.useMemo(() => {
-    const startItem = (page - 1) * rowsPerPage + 1;
-    const endItem = Math.min(page * rowsPerPage, filteredItems.length);
+  const bottomContent = useMemo(() => {
+    if (isLoading) return null;
+
+    const startItem = meta ? (meta.page - 1) * meta.limit + 1 : 0;
+    const endItem = meta ? Math.min(meta.page * meta.limit, meta.total) : 0;
+    const total = meta?.total || 0;
 
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {`Showing ${startItem} to ${endItem} of ${filteredItems.length} teams`}
+          {`Showing ${startItem} to ${endItem} of ${total} teams`}
         </span>
         <Pagination
           isCompact
@@ -541,7 +399,7 @@ export default function TeamsTable() {
           showShadow
           color="primary"
           page={page}
-          total={pages}
+          total={meta?.pages || 1}
           onChange={setPage}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
@@ -549,61 +407,76 @@ export default function TeamsTable() {
             isDisabled={page === 1}
             size="sm"
             variant="flat"
-            onPress={onPreviousPage}
+            onPress={() => setPage(page - 1)}
           >
             Previous
           </Button>
           <Button
-            isDisabled={page === pages}
+            isDisabled={page === (meta?.pages || 1)}
             size="sm"
             variant="flat"
-            onPress={onNextPage}
+            onPress={() => setPage(page + 1)}
           >
             Next
           </Button>
         </div>
       </div>
     );
-  }, [page, pages, filteredItems.length, rowsPerPage]);
+  }, [page, isLoading, meta]);
 
   return (
-    <Table
-      isHeaderSticky
-      aria-label="Teams table"
-      bottomContent={bottomContent}
-      bottomContentPlacement="outside"
-      classNames={{
-        wrapper: "max-h-[582px]",
-      }}
-      sortDescriptor={sortDescriptor}
-      topContent={topContent}
-      topContentPlacement="outside"
-      onSortChange={setSortDescriptor}
-    >
-      <TableHeader columns={headerColumns}>
-        {(column) => (
-          <TableColumn
-            key={column.uid}
-            align={column.uid === "actions" ? "end" : "start"}
-            allowsSorting={column.sortable}
-          >
-            {column.name}
-          </TableColumn>
-        )}
-      </TableHeader>
-      <TableBody
-        emptyContent={"No teams found"}
-        items={sortedItems}
-        loadingContent={<Spinner label="Loading teams..." />}
+    <>
+      <Table
+        isHeaderSticky
+        aria-label="Teams table"
+        bottomContent={bottomContent}
+        bottomContentPlacement="outside"
+        classNames={{
+          wrapper: "max-h-[582px]",
+        }}
+        sortDescriptor={sortDescriptor}
+        topContent={topContent}
+        topContentPlacement="outside"
+        onSortChange={handleSortChange}
       >
-        {(item) => (
-          <TableRow key={item.id}>
-            {(columnKey) => (
-              <TableCell>{renderCell(item, columnKey)}</TableCell>
-            )}
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+        <TableHeader columns={columns}>
+          {(column) => (
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "end" : "start"}
+              allowsSorting={column.sortable}
+            >
+              {column.name}
+            </TableColumn>
+          )}
+        </TableHeader>
+        <TableBody
+          emptyContent={isLoading ? " " : "No teams found"}
+          items={isLoading ? [] : tableRows}
+          loadingContent={<Spinner label="Loading teams..." />}
+          loadingState={isLoading ? "loading" : "idle"}
+        >
+          {(item) => (
+            <TableRow key={item.id}>
+              {(columnKey) => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+
+      <ViewTeamModal
+        isOpen={viewModal.isOpen}
+        onOpenChange={viewModal.onOpenChange}
+        team={selectedTeam}
+      />
+
+      <EditTeamModal
+        isOpen={editModal.isOpen}
+        onOpenChange={editModal.onOpenChange}
+        team={selectedTeam}
+      />
+    </>
   );
 }
