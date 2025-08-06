@@ -27,6 +27,6 @@ export const updateContact = async (
   id: string,
   updates: Partial<Contact>
 ): Promise<Contact> => {
-  const res = await api.patch(`/api/v1/contact/${id}`, updates);
+  const res = await api.patch(`/api/v1/contacts/${id}`, updates);
   return res.data;
 };

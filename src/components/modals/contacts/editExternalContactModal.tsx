@@ -6,9 +6,11 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
-import { Button, Input, Textarea, Switch } from "@heroui/react";
+import { Button, Input, Switch, Form } from "@heroui/react";
 import { Contact } from "@/models/api/contact.api.model";
 import { useContactStore } from "@/store/contactStore";
+import SearchExternalCompany from "@/components/data/externalCompany/searchExternalCompany";
+import { ExternalCompany } from "@/models/api/external.company.model";
 
 interface EditExternalContactModalProps {
   isOpen: boolean;
@@ -21,7 +23,10 @@ export default function EditExternalContactModal({
   onOpenChange,
   contact,
 }: EditExternalContactModalProps) {
-  //   const { updateContact } = useContactStore();
+  const { updateContact } = useContactStore();
+
+  const [initialCompany, setInitialCompany] = useState<ExternalCompany>();
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -29,13 +34,15 @@ export default function EditExternalContactModal({
     phone: "",
     position: "",
     isActive: true,
+    externalCompanyId: "",
   });
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialize form data when contact changes
   useEffect(() => {
     if (contact) {
+      setInitialCompany(contact.externalCompany);
       setFormData({
         firstName: contact.firstName,
         lastName: contact.lastName,
@@ -43,6 +50,10 @@ export default function EditExternalContactModal({
         phone: contact.phone,
         position: contact.position,
         isActive: contact.isActive,
+        externalCompanyId:
+          typeof contact.externalCompany === "string"
+            ? contact.externalCompany
+            : (contact.externalCompany?._id ?? ""),
       });
     }
   }, [contact]);
@@ -54,26 +65,25 @@ export default function EditExternalContactModal({
         if (value.length < 2)
           return "First name must be at least 2 characters.";
         break;
-
       case "lastName":
         if (!value.trim()) return "Last name is required.";
         if (value.length < 2) return "Last name must be at least 2 characters.";
         break;
-
       case "email":
         if (!value.trim()) return "Email is required.";
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
           return "Email must be a valid email address.";
         break;
-
       case "phone":
         if (!value.trim()) return "Phone is required.";
         if (value.length < 7) return "Phone must be at least 7 characters.";
         break;
-
       case "position":
         if (!value.trim()) return "Position is required.";
         if (value.length < 3) return "Position must be at least 3 characters.";
+        break;
+      case "externalCompanyId":
+        if (!value.trim()) return "Company is required.";
         break;
     }
     return "";
@@ -81,11 +91,9 @@ export default function EditExternalContactModal({
 
   const handleChange = (name: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
-
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
-
     if (typeof value === "string") {
       const error = validateField(name, value);
       if (error) {
@@ -96,14 +104,12 @@ export default function EditExternalContactModal({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
     Object.entries(formData).forEach(([key, value]) => {
       if (key !== "isActive") {
         const error = validateField(key, value as string);
         if (error) newErrors[key] = error;
       }
     });
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -114,14 +120,15 @@ export default function EditExternalContactModal({
 
     setIsSubmitting(true);
     try {
-      //   await updateContact(contact._id, {
-      //     firstName: formData.firstName.trim(),
-      //     lastName: formData.lastName.trim(),
-      //     email: formData.email.trim(),
-      //     phone: formData.phone.trim(),
-      //     position: formData.position.trim(),
-      //     isActive: formData.isActive,
-      //   });
+      await updateContact(contact._id, {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        position: formData.position.trim(),
+        isActive: formData.isActive,
+        externalCompanyId: formData.externalCompanyId,
+      });
 
       onOpenChange(false);
     } catch (error) {
@@ -138,7 +145,7 @@ export default function EditExternalContactModal({
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="md">
       <ModalContent>
         {(onClose) => (
-          <form onSubmit={handleSubmit}>
+          <Form onSubmit={handleSubmit}>
             <ModalHeader className="flex flex-col gap-1">
               Edit Contact
             </ModalHeader>
@@ -197,6 +204,17 @@ export default function EditExternalContactModal({
                   validationBehavior="aria"
                 />
 
+                <SearchExternalCompany
+                  value={initialCompany}
+                  onChange={(id, company) => {
+                    handleChange("externalCompanyId", id);
+
+                    if (company) {
+                      setInitialCompany(company);
+                    }
+                  }}
+                />
+
                 <Input
                   isRequired
                   isInvalid={!!errors.position}
@@ -244,7 +262,7 @@ export default function EditExternalContactModal({
                 </Button>
               </div>
             </ModalFooter>
-          </form>
+          </Form>
         )}
       </ModalContent>
     </Modal>

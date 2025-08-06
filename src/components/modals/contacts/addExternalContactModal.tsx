@@ -9,9 +9,10 @@ import {
 } from "@heroui/modal";
 import { Button, Input, Textarea, Switch, Form } from "@heroui/react";
 import { useContactStore } from "@/store/contactStore";
+import SearchExternalCompany from "@/components/data/externalCompany/searchExternalCompany";
 
 export default function AddExternalContactModal() {
-  const {} = useContactStore();
+  const { createContact } = useContactStore();
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const [formData, setFormData] = useState({
     firstName: "",
@@ -64,6 +65,10 @@ export default function AddExternalContactModal() {
         if (value.length < 7) return "Phone must be at least 7 characters.";
         break;
 
+      case "externalCompanyId":
+        if (!value.trim()) return "Company is required.";
+        break;
+
       case "position":
         if (!value.trim()) return "Position is required.";
         if (value.length < 3) return "Position must be at least 3 characters.";
@@ -91,7 +96,7 @@ export default function AddExternalContactModal() {
     const newErrors: Record<string, string> = {};
 
     Object.entries(formData).forEach(([key, value]) => {
-      if (key !== "isActive" && key !== "externalCompanyId") {
+      if (key !== "isActive") {
         const error = validateField(key, value as string);
         if (error) newErrors[key] = error;
       }
@@ -107,17 +112,16 @@ export default function AddExternalContactModal() {
 
     setIsSubmitting(true);
     try {
-      //   const newContact = await createContact({
-      //     firstName: formData.firstName.trim(),
-      //     lastName: formData.lastName.trim(),
-      //     email: formData.email.trim(),
-      //     phone: formData.phone.trim(),
-      //     position: formData.position.trim(),
-      //     isActive: formData.isActive,
-      //     externalCompanyId: formData.externalCompanyId, // Need to implement company selection
-      //   });
+      await createContact({
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        position: formData.position.trim(),
+        isActive: formData.isActive,
+        externalCompanyId: formData.externalCompanyId,
+      });
 
-      //   addContact(newContact);
       onClose();
     } catch (error) {
       console.error("Failed to create contact:", error);
@@ -199,6 +203,12 @@ export default function AddExternalContactModal() {
                       value={formData.phone}
                       onValueChange={(value) => handleChange("phone", value)}
                       validationBehavior="aria"
+                    />
+
+                    <SearchExternalCompany
+                      onChange={(id, company) => {
+                        handleChange("externalCompanyId", id);
+                      }}
                     />
 
                     <Input
