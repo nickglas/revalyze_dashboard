@@ -4,6 +4,7 @@ import { PaginationMeta } from "@/models/others/PaginationMeta";
 import * as service from "@/services/review.config.service";
 import { toast } from "react-toastify";
 import { ReviewConfig } from "@/models/api/review.config.api.model";
+import { CreateReviewConfigDTO } from "@/models/dto/review.config.dto";
 
 interface ReviewConfigState {
   reviewConfigs: ReviewConfig[] | null;
@@ -15,6 +16,8 @@ interface ReviewConfigState {
     page?: number,
     limit?: number
   ) => Promise<void>;
+
+  createReviewConfig: (data: CreateReviewConfigDTO) => Promise<void>;
 }
 
 export const useReviewConfigStore = create<ReviewConfigState>()(
@@ -36,6 +39,20 @@ export const useReviewConfigStore = create<ReviewConfigState>()(
           toast.error("Failed to fetch review configurations");
           console.error(err);
           set({ reviewConfigs: null, meta: null });
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      createReviewConfig: async (data: CreateReviewConfigDTO) => {
+        set({ isLoading: true });
+        try {
+          await service.createConfig(data);
+          // Refresh the list after creation
+          await get().fetchReviewConfigs({}, 1, get().meta?.limit || 5);
+        } catch (err) {
+          toast.error("Failed to create review configuration");
+          console.error(err);
         } finally {
           set({ isLoading: false });
         }

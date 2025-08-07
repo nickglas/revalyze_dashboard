@@ -304,9 +304,7 @@ export default function ReviewConfigsTable() {
                 </>
               </DropdownMenu>
             </Dropdown>
-            <Button color="primary" onPress={addModal.onOpen}>
-              Create Config
-            </Button>
+            <AddReviewConfigModal />
           </div>
         </div>
         <div className="flex justify-between items-center">
@@ -436,12 +434,6 @@ export default function ReviewConfigsTable() {
         isOpen={editModal.isOpen}
         onOpenChange={editModal.onOpenChange}
         config={selectedConfig}
-      />
-
-      <AddReviewConfigModal
-        config={null}
-        isOpen={addModal.isOpen}
-        onOpenChange={addModal.onOpenChange}
       />
     </>
   );

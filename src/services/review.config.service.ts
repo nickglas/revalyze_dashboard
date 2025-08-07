@@ -1,6 +1,7 @@
 import api from "@/util/axios";
 import { PaginatedResponse } from "@/models/others/PaginatedResponse";
 import { ReviewConfig } from "@/models/api/review.config.api.model";
+import { CreateReviewConfigDTO } from "@/models/dto/review.config.dto";
 
 export const getConfigs = async (
   page = 1,
@@ -21,11 +22,12 @@ export const getConfigs = async (
   return res.data;
 };
 
-// export const createConfig = async (input: CreateTeamDTOForAPI): Promise<Team> => {
-//   console.warn(input);
-//   const res = await api.post("/api/v1/teams", input);
-//   return res.data;
-// };
+export const createConfig = async (
+  input: CreateReviewConfigDTO
+): Promise<ReviewConfig> => {
+  const res = await api.post("/api/v1/review-configs", input);
+  return res.data;
+};
 
 // export const toggleStatus = async (team: Team): Promise<Team> => {
 //   const res = await api.patch(`/api/v1/teams/${team._id}/status`, {
