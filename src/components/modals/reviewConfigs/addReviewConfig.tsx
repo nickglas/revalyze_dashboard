@@ -7,7 +7,7 @@ import {
   ModalFooter,
   useDisclosure,
 } from "@heroui/modal";
-import { Button, Input, Textarea, Switch, Divider } from "@heroui/react";
+import { Button, Input, Textarea, Switch, Divider, Form } from "@heroui/react";
 import { toast } from "react-toastify";
 import {
   CreateReviewConfigDTO,
@@ -30,7 +30,7 @@ export default function AddReviewConfigModal() {
     name: "",
     description: "",
     isActive: true,
-    criteriaIds: [],
+    criteria: [],
     modelSettings: {
       temperature: 0.7,
       maxTokens: 1000,
@@ -52,7 +52,7 @@ export default function AddReviewConfigModal() {
       name: "",
       description: "",
       isActive: true,
-      criteriaIds: [],
+      criteria: [],
       modelSettings: {
         temperature: 0.7,
         maxTokens: 1000,
@@ -64,23 +64,24 @@ export default function AddReviewConfigModal() {
   };
 
   const handleAddCriterion = (criterion: CriterionSelectionDTO) => {
-    if (postData.criteriaIds.includes(criterion._id)) {
+    if (selectedCriteria.some((c) => c._id === criterion._id)) {
       toast.warn("This criterion is already selected");
       return;
     }
 
-    setPostData({
-      ...postData,
-      criteriaIds: [...postData.criteriaIds, criterion._id],
-    });
+    setSelectedCriteria([...selectedCriteria, { ...criterion, weight: 0.7 }]);
+  };
 
-    setSelectedCriteria([...selectedCriteria, criterion]);
+  const handleWeightChange = (criterionId: string, weight: number) => {
+    setSelectedCriteria((prev) =>
+      prev.map((c) => (c._id === criterionId ? { ...c, weight } : c))
+    );
   };
 
   const handleRemoveCriterion = (criterionId: string) => {
     setPostData({
       ...postData,
-      criteriaIds: postData.criteriaIds.filter((id) => id !== criterionId),
+      criteria: postData.criteria.filter((x) => x.criterionId !== criterionId),
     });
 
     setSelectedCriteria(
@@ -166,12 +167,14 @@ export default function AddReviewConfigModal() {
       newErrors.name = "Name is required.";
     }
 
-    // Validate at least one criterion
-    if (postData.criteriaIds.length === 0 && tab >= 1) {
-      newErrors.criteriaIds = "At least one criterion is required";
-    }
+    selectedCriteria.forEach((criterion) => {
+      if (criterion.weight < 0 || criterion.weight > 1) {
+        newErrors[`weight-${criterion._id}`] = "Weight must be between 0 and 1";
+      }
+    });
 
     setErrors(newErrors);
+
     return Object.keys(newErrors).length === 0;
   };
 
@@ -181,8 +184,18 @@ export default function AddReviewConfigModal() {
     if (!validateForm()) return;
     setIsSubmitting(true);
 
+    const dataToSend = {
+      ...postData,
+      criteria: selectedCriteria.map((c) => ({
+        criterionId: c._id,
+        weight: c.weight,
+      })),
+    };
+
+    console.warn(dataToSend);
+
     try {
-      await createReviewConfig(postData);
+      await createReviewConfig(dataToSend);
       toast.success("Review configuration created successfully!");
       onClose();
     } catch (error) {
@@ -206,203 +219,200 @@ export default function AddReviewConfigModal() {
                 Create Review Configuration
               </ModalHeader>
               <ModalBody>
-                <div className="flex flex-col w-full gap-4">
-                  {/* Progress Steps */}
-                  <div className="flex justify-between mb-4">
-                    {[1, 2, 3].map((step) => (
-                      <div
-                        key={step}
-                        className={`flex-1 flex flex-col items-center ${
-                          step > 1 ? "ml-2" : ""
-                        }`}
-                      >
+                <Form
+                  id="review-config-form"
+                  onSubmit={(e) => {
+                    handleSubmit(e);
+                  }}
+                >
+                  <div className="flex flex-col w-full gap-4">
+                    {/* Progress Steps */}
+                    <div className="flex justify-between mb-4">
+                      {[1, 2, 3].map((step) => (
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            tab >= step - 1
-                              ? "bg-primary-500 text-white"
-                              : "bg-default-100"
+                          key={step}
+                          className={`flex-1 flex flex-col items-center ${
+                            step > 1 ? "ml-2" : ""
                           }`}
                         >
-                          {step}
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                              tab >= step - 1
+                                ? "bg-primary-500 text-white"
+                                : "bg-default-100"
+                            }`}
+                          >
+                            {step}
+                          </div>
+                          <span className="text-xs mt-1">
+                            {step === 1 && "Basic Info"}
+                            {step === 2 && "Criteria"}
+                            {step === 3 && "Model"}
+                          </span>
                         </div>
-                        <span className="text-xs mt-1">
-                          {step === 1 && "Basic Info"}
-                          {step === 2 && "Criteria"}
-                          {step === 3 && "Model"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {tab === 0 && (
-                    <div className="space-y-4">
-                      <Input
-                        isRequired
-                        isInvalid={!!errors.name}
-                        errorMessage={errors.name}
-                        label="Configuration Name"
-                        labelPlacement="outside"
-                        placeholder="e.g. Technical Support Review"
-                        value={postData.name}
-                        onValueChange={(value) => handleChange("name", value)}
-                      />
-
-                      <Textarea
-                        isInvalid={!!errors.description}
-                        errorMessage={errors.description}
-                        label="Description"
-                        labelPlacement="outside"
-                        placeholder="Describe this configuration (optional)"
-                        value={postData.description}
-                        onValueChange={(value) =>
-                          handleChange("description", value)
-                        }
-                      />
-
-                      <Switch
-                        isSelected={postData.isActive}
-                        onValueChange={(value) =>
-                          handleChange("isActive", value)
-                        }
-                      >
-                        Is Active
-                      </Switch>
+                      ))}
                     </div>
-                  )}
 
-                  {tab === 1 && (
-                    <div className="flex flex-col gap-4">
-                      <SearchCriteria
-                        onChange={(criteria: CriterionSelectionDTO | null) => {
-                          if (criteria) {
-                            handleAddCriterion(criteria);
-                          }
-                        }}
-                      />
-
-                      {errors.criteriaIds && (
-                        <div className="text-danger text-sm">
-                          {errors.criteriaIds}
-                        </div>
-                      )}
-
-                      <div className="mt-2 flex flex-col gap-2">
-                        <span className=" text-sm">Criteria selection</span>
-                        <CriteriaSelection
-                          criteria={selectedCriteria}
-                          onRemove={handleRemoveCriterion}
+                    {tab === 0 && (
+                      <div className="space-y-4">
+                        <Input
+                          isRequired
+                          isInvalid={!!errors.name}
+                          errorMessage={errors.name}
+                          label="Configuration Name"
+                          labelPlacement="outside"
+                          placeholder="e.g. Technical Support Review"
+                          value={postData.name}
+                          onValueChange={(value) => handleChange("name", value)}
                         />
+
+                        <Textarea
+                          isInvalid={!!errors.description}
+                          errorMessage={errors.description}
+                          label="Description"
+                          labelPlacement="outside"
+                          placeholder="Describe this configuration (optional)"
+                          value={postData.description}
+                          onValueChange={(value) =>
+                            handleChange("description", value)
+                          }
+                        />
+
+                        <Switch
+                          isSelected={postData.isActive}
+                          onValueChange={(value) =>
+                            handleChange("isActive", value)
+                          }
+                        >
+                          Is Active
+                        </Switch>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {tab === 2 && (
-                    <div className="space-y-4">
-                      <Input
-                        isRequired
-                        isInvalid={!!errors["modelSettings.temperature"]}
-                        errorMessage={errors["modelSettings.temperature"]}
-                        label="Temperature"
-                        labelPlacement="outside"
-                        placeholder="0.0 - 2.0"
-                        type="number"
-                        min="0"
-                        max="2"
-                        step="0.1"
-                        value={postData.modelSettings.temperature.toString()}
-                        onValueChange={(value) =>
-                          handleChange(
-                            "temperature",
-                            parseFloat(value) || 0,
-                            "modelSettings"
-                          )
-                        }
-                      />
+                    {tab === 1 && (
+                      <div className="flex flex-col gap-4">
+                        <SearchCriteria
+                          onChange={(c: CriterionSelectionDTO | null) => {
+                            if (c) {
+                              handleAddCriterion(c);
+                            }
+                          }}
+                        />
 
-                      <Input
-                        isRequired
-                        isInvalid={!!errors["modelSettings.maxTokens"]}
-                        errorMessage={errors["modelSettings.maxTokens"]}
-                        label="Max Tokens"
-                        labelPlacement="outside"
-                        placeholder="e.g. 1000"
-                        type="number"
-                        min="1"
-                        max="4000"
-                        value={postData.modelSettings.maxTokens.toString()}
-                        onValueChange={(value) =>
-                          handleChange(
-                            "maxTokens",
-                            parseInt(value) || 0,
-                            "modelSettings"
-                          )
-                        }
-                      />
+                        {errors.criteria && (
+                          <div className="text-danger text-sm">
+                            {errors.criteria}
+                          </div>
+                        )}
 
-                      <div className="bg-blue-50 p-3 rounded-lg">
-                        <h4 className="font-medium text-sm">
-                          Model Settings Guide
-                        </h4>
-                        <ul className="text-xs text-gray-600 mt-1 space-y-1">
-                          <li>
-                            • <strong>Temperature</strong>: Controls randomness
-                            (0 = precise, 2 = creative)
-                          </li>
-                          <li>
-                            • <strong>Max Tokens</strong>: Limits response
-                            length (typically 500-2000 tokens)
-                          </li>
-                        </ul>
+                        <div className="mt-2">
+                          <span className="text-sm">Criteria selection</span>
+                          <CriteriaSelection
+                            criteria={selectedCriteria}
+                            onRemove={handleRemoveCriterion}
+                            onWeightChange={handleWeightChange}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <div className="flex items-center justify-between w-full">
-                  <div>
-                    {tab > 0 && (
-                      <Button
-                        color="default"
-                        variant="light"
-                        onPress={() => setTab(tab - 1)}
-                        disabled={isSubmitting}
-                      >
-                        Previous
-                      </Button>
+                    )}
+
+                    {tab === 2 && (
+                      <div className="flex flex-col gap-4">
+                        <Input
+                          isRequired
+                          isInvalid={!!errors["modelSettings.temperature"]}
+                          errorMessage={errors["modelSettings.temperature"]}
+                          label="Temperature"
+                          labelPlacement="outside"
+                          placeholder="0.0 - 2.0"
+                          type="number"
+                          min="0"
+                          max="2"
+                          step="0.1"
+                          value={postData.modelSettings.temperature.toString()}
+                          onValueChange={(value) =>
+                            handleChange(
+                              "modelSettings.temperature",
+                              parseFloat(value) || 0
+                            )
+                          }
+                        />
+
+                        <Input
+                          isRequired
+                          isInvalid={!!errors["modelSettings.maxTokens"]}
+                          errorMessage={errors["modelSettings.maxTokens"]}
+                          label="Max Tokens"
+                          labelPlacement="outside"
+                          placeholder="e.g. 1000"
+                          type="number"
+                          min="1"
+                          max="4000"
+                          value={postData.modelSettings.maxTokens.toString()}
+                          onValueChange={(value) =>
+                            handleChange(
+                              "modelSettings.maxTokens",
+                              parseInt(value) || 0
+                            )
+                          }
+                        />
+
+                        {/* <div className="p-3 rounded-lg">
+                          <h4 className="font-medium text-sm">
+                            Model Settings Guide
+                          </h4>
+                          <ul className="text-xs text-gray-600 mt-1 space-y-1">
+                            <li>
+                              • <strong>Temperature</strong>: Controls
+                              randomness (0 = precise, 2 = creative)
+                            </li>
+                            <li>
+                              • <strong>Max Tokens</strong>: Limits response
+                              length (typically 500-2000 tokens)
+                            </li>
+                          </ul>
+                        </div> */}
+                      </div>
                     )}
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      color="default"
-                      variant="light"
-                      onPress={onClose}
-                      disabled={isSubmitting}
-                    >
-                      Cancel
-                    </Button>
-
-                    {tab < 2 ? (
-                      <Button
-                        color="primary"
-                        onPress={() => setTab(tab + 1)}
-                        disabled={isSubmitting}
-                      >
+                  <div className="flex w-full justify-end mb-2">
+                    {tab === 0 && (
+                      <Button onPress={() => setTab(tab + 1)} color="primary">
                         Next
                       </Button>
-                    ) : (
-                      <Button
-                        color="primary"
-                        isLoading={isSubmitting}
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting ? "Creating..." : "Create Configuration"}
-                      </Button>
+                    )}
+
+                    {tab === 1 && (
+                      <div className="flex gap-4">
+                        <Button onPress={() => setTab(tab - 1)} variant="ghost">
+                          Previous
+                        </Button>
+
+                        <Button onPress={() => setTab(tab + 1)} color="primary">
+                          Next
+                        </Button>
+                      </div>
+                    )}
+
+                    {tab === 2 && (
+                      <div className="flex gap-4 mt-4">
+                        <Button onPress={() => setTab(tab - 1)} variant="ghost">
+                          Previous
+                        </Button>
+
+                        <Button
+                          type="submit"
+                          form="review-config-form"
+                          color="primary"
+                        >
+                          Submit
+                        </Button>
+                      </div>
                     )}
                   </div>
-                </div>
-              </ModalFooter>
+                </Form>
+              </ModalBody>
             </>
           )}
         </ModalContent>
