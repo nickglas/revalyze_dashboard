@@ -8,6 +8,7 @@ import {
   CreateTeamDTO,
   CreateTeamDTOForAPI,
 } from "@/models/dto/create.team.dto";
+import { UpdateTeamDTO } from "@/models/dto/update.team.dto";
 
 interface TeamState {
   teams: Team[] | null;
@@ -16,7 +17,7 @@ interface TeamState {
 
   fetchTeams: (filters: any, page?: number, limit?: number) => Promise<void>;
   createTeam: (input: CreateTeamDTO) => Promise<Team>;
-  updateTeam: (id: string, updates: Partial<Team>) => Promise<Team>;
+  updateTeam: (id: string, input: UpdateTeamDTO) => Promise<Team>;
 }
 
 export const useTeamStore = create<TeamState>()(
@@ -57,7 +58,7 @@ export const useTeamStore = create<TeamState>()(
           };
 
           const newTeam = await service.createTeam(payload);
-          toast.success("Contact created");
+          toast.success("Team created");
           set((state) => ({
             teams: state.teams ? [newTeam, ...state.teams] : [newTeam],
             meta: state.meta
@@ -73,11 +74,21 @@ export const useTeamStore = create<TeamState>()(
         }
       },
 
-      updateTeam: async (id, updates) => {
+      updateTeam: async (id, input) => {
         set({ isLoading: true });
         try {
-          const updated = await service.updateTeam(id, updates);
-          toast.success("Contact updated");
+          const payload: CreateTeamDTOForAPI = {
+            name: input.name!,
+            description: input.description!,
+            isActive: input.isActive!,
+            users: input.users!.map(({ userId, isManager }) => ({
+              userId,
+              isManager,
+            })),
+          };
+
+          const updated = await service.updateTeam(id, payload);
+          toast.success("Team updated");
           set((state) => ({
             teams: state.teams
               ? state.teams.map((c) => (c._id === updated._id ? updated : c))
@@ -85,9 +96,7 @@ export const useTeamStore = create<TeamState>()(
           }));
           return updated;
         } catch (err: any) {
-          toast.error(
-            err?.response?.data?.message || "Failed to update contact"
-          );
+          toast.error(err?.response?.data?.message || "Failed to update team");
           throw err;
         } finally {
           set({ isLoading: false });

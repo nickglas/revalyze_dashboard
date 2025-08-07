@@ -14,7 +14,7 @@ import { FaTrashCan } from "react-icons/fa6";
 import { TeamMemberDTO } from "@/models/dto/create.team.dto";
 
 interface ManagerSelectionProps {
-  users: TeamMemberDTO[] | [];
+  users: TeamMemberDTO[];
   onManagerToggle?: (userId: string) => void;
   onUserDiscard?: (userId: string) => void;
 }

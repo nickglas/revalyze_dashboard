@@ -5,23 +5,29 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
+  useDisclosure,
 } from "@heroui/modal";
-import {
-  Button,
-  Input,
-  Textarea,
-  Switch,
-  Chip,
-  Avatar,
-  Badge,
-} from "@heroui/react";
+import { Button, Input, Textarea, Switch, Form } from "@heroui/react";
 import { Team } from "@/models/api/team.api.model";
 import { useTeamStore } from "@/store/teamStore";
+import SearchUsers from "@/components/data/users/searchUsers";
+import { User } from "@/models/api/user.model";
+import { ManagerSelection } from "@/components/managerSelection";
+import { toast } from "react-toastify";
+import { CreateTeamDTO, TeamMemberDTO } from "@/models/dto/create.team.dto";
+import { UpdateTeamDTO } from "@/models/dto/update.team.dto";
 
 interface EditTeamModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   team: Team | null;
+}
+
+interface EditTeamFormState {
+  name: string;
+  description?: string;
+  isActive: boolean;
+  users: TeamMemberDTO[];
 }
 
 export default function EditTeamModal({
@@ -30,67 +36,105 @@ export default function EditTeamModal({
   team,
 }: EditTeamModalProps) {
   const { updateTeam } = useTeamStore();
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    isActive: true,
-    managerId: "",
-  });
+  const [tab, setTab] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [postData, setPostData] = useState<EditTeamFormState>({
+    name: "",
+    description: "",
+    isActive: true,
+    users: [],
+  });
+
   // Initialize form data when team changes
   useEffect(() => {
-    if (team) {
-      const manager = team.users.find((u) => u.isManager)?.user;
+    if (team && isOpen) {
+      // Convert team users to TeamMemberDTO[]
+      const users: TeamMemberDTO[] = team.users.map((member) => ({
+        userId: member.user._id,
+        name: member.user.name,
+        email: member.user.email,
+        isManager: member.isManager,
+      }));
 
-      setFormData({
+      setPostData({
         name: team.name,
         description: team.description || "",
         isActive: team.isActive,
-        managerId: manager?._id || "",
+        users: users,
       });
+      setErrors({});
+      setTab(0);
     }
-  }, [team]);
+  }, [team, isOpen]);
 
-  const validateField = (name: string, value: string) => {
+  const handleAddUser = (user: User) => {
+    setPostData((prev) => ({
+      ...prev,
+      users: [
+        ...prev.users,
+        {
+          userId: user._id,
+          name: user.name,
+          email: user.email,
+          isManager: false,
+        },
+      ],
+    }));
+  };
+
+  const handleManagerToggle = (userId: string) => {
+    setPostData((prev) => {
+      const updatedUsers = prev.users.map((user) =>
+        user.userId === userId ? { ...user, isManager: !user.isManager } : user
+      );
+      return { ...prev, users: updatedUsers };
+    });
+  };
+
+  const validateField = (name: string, value: string | boolean) => {
     if (name === "name") {
-      if (!value.trim()) return "Team name is required.";
-      if (value.length < 3) return "Team name must be at least 3 characters.";
-      if (value.length > 50) return "Team name cannot exceed 50 characters.";
+      if (!value) return "Name is required.";
+      if (typeof value === "string" && value.length < 2)
+        return "Name must be at least 2 characters.";
+      if (typeof value === "string" && value.length > 50)
+        return "Name cannot exceed 50 characters.";
     }
 
-    if (name === "description" && value.length > 500) {
-      return "Description cannot exceed 500 characters.";
+    if (name === "description" && typeof value === "string") {
+      if (value && value.length > 500)
+        return "Description cannot exceed 500 characters.";
     }
 
     return "";
   };
 
   const handleChange = (name: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-
-    if (typeof value === "string" && errors[name]) {
-      const error = validateField(name, value);
-      if (error) {
-        setErrors((prev) => ({ ...prev, [name]: error }));
-      }
-    }
+    setPostData((prev) => ({ ...prev, [name]: value }));
+    const error = validateField(name, value);
+    setErrors((prev) => ({ ...prev, [name]: error }));
   };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    Object.entries(formData).forEach(([key, value]) => {
-      if (key !== "isActive" && key !== "managerId") {
-        const error = validateField(key, value as string);
+    if (!postData.name.trim()) {
+      newErrors.name = "Name is required.";
+    }
+
+    // Validate all fields
+    Object.entries(postData).forEach(([key, value]) => {
+      if (key !== "users") {
+        const error = validateField(key, value);
         if (error) newErrors[key] = error;
       }
     });
+
+    // Special validation for name
+    if (!postData.name.trim()) {
+      newErrors.name = "Name is required.";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -98,151 +142,156 @@ export default function EditTeamModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!team || !validateForm()) return;
 
+    if (!validateForm() || !team) return;
     setIsSubmitting(true);
+
     try {
       await updateTeam(team._id, {
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-        isActive: formData.isActive,
-        // In a real app, you'd update manager here
+        ...postData,
+        name: postData.name.trim(),
+        description: postData.description?.trim() || "",
+        users: postData.users.map((u) => ({
+          userId: u.userId,
+          isManager: u.isManager,
+        })),
       });
-
       onOpenChange(false);
     } catch (error) {
-      console.error("Failed to update team:", error);
-      setErrors({
-        general: "Failed to update team. Please try again.",
-      });
+      console.error("Update failed:", error);
+      toast.error("Failed to update team");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!team) return null;
+  const handleRemoveUser = (userId: string) => {
+    setPostData((prev) => ({
+      ...prev,
+      users: prev.users.filter((user) => user.userId !== userId),
+    }));
+  };
 
-  // Find manager
-  const manager = team.users.find((u) => u.isManager)?.user;
+  if (!team) return null;
 
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="lg">
       <ModalContent>
         {(onClose) => (
-          <form onSubmit={handleSubmit}>
+          <>
             <ModalHeader className="flex flex-col gap-1">
               Edit Team: {team.name}
             </ModalHeader>
             <ModalBody>
-              <div className="flex flex-col gap-6">
-                {errors.general && (
-                  <div className="text-danger text-sm">{errors.general}</div>
-                )}
+              <Form id="edit-team-form" onSubmit={handleSubmit}>
+                <div className="flex flex-col w-full gap-4">
+                  {tab === 0 && (
+                    <>
+                      <Input
+                        isRequired
+                        isInvalid={!!errors.name}
+                        errorMessage={errors.name}
+                        label="Name"
+                        labelPlacement="outside"
+                        name="name"
+                        placeholder="Enter team name"
+                        value={postData.name}
+                        onValueChange={(value) => handleChange("name", value)}
+                        validationBehavior="aria"
+                      />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    isRequired
-                    isInvalid={!!errors.name}
-                    errorMessage={errors.name}
-                    label="Team Name"
-                    labelPlacement="outside"
-                    name="name"
-                    placeholder="Enter team name"
-                    value={formData.name}
-                    onValueChange={(value) => handleChange("name", value)}
-                    validationBehavior="aria"
-                  />
+                      <Textarea
+                        isInvalid={!!errors.description}
+                        errorMessage={errors.description}
+                        label="Description"
+                        labelPlacement="outside"
+                        placeholder="Enter team description (optional)"
+                        value={postData.description}
+                        onValueChange={(value) =>
+                          handleChange("description", value)
+                        }
+                        validationBehavior="aria"
+                      />
 
-                  <div>
-                    <label className="text-sm font-medium">Status</label>
-                    <Switch
-                      isSelected={formData.isActive}
-                      onValueChange={(value) => handleChange("isActive", value)}
-                      className="mt-2"
-                    >
-                      {formData.isActive ? "Active" : "Inactive"}
-                    </Switch>
-                  </div>
-                </div>
+                      <Switch
+                        isSelected={postData.isActive}
+                        onValueChange={(value) =>
+                          handleChange("isActive", value)
+                        }
+                      >
+                        Is active
+                      </Switch>
+                    </>
+                  )}
 
-                <Textarea
-                  isInvalid={!!errors.description}
-                  errorMessage={errors.description}
-                  label="Description"
-                  labelPlacement="outside"
-                  placeholder="Enter team description"
-                  value={formData.description}
-                  onValueChange={(value) => handleChange("description", value)}
-                  validationBehavior="aria"
-                />
-
-                <div>
-                  <label className="text-sm font-medium">Current Manager</label>
-                  {manager ? (
-                    <div className="flex items-center gap-3 p-3 mt-2 border rounded-lg">
-                      <Avatar name={manager.name} />
-                      <div>
-                        <p className="font-medium">{manager.name}</p>
-                        <p className="text-gray-500 text-sm">{manager.email}</p>
+                  {tab === 1 && (
+                    <div className="flex flex-col gap-6">
+                      <SearchUsers
+                        required={false}
+                        onChange={(selectedUser) => {
+                          if (selectedUser) {
+                            handleAddUser(selectedUser);
+                          }
+                        }}
+                      />
+                      <div className="flex flex-col gap-2">
+                        <span className="text-sm">Team Members</span>
+                        <ManagerSelection
+                          users={postData.users}
+                          onUserDiscard={(userId: string) =>
+                            handleRemoveUser(userId)
+                          }
+                          onManagerToggle={(userId: string) => {
+                            handleManagerToggle(userId);
+                          }}
+                        />
                       </div>
-                      <Badge color="primary" className="ml-auto">
-                        Manager
-                      </Badge>
                     </div>
-                  ) : (
-                    <p className="mt-2 text-gray-500">No manager assigned</p>
                   )}
                 </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Team Members
-                  </label>
-                  <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto p-2 border rounded-lg">
-                    {team.users.map((member) => (
-                      <div
-                        key={member.user._id}
-                        className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded"
-                      >
-                        <Avatar name={member.user.name} size="sm" />
-                        <div>
-                          <p className="font-medium">{member.user.name}</p>
-                          <p className="text-gray-500 text-sm">
-                            {member.user.email}
-                          </p>
-                        </div>
-                        {member.isManager && (
-                          <Chip size="sm" color="primary" className="ml-auto">
-                            Manager
-                          </Chip>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              </Form>
             </ModalBody>
             <ModalFooter>
               <div className="flex items-center justify-end gap-4 w-full">
-                <Button
-                  color="danger"
-                  variant="light"
-                  onPress={onClose}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  color="primary"
-                  type="submit"
-                  isLoading={isSubmitting}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Saving..." : "Save Changes"}
-                </Button>
+                {tab === 0 && (
+                  <>
+                    <Button
+                      color="danger"
+                      variant="light"
+                      onPress={onClose}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button color="primary" onPress={() => setTab(tab + 1)}>
+                      Next step
+                    </Button>
+                  </>
+                )}
+
+                {tab === 1 && (
+                  <>
+                    <Button
+                      color="danger"
+                      variant="light"
+                      onPress={() => setTab(tab - 1)}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      color="primary"
+                      type="submit"
+                      form="edit-team-form"
+                      isLoading={isSubmitting}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "Updating..." : "Update Team"}
+                    </Button>
+                  </>
+                )}
               </div>
             </ModalFooter>
-          </form>
+          </>
         )}
       </ModalContent>
     </Modal>

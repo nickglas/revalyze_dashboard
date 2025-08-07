@@ -2,6 +2,7 @@ import api from "@/util/axios";
 import { PaginatedResponse } from "@/models/others/PaginatedResponse";
 import { Team } from "@/models/api/team.api.model";
 import { CreateTeamDTOForAPI } from "@/models/dto/create.team.dto";
+import { UpdateTeamDTO } from "@/models/dto/update.team.dto";
 
 export const getTeams = async (
   page = 1,
@@ -23,6 +24,7 @@ export const getTeams = async (
 };
 
 export const createTeam = async (input: CreateTeamDTOForAPI): Promise<Team> => {
+  console.warn(input);
   const res = await api.post("/api/v1/teams", input);
   return res.data;
 };
@@ -36,8 +38,10 @@ export const toggleStatus = async (team: Team): Promise<Team> => {
 
 export const updateTeam = async (
   id: string,
-  updates: Partial<Team>
+  updates: UpdateTeamDTO
 ): Promise<Team> => {
+  console.warn(id);
+  console.warn(updates);
   const res = await api.patch(`/api/v1/teams/${id}`, updates);
   return res.data;
 };

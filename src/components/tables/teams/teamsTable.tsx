@@ -85,6 +85,7 @@ interface TeamTableRow {
     };
     isManager: boolean;
   }[];
+  original: Team;
 }
 
 export default function TeamsTable() {
@@ -160,6 +161,7 @@ export default function TeamsTable() {
         isActive: team.isActive,
         createdAt: new Date(team.createdAt),
         users: team.users,
+        original: team, // <-- preserve original team
       };
     });
   }, [teams]);
@@ -263,13 +265,13 @@ export default function TeamsTable() {
                 <DropdownMenu>
                   <DropdownItem
                     key="view"
-                    onPress={() => handleView(team as unknown as Team)}
+                    onPress={() => handleView(team.original)}
                   >
                     View
                   </DropdownItem>
                   <DropdownItem
                     key="edit"
-                    onPress={() => handleEdit(team as unknown as Team)}
+                    onPress={() => handleEdit(team.original)}
                   >
                     Edit
                   </DropdownItem>

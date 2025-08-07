@@ -14,7 +14,7 @@ import SearchUsers from "@/components/data/users/searchUsers";
 import { User } from "@/models/api/user.model";
 import { ManagerSelection } from "@/components/managerSelection";
 import { toast } from "react-toastify";
-import { CreateTeamDTO, TeamMemberDTO } from "@/models/dto/create.team.dto";
+import { CreateTeamDTO } from "@/models/dto/create.team.dto";
 
 export default function AddTeamModal() {
   const [tab, setTab] = useState(0);
