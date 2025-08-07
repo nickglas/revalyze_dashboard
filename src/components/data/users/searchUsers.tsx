@@ -17,7 +17,7 @@ function useDebounce<T>(value: T, delay = 750): T {
 }
 
 type Props = {
-  value?: User; // Selected company object
+  value?: User;
   onChange?: (value: User | null) => void;
   required: boolean;
 };
@@ -42,13 +42,12 @@ const SearchUsers = ({ value, onChange, required }: Props) => {
       }));
       setUsers(transformed);
     } catch (err) {
-      console.error("Failed to fetch companies:", err);
+      console.error("Failed to fetch users:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Set initial input value when value changes
   useEffect(() => {
     if (value) {
       setInputValue(value.name);
@@ -57,30 +56,22 @@ const SearchUsers = ({ value, onChange, required }: Props) => {
     }
   }, [value]);
 
-  // Handle search trigger
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
 
-    if (debouncedQuery.trim().length > 0 && !isSelection.current) {
+    if (debouncedQuery.trim().length > 0) {
       fetchUser(debouncedQuery);
     } else {
       setUsers([]);
     }
-
-    // Reset selection flag after search
-    isSelection.current = false;
   }, [debouncedQuery]);
 
   const handleInputChange = (value: string) => {
     setInputValue(value);
-
-    // Only set search query if we're not in "selection mode"
-    if (!isSelection.current) {
-      setSearchQuery(value);
-    }
+    setSearchQuery(value);
   };
 
   return (
@@ -91,13 +82,14 @@ const SearchUsers = ({ value, onChange, required }: Props) => {
       items={users}
       selectedKey={value?._id}
       onSelectionChange={(key) => {
-        console.warn(key);
         const selected = users.find((c) => c._id === key);
         if (selected) {
-          console.warn(selected);
+          // Reset selection flag immediately after handling
           isSelection.current = true;
           setInputValue(selected.name);
           if (onChange) onChange(selected);
+          // Reset flag to allow new searches
+          isSelection.current = false;
         } else {
           setInputValue("");
           if (onChange) onChange(null);
