@@ -4,9 +4,20 @@ import { PaginatedResponse } from "@/models/others/PaginatedResponse";
 
 export const getCriteria = async (
   page = 1,
-  limit = 20
+  limit = 20,
+  filters: any = {}
 ): Promise<PaginatedResponse<Criterion>> => {
-  const res = await api.get(`/api/v1/criteria?page=${page}&limit=${limit}`);
+  const params = {
+    page,
+    limit,
+    ...filters,
+  };
+
+  Object.keys(params).forEach(
+    (key) => params[key] === undefined && delete params[key]
+  );
+
+  const res = await api.get(`/api/v1/criteria`, { params });
   return res.data;
 };
 

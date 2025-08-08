@@ -10,7 +10,7 @@ interface CriteriaState {
   meta: PaginationMeta | null;
   isLoading: boolean;
 
-  fetchCriteria: (page?: number, limit?: number) => Promise<void>;
+  fetchCriteria: (filters: any, page?: number, limit?: number) => Promise<void>;
   createCriterion: (input: {
     title: string;
     description: string;
@@ -30,10 +30,10 @@ export const useCriteriaStore = create<CriteriaState>()(
       meta: null,
       isLoading: false,
 
-      fetchCriteria: async (page = 1, limit = 20) => {
+      fetchCriteria: async (filters: any = {}, page = 1, limit = 20) => {
         set({ isLoading: true });
         try {
-          const res = await service.getCriteria(page, limit);
+          const res = await service.getCriteria(page, limit, filters);
           set({
             criteria: res.data,
             meta: res.meta,

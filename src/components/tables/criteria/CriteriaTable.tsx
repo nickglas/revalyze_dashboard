@@ -17,13 +17,13 @@ import {
   Spinner,
   Tooltip,
   Switch,
+  useDisclosure,
 } from "@heroui/react";
 import { SearchIcon } from "@/components/icons";
 import { ChevronDownIcon, VerticalDotsIcon } from "../users/userTable";
 import AddCriteriaModal from "@/components/modals/criteria/addCriteriaModal";
 import { useCriteriaStore } from "@/store/criteriaStore";
 import { Criterion } from "@/models/api/criteria.api.model";
-import { useDisclosure } from "@heroui/modal";
 import ViewCriteriaModal from "@/components/modals/criteria/viewCriteriaModal";
 import EditCriteriaModal from "@/components/modals/criteria/editCriteriaModal";
 
@@ -60,131 +60,66 @@ export default function CriteriaTable() {
     fetchCriteria,
     toggleCriterionStatus,
   } = useCriteriaStore();
+
   const [filterValue, setFilterValue] = useState("");
-  const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
-  );
   const [statusFilter, setStatusFilter] = useState("all");
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [page, setPage] = useState(1);
+  const [sortDescriptor, setSortDescriptor] = useState({
+    column: "createdAt",
+    direction: "descending" as "ascending" | "descending",
+  });
 
-  const handleSortChange = (descriptor: any) => {
-    setSortDescriptor({
-      column: String(descriptor.column),
-      direction: descriptor.direction,
-    });
-  };
-
-  const {
-    isOpen: isViewModalOpen,
-    onOpen: onViewModalOpen,
-    onOpenChange: onViewModalOpenChange,
-  } = useDisclosure();
-
-  const {
-    isOpen: isEditModalOpen,
-    onOpen: onEditModalOpen,
-    onOpenChange: onEditModalOpenChange,
-  } = useDisclosure();
-
+  // Modal controls
+  const viewModal = useDisclosure();
+  const editModal = useDisclosure();
   const [selectedCriterion, setSelectedCriterion] = useState<Criterion | null>(
     null
   );
 
-  const handleEdit = (criterion: Criterion) => {
-    setSelectedCriterion(criterion);
-    onEditModalOpen();
-  };
-
+  // Handle view action
   const handleView = (criterion: Criterion) => {
     setSelectedCriterion(criterion);
-    onViewModalOpen();
+    viewModal.onOpen();
   };
 
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [sortDescriptor, setSortDescriptor] = useState<{
-    column: string;
-    direction: "ascending" | "descending";
-  }>({
-    column: "createdAt",
-    direction: "descending",
-  });
-  const [page, setPage] = useState(1);
+  // Handle edit action
+  const handleEdit = (criterion: Criterion) => {
+    setSelectedCriterion(criterion);
+    editModal.onOpen();
+  };
 
-  // Fetch criteria only if store is empty
+  // Fetch data when filters, pagination, or sorting changes
   useEffect(() => {
-    if (!storeCriteria) {
-      fetchCriteria();
-    }
-  }, [storeCriteria, fetchCriteria]);
-
-  // Use original criteria directly
-  const criteria = storeCriteria || [];
-
-  const hasSearchFilter = Boolean(filterValue);
-
-  const headerColumns = useMemo(() => {
-    return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+    fetchCriteria(
+      {
+        name: filterValue || undefined,
+        isActive:
+          statusFilter !== "all" ? statusFilter === "active" : undefined,
+        sortBy: sortDescriptor.column,
+        sortOrder: sortDescriptor.direction === "ascending" ? "asc" : "desc",
+      },
+      page,
+      rowsPerPage
     );
-  }, [visibleColumns]);
+  }, [
+    page,
+    rowsPerPage,
+    statusFilter,
+    filterValue,
+    sortDescriptor,
+    fetchCriteria,
+  ]);
 
-  const filteredItems = useMemo(() => {
-    let filteredCriteria = [...criteria];
-
-    if (hasSearchFilter) {
-      filteredCriteria = filteredCriteria.filter(
-        (criterion) =>
-          criterion.title.toLowerCase().includes(filterValue.toLowerCase()) ||
-          criterion.description
-            .toLowerCase()
-            .includes(filterValue.toLowerCase())
-      );
-    }
-
-    if (statusFilter !== "all") {
-      filteredCriteria = filteredCriteria.filter((criterion) =>
-        statusFilter === "active" ? criterion.isActive : !criterion.isActive
-      );
-    }
-
-    return filteredCriteria;
-  }, [criteria, filterValue, statusFilter]);
-
-  const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
-
-  const items = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return filteredItems.slice(start, end);
-  }, [page, filteredItems, rowsPerPage]);
-
-  const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => {
-      let first: any, second: any;
-
-      // Handle sorting for each column using original model properties
-      switch (sortDescriptor.column) {
-        case "title":
-        case "description":
-          first = a[sortDescriptor.column];
-          second = b[sortDescriptor.column];
-          break;
-        case "isActive":
-          first = a.isActive ? 1 : 0;
-          second = b.isActive ? 1 : 0;
-          break;
-        case "createdAt":
-          first = new Date(a.createdAt).getTime();
-          second = new Date(b.createdAt).getTime();
-          break;
-        default:
-          first = 0;
-          second = 0;
-      }
-
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
+  const handleSortChange = (descriptor: any) => {
+    setSortDescriptor({
+      column: descriptor.column,
+      direction: descriptor.direction,
     });
-  }, [sortDescriptor, items]);
+    setPage(1); // Reset to first page when sorting changes
+  };
+
+  const criteria = storeCriteria || [];
 
   const renderCell = useCallback(
     (criterion: Criterion, columnKey: React.Key) => {
@@ -276,40 +211,29 @@ export default function CriteriaTable() {
           return null;
       }
     },
-    [toggleCriterionStatus]
+    [toggleCriterionStatus, handleView, handleEdit]
   );
 
-  const onNextPage = React.useCallback(() => {
-    if (page < pages) setPage(page + 1);
-  }, [page, pages]);
-
-  const onPreviousPage = React.useCallback(() => {
-    if (page > 1) setPage(page - 1);
-  }, [page]);
-
-  const onRowsPerPageChange = React.useCallback(
+  const onRowsPerPageChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setRowsPerPage(Number(e.target.value));
-      setPage(1);
+      const newRowsPerPage = Number(e.target.value);
+      setRowsPerPage(newRowsPerPage);
+      setPage(1); // Reset to first page when rows per page changes
     },
     []
   );
 
-  const onSearchChange = React.useCallback((value: string) => {
-    if (value) {
-      setFilterValue(value);
-      setPage(1);
-    } else {
-      setFilterValue("");
-    }
+  const onSearchChange = useCallback((value: string) => {
+    setFilterValue(value);
+    setPage(1); // Reset to first page when search changes
   }, []);
 
-  const onClear = React.useCallback(() => {
+  const onClear = useCallback(() => {
     setFilterValue("");
     setPage(1);
   }, []);
 
-  const topContent = React.useMemo(() => {
+  const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
@@ -319,7 +243,7 @@ export default function CriteriaTable() {
             placeholder="Search by title or description..."
             startContent={<SearchIcon />}
             value={filterValue}
-            onClear={() => setFilterValue("")}
+            onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
@@ -360,14 +284,14 @@ export default function CriteriaTable() {
           <span className="text-default-400 text-small">
             {isLoading
               ? "Loading criteria..."
-              : `Showing ${filteredItems.length} of ${meta?.total || 0} criteria`}
+              : `Showing ${criteria.length} of ${meta?.total || 0} criteria`}
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
               className="bg-transparent outline-none text-default-400 text-small ml-1"
               onChange={onRowsPerPageChange}
-              defaultValue="5"
+              value={rowsPerPage}
             >
               <option value="5">5</option>
               <option value="10">10</option>
@@ -382,21 +306,23 @@ export default function CriteriaTable() {
     statusFilter,
     onSearchChange,
     onRowsPerPageChange,
-    filteredItems.length,
+    criteria.length,
     isLoading,
     meta?.total,
+    rowsPerPage,
   ]);
 
-  const bottomContent = React.useMemo(() => {
+  const bottomContent = useMemo(() => {
     if (isLoading) return null;
 
-    const startItem = (page - 1) * rowsPerPage + 1;
-    const endItem = Math.min(page * rowsPerPage, filteredItems.length);
+    const startItem = meta ? (meta.page - 1) * meta.limit + 1 : 0;
+    const endItem = meta ? Math.min(meta.page * meta.limit, meta.total) : 0;
+    const total = meta?.total || 0;
 
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {`Showing ${startItem} to ${endItem} of ${filteredItems.length} criteria`}
+          {`Showing ${startItem} to ${endItem} of ${total} criteria`}
         </span>
         <Pagination
           isCompact
@@ -404,38 +330,30 @@ export default function CriteriaTable() {
           showShadow
           color="primary"
           page={page}
-          total={pages}
+          total={meta?.pages || 1}
           onChange={setPage}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
-            isDisabled={pages === 1}
+            isDisabled={page === 1}
             size="sm"
             variant="flat"
-            onPress={onPreviousPage}
+            onPress={() => setPage(page - 1)}
           >
             Previous
           </Button>
           <Button
-            isDisabled={pages === 1}
+            isDisabled={page === (meta?.pages || 1)}
             size="sm"
             variant="flat"
-            onPress={onNextPage}
+            onPress={() => setPage(page + 1)}
           >
             Next
           </Button>
         </div>
       </div>
     );
-  }, [
-    page,
-    pages,
-    filteredItems.length,
-    rowsPerPage,
-    onPreviousPage,
-    onNextPage,
-    isLoading,
-  ]);
+  }, [page, isLoading, meta]);
 
   return (
     <>
@@ -452,7 +370,7 @@ export default function CriteriaTable() {
         topContentPlacement="outside"
         onSortChange={handleSortChange}
       >
-        <TableHeader columns={headerColumns}>
+        <TableHeader columns={columns}>
           {(column) => (
             <TableColumn
               key={column.uid}
@@ -465,7 +383,7 @@ export default function CriteriaTable() {
         </TableHeader>
         <TableBody
           emptyContent={isLoading ? " " : "No criteria found"}
-          items={isLoading ? [] : sortedItems}
+          items={isLoading ? [] : criteria}
           loadingContent={<Spinner label="Loading criteria..." />}
           loadingState={isLoading ? "loading" : "idle"}
         >
@@ -479,13 +397,13 @@ export default function CriteriaTable() {
         </TableBody>
       </Table>
       <ViewCriteriaModal
-        isOpen={isViewModalOpen}
-        onOpenChange={onViewModalOpenChange}
+        isOpen={viewModal.isOpen}
+        onOpenChange={viewModal.onOpenChange}
         criterion={selectedCriterion}
       />
       <EditCriteriaModal
-        isOpen={isEditModalOpen}
-        onOpenChange={onEditModalOpenChange}
+        isOpen={editModal.isOpen}
+        onOpenChange={editModal.onOpenChange}
         criterion={selectedCriterion}
       />
     </>
