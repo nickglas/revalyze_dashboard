@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Table,
   TableHeader,
@@ -18,9 +18,13 @@ import {
   Avatar,
   Tooltip,
   useDisclosure,
+  Switch,
 } from "@heroui/react";
-import { SearchIcon } from "@/components/icons";
-import { ChevronDownIcon, VerticalDotsIcon } from "../users/userTable";
+import {
+  ChevronDownIcon,
+  SearchIcon,
+  VerticalDotsIcon,
+} from "../users/userTable";
 import { useContactStore } from "@/store/contactStore";
 import { Contact } from "@/models/api/contact.api.model";
 import ViewExternalContactModal from "@/components/modals/contacts/viewExternalContactModal";
@@ -52,33 +56,30 @@ const statusColorMap = {
   inactive: "danger",
 };
 
-const INITIAL_VISIBLE_COLUMNS = [
-  "name",
-  "email",
-  "phone",
-  "position",
-  "company",
-  "status",
-  "createdAt",
-  "actions",
-];
+interface ContactTableRow {
+  id: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  position: string;
+  company: string;
+  status: "active" | "inactive";
+  createdAt: Date;
+  original: Contact;
+}
 
 export default function ExternalContactsTable() {
   const { contacts, meta, isLoading, fetchContacts } = useContactStore();
   const [filterValue, setFilterValue] = useState("");
-  const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
-  );
   const [statusFilter, setStatusFilter] = useState("all");
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [sortDescriptor, setSortDescriptor] = useState<{
-    column: string;
-    direction: "ascending" | "descending";
-  }>({
-    column: "createdAt",
-    direction: "descending",
-  });
   const [page, setPage] = useState(1);
+  const [sortDescriptor, setSortDescriptor] = useState({
+    column: "createdAt",
+    direction: "descending" as "ascending" | "descending",
+  });
 
   // Modal controls
   const viewModal = useDisclosure();
@@ -97,16 +98,43 @@ export default function ExternalContactsTable() {
     editModal.onOpen();
   };
 
-  // Fetch data only if store is empty
+  // Fetch data when parameters change
   useEffect(() => {
-    if (!contacts || contacts.length === 0) {
-      fetchContacts(1, 1000); // Fetch all contacts for client-side filtering
-    }
-  }, [contacts, fetchContacts]);
+    fetchContacts(
+      {
+        name: filterValue || undefined,
+        email: filterValue || undefined,
+        phone: filterValue || undefined,
+        position: filterValue || undefined,
+        isActive:
+          statusFilter !== "all" ? statusFilter === "active" : undefined,
+        sortBy: sortDescriptor.column,
+        sortOrder: sortDescriptor.direction === "ascending" ? "asc" : "desc",
+      },
+      page,
+      rowsPerPage
+    );
+  }, [
+    page,
+    rowsPerPage,
+    statusFilter,
+    filterValue,
+    sortDescriptor,
+    fetchContacts,
+  ]);
+
+  const handleSortChange = (descriptor: any) => {
+    setSortDescriptor({
+      column: descriptor.column,
+      direction: descriptor.direction,
+    });
+    setPage(1);
+  };
 
   // Map API data to table format
-  const externalContacts = React.useMemo(() => {
+  const tableRows = useMemo<ContactTableRow[]>(() => {
     if (!contacts) return [];
+
     return contacts.map((contact) => ({
       id: contact._id,
       name: `${contact.firstName} ${contact.lastName}`,
@@ -118,220 +146,159 @@ export default function ExternalContactsTable() {
       company: contact.externalCompany?.name || "Unknown Company",
       status: contact.isActive ? "active" : "inactive",
       createdAt: new Date(contact.createdAt),
-      rawContact: contact, // Keep reference to original contact
+      original: contact,
     }));
   }, [contacts]);
 
-  const hasSearchFilter = Boolean(filterValue);
-
-  const headerColumns = React.useMemo(() => {
-    return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
-    );
-  }, [visibleColumns]);
-
-  const filteredItems = React.useMemo(() => {
-    let filteredContacts = [...externalContacts];
-
-    if (hasSearchFilter) {
-      filteredContacts = filteredContacts.filter(
-        (contact) =>
-          contact.name.toLowerCase().includes(filterValue.toLowerCase()) ||
-          contact.email.toLowerCase().includes(filterValue.toLowerCase()) ||
-          contact.position.toLowerCase().includes(filterValue.toLowerCase()) ||
-          contact.company.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    }
-
-    if (statusFilter !== "all") {
-      filteredContacts = filteredContacts.filter(
-        (contact) => contact.status === statusFilter
-      );
-    }
-
-    return filteredContacts;
-  }, [externalContacts, filterValue, statusFilter]);
-
-  const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
-
-  const items = React.useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return filteredItems.slice(start, end);
-  }, [page, filteredItems, rowsPerPage]);
-
-  const sortedItems = React.useMemo(() => {
-    return [...items].sort((a, b) => {
-      let first: any, second: any;
-
-      if (sortDescriptor.column === "createdAt") {
-        first = a.createdAt.getTime();
-        second = b.createdAt.getTime();
-      } else {
-        first = a[sortDescriptor.column as keyof typeof a];
-        second = b[sortDescriptor.column as keyof typeof b];
-      }
-
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
-  }, [sortDescriptor, items]);
-
-  const renderCell = React.useCallback((contact: any, columnKey: React.Key) => {
-    const cellValue = contact[columnKey as keyof typeof contact];
-
-    switch (columnKey) {
-      case "name":
-        return (
-          <div className="flex items-center gap-3">
-            <Avatar
-              name={contact.name}
-              getInitials={(name: string) =>
-                `${contact.firstName[0]}${contact.lastName[0]}`
-              }
-            />
-            <div>
-              <p className="font-medium">{contact.name}</p>
-              <p className="text-gray-500 text-sm">{contact.position}</p>
+  const renderCell = useCallback(
+    (contact: ContactTableRow, columnKey: string | number) => {
+      switch (columnKey) {
+        case "name":
+          return (
+            <div className="flex items-center gap-3">
+              <Avatar
+                name={contact.name}
+                getInitials={(name: string) =>
+                  `${contact.firstName[0]}${contact.lastName[0]}`
+                }
+              />
+              <div>
+                <p className="font-medium">{contact.name}</p>
+                <p className="text-gray-500 text-sm">{contact.position}</p>
+              </div>
             </div>
-          </div>
-        );
+          );
 
-      case "email":
-        return (
-          <div className="flex items-center">
-            <a
-              href={`mailto:${contact.email}`}
-              className="text-blue-500 hover:underline"
+        case "email":
+          return (
+            <div className="flex items-center">
+              <a
+                href={`mailto:${contact.email}`}
+                className="text-blue-500 hover:underline"
+              >
+                {contact.email}
+              </a>
+            </div>
+          );
+
+        case "phone":
+          return (
+            <div className="flex items-center">
+              <a href={`tel:${contact.phone}`} className="text-gray-600">
+                {contact.phone}
+              </a>
+            </div>
+          );
+
+        case "position":
+          return <div className="text-gray-600">{contact.position}</div>;
+
+        case "company":
+          return (
+            <div className="flex items-center gap-2">
+              <Avatar name={contact.company} />
+              <span>{contact.company}</span>
+            </div>
+          );
+
+        case "status":
+          return (
+            <Chip
+              className="capitalize"
+              color={
+                statusColorMap[
+                  contact.status as keyof typeof statusColorMap
+                ] as
+                  | "default"
+                  | "primary"
+                  | "secondary"
+                  | "success"
+                  | "warning"
+                  | "danger"
+                  | undefined
+              }
+              size="sm"
+              variant="flat"
             >
-              {contact.email}
-            </a>
-          </div>
-        );
+              {contact.status}
+            </Chip>
+          );
 
-      case "phone":
-        return (
-          <div className="flex items-center">
-            <a href={`tel:${contact.phone}`} className="text-gray-600">
-              {contact.phone}
-            </a>
-          </div>
-        );
+        case "createdAt":
+          return (
+            <div className="flex flex-col">
+              <p className="font-medium">
+                {contact.createdAt.toLocaleDateString()}
+              </p>
+              <p className="text-gray-500 text-sm">
+                {contact.createdAt.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+          );
 
-      case "position":
-        return <div className="text-gray-600">{contact.position}</div>;
+        case "actions":
+          return (
+            <div className="relative flex justify-end items-center gap-2">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button isIconOnly size="sm" variant="light">
+                    <VerticalDotsIcon className="text-default-300" />
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu aria-label="Contact Actions">
+                  <DropdownItem
+                    key="view"
+                    onPress={() => handleView(contact.original)}
+                  >
+                    View Details
+                  </DropdownItem>
+                  <DropdownItem
+                    key="edit"
+                    onPress={() => handleEdit(contact.original)}
+                  >
+                    Edit
+                  </DropdownItem>
+                  <DropdownItem key="transcripts">
+                    View Transcripts
+                  </DropdownItem>
+                  <DropdownItem key="delete" className="text-danger">
+                    Delete
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          );
 
-      case "company":
-        return (
-          <div className="flex items-center gap-2">
-            <Avatar name={contact.company} />
-            <span>{contact.company}</span>
-          </div>
-        );
+        default:
+          return null;
+      }
+    },
+    [handleView, handleEdit]
+  );
 
-      case "status":
-        return (
-          <Chip
-            className="capitalize"
-            color={
-              statusColorMap[contact.status as keyof typeof statusColorMap] as
-                | "default"
-                | "primary"
-                | "secondary"
-                | "success"
-                | "warning"
-                | "danger"
-                | undefined
-            }
-            size="sm"
-            variant="flat"
-          >
-            {contact.status}
-          </Chip>
-        );
-
-      case "createdAt":
-        return (
-          <div className="flex flex-col">
-            <p className="font-medium">
-              {contact.createdAt.toLocaleDateString()}
-            </p>
-            <p className="text-gray-500 text-sm">
-              {contact.createdAt.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
-          </div>
-        );
-
-      case "actions":
-        return (
-          <div className="relative flex justify-end items-center gap-2">
-            <Dropdown>
-              <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light">
-                  <VerticalDotsIcon className="text-default-300" />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu aria-label="Contact Actions">
-                <DropdownItem
-                  key="view"
-                  onPress={() => handleView(contact.rawContact)}
-                >
-                  View Details
-                </DropdownItem>
-                <DropdownItem
-                  key="edit"
-                  onPress={() => handleEdit(contact.rawContact)}
-                >
-                  Edit
-                </DropdownItem>
-                <DropdownItem key="transcripts">View Transcripts</DropdownItem>
-                <DropdownItem key="delete" className="text-danger">
-                  Delete
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        );
-
-      default:
-        return cellValue;
-    }
-  }, []);
-
-  const onNextPage = React.useCallback(() => {
-    if (page < pages) setPage(page + 1);
-  }, [page, pages]);
-
-  const onPreviousPage = React.useCallback(() => {
-    if (page > 1) setPage(page - 1);
-  }, [page]);
-
-  const onRowsPerPageChange = React.useCallback(
+  const onRowsPerPageChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setRowsPerPage(Number(e.target.value));
+      const newRowsPerPage = Number(e.target.value);
+      setRowsPerPage(newRowsPerPage);
       setPage(1);
     },
     []
   );
 
-  const onSearchChange = React.useCallback((value: string) => {
-    if (value) {
-      setFilterValue(value);
-      setPage(1);
-    } else {
-      setFilterValue("");
-    }
+  const onSearchChange = useCallback((value: string) => {
+    setFilterValue(value);
+    setPage(1);
   }, []);
 
-  const onClear = React.useCallback(() => {
+  const onClear = useCallback(() => {
     setFilterValue("");
     setPage(1);
   }, []);
 
-  const topContent = React.useMemo(() => {
+  const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
@@ -341,7 +308,7 @@ export default function ExternalContactsTable() {
             placeholder="Search by name, email, position, or company..."
             startContent={<SearchIcon />}
             value={filterValue}
-            onClear={() => setFilterValue("")}
+            onClear={onClear}
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
@@ -382,14 +349,14 @@ export default function ExternalContactsTable() {
           <span className="text-default-400 text-small">
             {isLoading
               ? "Loading contacts..."
-              : `Showing ${filteredItems.length} of ${meta?.total || 0} contacts`}
+              : `Showing ${contacts?.length || 0} of ${meta?.total || 0} contacts`}
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
               className="bg-transparent outline-none text-default-400 text-small ml-1"
               onChange={onRowsPerPageChange}
-              defaultValue="5"
+              value={rowsPerPage}
             >
               <option value="5">5</option>
               <option value="10">10</option>
@@ -404,21 +371,23 @@ export default function ExternalContactsTable() {
     statusFilter,
     onSearchChange,
     onRowsPerPageChange,
-    filteredItems.length,
+    contacts,
     isLoading,
     meta?.total,
+    rowsPerPage,
   ]);
 
-  const bottomContent = React.useMemo(() => {
+  const bottomContent = useMemo(() => {
     if (isLoading) return null;
 
-    const startItem = (page - 1) * rowsPerPage + 1;
-    const endItem = Math.min(page * rowsPerPage, filteredItems.length);
+    const startItem = meta ? (meta.page - 1) * meta.limit + 1 : 0;
+    const endItem = meta ? Math.min(meta.page * meta.limit, meta.total) : 0;
+    const total = meta?.total || 0;
 
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {`Showing ${startItem} to ${endItem} of ${filteredItems.length} contacts`}
+          {`Showing ${startItem} to ${endItem} of ${total} contacts`}
         </span>
         <Pagination
           isCompact
@@ -426,38 +395,30 @@ export default function ExternalContactsTable() {
           showShadow
           color="primary"
           page={page}
-          total={pages}
+          total={meta?.pages || 1}
           onChange={setPage}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
-            isDisabled={pages === 1}
+            isDisabled={page === 1}
             size="sm"
             variant="flat"
-            onPress={onPreviousPage}
+            onPress={() => setPage(page - 1)}
           >
             Previous
           </Button>
           <Button
-            isDisabled={pages === 1}
+            isDisabled={page === (meta?.pages || 1)}
             size="sm"
             variant="flat"
-            onPress={onNextPage}
+            onPress={() => setPage(page + 1)}
           >
             Next
           </Button>
         </div>
       </div>
     );
-  }, [
-    page,
-    pages,
-    filteredItems.length,
-    rowsPerPage,
-    onPreviousPage,
-    onNextPage,
-    isLoading,
-  ]);
+  }, [page, isLoading, meta]);
 
   return (
     <>
@@ -472,14 +433,9 @@ export default function ExternalContactsTable() {
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        onSortChange={(descriptor) =>
-          setSortDescriptor({
-            column: String(descriptor.column),
-            direction: descriptor.direction,
-          })
-        }
+        onSortChange={handleSortChange}
       >
-        <TableHeader columns={headerColumns}>
+        <TableHeader columns={columns}>
           {(column) => (
             <TableColumn
               key={column.uid}
@@ -492,7 +448,7 @@ export default function ExternalContactsTable() {
         </TableHeader>
         <TableBody
           emptyContent={isLoading ? " " : "No contacts found"}
-          items={isLoading ? [] : sortedItems}
+          items={isLoading ? [] : tableRows}
           loadingContent={<Spinner label="Loading contacts..." />}
           loadingState={isLoading ? "loading" : "idle"}
         >

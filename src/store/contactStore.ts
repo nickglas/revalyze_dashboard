@@ -10,7 +10,8 @@ interface ContactState {
   meta: PaginationMeta | null;
   isLoading: boolean;
 
-  fetchContacts: (page?: number, limit?: number) => Promise<void>;
+  fetchContacts: (filters: any, page?: number, limit?: number) => Promise<void>;
+
   createContact: (input: {
     firstName: string;
     lastName: string;
@@ -20,6 +21,7 @@ interface ContactState {
     isActive: boolean;
     externalCompanyId: string;
   }) => Promise<Contact>;
+
   updateContact: (id: string, updates: Partial<Contact>) => Promise<Contact>;
 }
 
@@ -30,10 +32,11 @@ export const useContactStore = create<ContactState>()(
       meta: null,
       isLoading: false,
 
-      fetchContacts: async (page = 1, limit = 20) => {
+      // Updated to accept filters
+      fetchContacts: async (filters: any = {}, page = 1, limit = 20) => {
         set({ isLoading: true });
         try {
-          const res = await service.getContacts(page, limit);
+          const res = await service.getContacts(page, limit, filters);
           set({
             contacts: res.data,
             meta: res.meta,
@@ -96,7 +99,7 @@ export const useContactStore = create<ContactState>()(
     {
       name: "contacts-storage",
       partialize: (state) => ({
-        criteria: state.contacts,
+        contacts: state.contacts,
         meta: state.meta,
       }),
     }

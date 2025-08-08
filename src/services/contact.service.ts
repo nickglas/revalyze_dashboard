@@ -4,9 +4,20 @@ import { Contact } from "@/models/api/contact.api.model";
 
 export const getContacts = async (
   page = 1,
-  limit = 20
+  limit = 20,
+  filters: any = {}
 ): Promise<PaginatedResponse<Contact>> => {
-  const res = await api.get(`/api/v1/contacts?page=${page}&limit=${limit}`);
+  const params = {
+    page,
+    limit,
+    ...filters,
+  };
+
+  Object.keys(params).forEach(
+    (key) => params[key] === undefined && delete params[key]
+  );
+
+  const res = await api.get("/api/v1/contacts", { params });
   return res.data;
 };
 
