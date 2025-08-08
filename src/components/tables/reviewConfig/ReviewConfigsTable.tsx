@@ -23,11 +23,10 @@ import {
   VerticalDotsIcon,
   ChevronDownIcon,
 } from "../users/userTable";
-import { useTeamStore } from "@/store/teamStore"; // Assuming this is your review config store
 import { ReviewConfig } from "@/models/api/review.config.api.model";
-import AddReviewConfigModal from "@/components/modals/reviewConfigs/addReviewConfig";
-import EditReviewConfigModal from "@/components/modals/reviewConfigs/editReviewConfig";
-import ViewReviewConfigModal from "@/components/modals/reviewConfigs/viewReviewConfig";
+import AddReviewConfigModal from "@/components/modals/reviewConfigs/addReviewConfigModal";
+import EditReviewConfigModal from "@/components/modals/reviewConfigs/editReviewConfigModal";
+import ViewReviewConfigModal from "@/components/modals/reviewConfigs/viewReviewConfigModal";
 import { useReviewConfigStore } from "@/store/reviewConfigStore";
 
 export const columns = [

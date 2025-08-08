@@ -7,3 +7,7 @@ export interface Criterion {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CriterionWeight extends Criterion {
+  weight: number;
+}

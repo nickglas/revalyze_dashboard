@@ -4,7 +4,10 @@ import { PaginationMeta } from "@/models/others/PaginationMeta";
 import * as service from "@/services/review.config.service";
 import { toast } from "react-toastify";
 import { ReviewConfig } from "@/models/api/review.config.api.model";
-import { CreateReviewConfigDTO } from "@/models/dto/review.config.dto";
+import {
+  CreateReviewConfigDTO,
+  UpdateReviewConfigDTO,
+} from "@/models/dto/review.config.dto";
 
 interface ReviewConfigState {
   reviewConfigs: ReviewConfig[] | null;
@@ -18,6 +21,11 @@ interface ReviewConfigState {
   ) => Promise<void>;
 
   createReviewConfig: (data: CreateReviewConfigDTO) => Promise<void>;
+  updateReviewConfig: (
+    id: string,
+    data: UpdateReviewConfigDTO
+  ) => Promise<void>;
+  toggleStatus: (config: ReviewConfig) => Promise<void>;
 }
 
 export const useReviewConfigStore = create<ReviewConfigState>()(
@@ -52,6 +60,47 @@ export const useReviewConfigStore = create<ReviewConfigState>()(
           await get().fetchReviewConfigs({}, 1, get().meta?.limit || 5);
         } catch (err) {
           toast.error("Failed to create review configuration");
+          console.error(err);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+      updateReviewConfig: async (id, data) => {
+        set({ isLoading: true });
+        try {
+          const updated = await service.updateConfig(id, data);
+          set((state) => ({
+            reviewConfigs: state.reviewConfigs
+              ? state.reviewConfigs.map((c) =>
+                  c._id === updated._id ? updated : c
+                )
+              : null,
+          }));
+          toast.success("Review configuration updated successfully!");
+        } catch (err) {
+          toast.error("Failed to update review configuration");
+          console.error(err);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      toggleStatus: async (config) => {
+        set({ isLoading: true });
+        try {
+          const updated = await service.toggleStatus(config);
+          set((state) => ({
+            reviewConfigs: state.reviewConfigs
+              ? state.reviewConfigs.map((c) =>
+                  c._id === updated._id ? updated : c
+                )
+              : null,
+          }));
+          toast.success(
+            `Configuration ${updated.isActive ? "activated" : "deactivated"}`
+          );
+        } catch (err) {
+          toast.error("Failed to update status");
           console.error(err);
         } finally {
           set({ isLoading: false });

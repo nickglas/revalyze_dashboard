@@ -1,7 +1,10 @@
 import api from "@/util/axios";
 import { PaginatedResponse } from "@/models/others/PaginatedResponse";
 import { ReviewConfig } from "@/models/api/review.config.api.model";
-import { CreateReviewConfigDTO } from "@/models/dto/review.config.dto";
+import {
+  CreateReviewConfigDTO,
+  UpdateReviewConfigDTO,
+} from "@/models/dto/review.config.dto";
 
 export const getConfigs = async (
   page = 1,
@@ -29,11 +32,22 @@ export const createConfig = async (
   return res.data;
 };
 
+export const updateConfig = async (
+  id: string,
+  input: UpdateReviewConfigDTO
+): Promise<ReviewConfig> => {
+  const res = await api.patch(`/api/v1/review-configs/${id}`, input);
+  return res.data;
+};
+
 export const toggleStatus = async (
   reviewConfig: ReviewConfig
 ): Promise<ReviewConfig> => {
-  const res = await api.patch(`/api/v1/teams/${reviewConfig._id}/status`, {
-    isActive: !reviewConfig.isActive,
-  });
+  const res = await api.patch(
+    `/api/v1/review-configs/${reviewConfig._id}/status`,
+    {
+      isActive: !reviewConfig.isActive,
+    }
+  );
   return res.data;
 };

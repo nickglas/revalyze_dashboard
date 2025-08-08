@@ -1,9 +1,10 @@
-import { Criterion } from "./criteria.api.model";
+import { Criterion, CriterionWeight } from "./criteria.api.model";
 
 export interface ReviewConfig {
   _id: string;
   name: string;
-  criteria: Criterion[];
+  description?: string;
+  criteria: CriterionWeight[];
   modelSettings: {
     temperature: number;
     maxTokens: 2000;
