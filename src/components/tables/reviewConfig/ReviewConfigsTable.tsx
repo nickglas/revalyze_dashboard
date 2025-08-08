@@ -17,6 +17,7 @@ import {
   Spinner,
   Tooltip,
   useDisclosure,
+  Switch,
 } from "@heroui/react";
 import {
   SearchIcon,
@@ -68,7 +69,7 @@ interface ReviewConfigTableRow {
 }
 
 export default function ReviewConfigsTable() {
-  const { reviewConfigs, meta, isLoading, fetchReviewConfigs } =
+  const { reviewConfigs, meta, isLoading, fetchReviewConfigs, toggleStatus } =
     useReviewConfigStore();
   const [filterValue, setFilterValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -180,14 +181,21 @@ export default function ReviewConfigsTable() {
 
         case "isActive":
           return (
-            <Chip
-              className="capitalize"
-              color={config.isActive ? "success" : "danger"}
-              size="sm"
-              variant="flat"
-            >
-              {config.isActive ? "Active" : "Inactive"}
-            </Chip>
+            <div className="flex items-center gap-3">
+              <Switch
+                onValueChange={() => toggleStatus(config.original)}
+                isSelected={config.isActive}
+                color="success"
+              />
+              <Chip
+                className="capitalize"
+                color={config.isActive ? "success" : "danger"}
+                size="sm"
+                variant="flat"
+              >
+                {config.isActive ? "active" : "inactive"}
+              </Chip>
+            </div>
           );
 
         case "createdAt":
