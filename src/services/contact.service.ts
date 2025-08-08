@@ -41,3 +41,10 @@ export const updateContact = async (
   const res = await api.patch(`/api/v1/contacts/${id}`, updates);
   return res.data;
 };
+
+export const toggleContact = async (contact: Contact): Promise<Contact> => {
+  const res = await api.patch(`/api/v1/contacts/${contact._id}/toggle-status`, {
+    isActive: !contact.isActive,
+  });
+  return res.data;
+};

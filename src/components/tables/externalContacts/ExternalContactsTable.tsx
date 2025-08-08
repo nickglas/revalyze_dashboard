@@ -37,7 +37,7 @@ export const columns = [
   { name: "PHONE", uid: "phone", sortable: true },
   { name: "POSITION", uid: "position", sortable: true },
   { name: "COMPANY", uid: "company", sortable: true },
-  { name: "STATUS", uid: "status", sortable: true },
+  { name: "STATUS", uid: "isActive", sortable: true },
   { name: "CREATED AT", uid: "createdAt", sortable: true },
   { name: "ACTIONS", uid: "actions" },
 ];
@@ -51,11 +51,6 @@ export function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const statusColorMap = {
-  active: "success",
-  inactive: "danger",
-};
-
 interface ContactTableRow {
   id: string;
   name: string;
@@ -65,13 +60,14 @@ interface ContactTableRow {
   phone: string;
   position: string;
   company: string;
-  status: "active" | "inactive";
+  isActive: boolean;
   createdAt: Date;
   original: Contact;
 }
 
 export default function ExternalContactsTable() {
-  const { contacts, meta, isLoading, fetchContacts } = useContactStore();
+  const { contacts, meta, isLoading, fetchContacts, toggleContactStatus } =
+    useContactStore();
   const [filterValue, setFilterValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -144,7 +140,7 @@ export default function ExternalContactsTable() {
       phone: contact.phone,
       position: contact.position,
       company: contact.externalCompany?.name || "Unknown Company",
-      status: contact.isActive ? "active" : "inactive",
+      isActive: contact.isActive,
       createdAt: new Date(contact.createdAt),
       original: contact,
     }));
@@ -201,27 +197,23 @@ export default function ExternalContactsTable() {
             </div>
           );
 
-        case "status":
+        case "isActive":
           return (
-            <Chip
-              className="capitalize"
-              color={
-                statusColorMap[
-                  contact.status as keyof typeof statusColorMap
-                ] as
-                  | "default"
-                  | "primary"
-                  | "secondary"
-                  | "success"
-                  | "warning"
-                  | "danger"
-                  | undefined
-              }
-              size="sm"
-              variant="flat"
-            >
-              {contact.status}
-            </Chip>
+            <div className="flex items-center gap-3">
+              <Switch
+                onValueChange={() => toggleContactStatus(contact.original)}
+                isSelected={contact.isActive}
+                color="success"
+              />
+              <Chip
+                className="capitalize"
+                color={contact.isActive ? "success" : "danger"}
+                size="sm"
+                variant="flat"
+              >
+                {contact.isActive ? "active" : "inactive"}
+              </Chip>
+            </div>
           );
 
         case "createdAt":

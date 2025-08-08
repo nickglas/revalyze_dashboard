@@ -21,7 +21,7 @@ interface ContactState {
     isActive: boolean;
     externalCompanyId: string;
   }) => Promise<Contact>;
-
+  toggleContactStatus: (contact: Contact) => Promise<void>;
   updateContact: (id: string, updates: Partial<Contact>) => Promise<Contact>;
 }
 
@@ -92,6 +92,21 @@ export const useContactStore = create<ContactState>()(
           throw err;
         } finally {
           set({ isLoading: false });
+        }
+      },
+
+      toggleContactStatus: async (team) => {
+        try {
+          const updated = await service.toggleContact(team);
+          toast.success("Contact status updated");
+          set((state) => ({
+            contacts: state.contacts
+              ? state.contacts.map((c) => (c._id === updated._id ? updated : c))
+              : null,
+          }));
+        } catch (error) {
+          toast.error("Error toggling contact status");
+          console.error("Failed to toggle status", error);
         }
       },
     }),

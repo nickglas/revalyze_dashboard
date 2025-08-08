@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Table,
   TableHeader,
@@ -16,203 +16,14 @@ import {
   User,
   Pagination,
   Spinner,
+  Switch,
 } from "@heroui/react";
-import { JSX } from "react/jsx-runtime";
 import AddUserModal from "@/components/modals/users/addUserModal";
+import { useUserStore } from "@/store/userStore";
+import { User as UserModel } from "@/models/api/user.api.model";
 
-// API data as mock data
-const apiData = {
-  data: [
-    {
-      _id: "687b85ef3d0b6f56ee5cfb76",
-      email: "TEST@acme.com",
-      name: "Jane Admin",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      isActive: true,
-      role: "company_admin",
-      createdAt: "2025-07-19T11:47:59.599Z",
-      updatedAt: "2025-07-20T17:28:00.242Z",
-      __v: 0,
-      metrics: {
-        lastCalculated: "2025-07-19T20:51:25.439Z",
-        reviewCount: 2,
-        overallScore: 9.15,
-        sentimentScore: 9.75,
-        lastPeriodScores: [
-          {
-            period: "2025-07",
-            overall: 9.15,
-            sentiment: 9.75,
-          },
-        ],
-      },
-    },
-    {
-      _id: "687d23483cb8c1c33f349909",
-      email: "nickglas@acme.io",
-      name: "Nick Glas",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      isActive: true,
-      role: "employee",
-      createdAt: "2025-07-20T17:11:36.563Z",
-      updatedAt: "2025-07-20T17:11:36.563Z",
-      __v: 0,
-    },
-    {
-      _id: "687d234d3cb8c1c33f349911",
-      email: "nickglas@acme.ios",
-      name: "Nick Glas",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      isActive: true,
-      role: "employee",
-      createdAt: "2025-07-20T17:11:41.399Z",
-      updatedAt: "2025-07-20T17:11:41.399Z",
-      __v: 0,
-    },
-    {
-      _id: "687d234f3cb8c1c33f349916",
-      email: "nickglas@acme.ioss",
-      name: "Nick Glas",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      isActive: false,
-      role: "employee",
-      createdAt: "2025-07-20T17:11:43.324Z",
-      updatedAt: "2025-07-20T17:23:06.099Z",
-      __v: 0,
-    },
-    {
-      _id: "687d23513cb8c1c33f34991b",
-      email: "nickglas@acme.iosss",
-      name: "Nick Glas",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      isActive: false,
-      role: "employee",
-      createdAt: "2025-07-20T17:11:45.235Z",
-      updatedAt: "2025-07-20T17:21:41.180Z",
-      __v: 0,
-    },
-    {
-      _id: "687d23643cb8c1c33f349920",
-      email: "nickglas@acme.iossss",
-      name: "Nick Glas",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      isActive: false,
-      role: "employee",
-      createdAt: "2025-07-20T17:12:04.560Z",
-      updatedAt: "2025-07-20T17:21:31.010Z",
-      __v: 0,
-    },
-    {
-      _id: "687d23653cb8c1c33f349925",
-      email: "nickglas@acme.iosssss",
-      name: "Nick Glas",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      isActive: false,
-      role: "employee",
-      createdAt: "2025-07-20T17:12:05.943Z",
-      updatedAt: "2025-07-20T17:20:17.995Z",
-      __v: 0,
-    },
-    {
-      _id: "687d23673cb8c1c33f34992a",
-      email: "nickglas@acme.iossssss",
-      name: "Nick Glas",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      isActive: false,
-      role: "employee",
-      createdAt: "2025-07-20T17:12:07.446Z",
-      updatedAt: "2025-07-20T17:20:08.808Z",
-      __v: 0,
-    },
-    {
-      _id: "687d23693cb8c1c33f34992f",
-      email: "nickglas@acme.iosssssss",
-      name: "Nick Glas",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      isActive: false,
-      role: "employee",
-      createdAt: "2025-07-20T17:12:09.015Z",
-      updatedAt: "2025-07-20T17:20:01.874Z",
-      __v: 0,
-    },
-    {
-      _id: "687d236a3cb8c1c33f349934",
-      email: "nickglas@acme.iossssssss",
-      name: "Nick Glas",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      isActive: false,
-      role: "employee",
-      createdAt: "2025-07-20T17:12:10.653Z",
-      updatedAt: "2025-07-20T17:19:53.666Z",
-      __v: 0,
-    },
-  ],
-  meta: {
-    total: 10,
-    page: 1,
-    limit: 20,
-    pages: 1,
-  },
-};
-
-// Map API data to table format
-const users = apiData.data.map((user) => ({
-  id: user._id,
-  name: user.name,
-  email: user.email,
-  role: user.role,
-  status: user.isActive ? "active" : "inactive",
-}));
-
-export const columns = [
-  { name: "NAME", uid: "name", sortable: true },
-  { name: "ROLE", uid: "role", sortable: true },
-  { name: "STATUS", uid: "status", sortable: true },
-  { name: "ACTIONS", uid: "actions" },
-];
-
-export const statusOptions = [
-  { name: "Active", uid: "active" },
-  { name: "Inactive", uid: "inactive" },
-];
-
-export function capitalize(s: string) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
-}
-
-type VerticalDotsIconProps = {
-  size?: number;
-  width?: number | string;
-  height?: number | string;
-  [key: string]: any;
-};
-
-export const VerticalDotsIcon = ({
-  size = 24,
-  width,
-  height,
-  ...props
-}: VerticalDotsIconProps) => (
-  <svg
-    aria-hidden="true"
-    fill="none"
-    focusable="false"
-    height={size || height}
-    role="presentation"
-    viewBox="0 0 24 24"
-    width={size || width}
-    {...props}
-  >
-    <path
-      d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
-      fill="currentColor"
-    />
-  </svg>
-);
-
-export const SearchIcon = (
-  props: JSX.IntrinsicAttributes & React.SVGProps<SVGSVGElement>
-) => (
+// Icons
+export const VerticalDotsIcon = () => (
   <svg
     aria-hidden="true"
     fill="none"
@@ -221,7 +32,23 @@ export const SearchIcon = (
     role="presentation"
     viewBox="0 0 24 24"
     width="1em"
-    {...props}
+  >
+    <path
+      d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const SearchIcon = () => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="1em"
+    role="presentation"
+    viewBox="0 0 24 24"
+    width="1em"
   >
     <path
       d="M11.5 21C16.7467 21 21 16.7467 21 11.5C21 6.25329 16.7467 2 11.5 2C6.25329 2 2 6.25329 2 11.5C2 16.7467 6.25329 21 11.5 21Z"
@@ -240,7 +67,7 @@ export const SearchIcon = (
   </svg>
 );
 
-export const ChevronDownIcon = ({ strokeWidth = 1.5, ...otherProps }) => (
+export const ChevronDownIcon = () => (
   <svg
     aria-hidden="true"
     fill="none"
@@ -249,7 +76,6 @@ export const ChevronDownIcon = ({ strokeWidth = 1.5, ...otherProps }) => (
     role="presentation"
     viewBox="0 0 24 24"
     width="1em"
-    {...otherProps}
   >
     <path
       d="m19.92 8.95-6.52 6.52c-.77.77-2.03.77-2.8 0L4.08 8.95"
@@ -257,102 +83,117 @@ export const ChevronDownIcon = ({ strokeWidth = 1.5, ...otherProps }) => (
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeMiterlimit={10}
-      strokeWidth={strokeWidth}
+      strokeWidth={1.5}
     />
   </svg>
 );
 
-const statusColorMap = {
-  active: "success",
-  inactive: "danger",
-};
+export const columns = [
+  { name: "NAME", uid: "name", sortable: true },
+  { name: "EMAIL", uid: "email", sortable: true },
+  { name: "ROLE", uid: "role", sortable: true },
+  { name: "STATUS", uid: "isActive", sortable: true },
+  { name: "CREATED AT", uid: "createdAt", sortable: true },
+  { name: "ACTIONS", uid: "actions" },
+];
 
-const INITIAL_VISIBLE_COLUMNS = ["name", "role", "status", "actions"];
+export const statusOptions = [
+  { name: "Active", uid: "active" },
+  { name: "Inactive", uid: "inactive" },
+];
+
+export const roleOptions = [
+  { name: "Employee", uid: "employee" },
+  { name: "Company Admin", uid: "company_admin" },
+];
+
+export function capitalize(s: string) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+}
+
+interface UserTableRow {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  createdAt: Date;
+  original: UserModel;
+}
 
 export default function UsersTable() {
-  const [filterValue, setFilterValue] = React.useState("");
-  const [visibleColumns, setVisibleColumns] = React.useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
-  );
-  const [statusFilter, setStatusFilter] = React.useState("all");
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [sortDescriptor, setSortDescriptor] = React.useState({
-    column: "name",
-    direction: "ascending",
+  const { users, meta, isLoading, fetchUsers, toggleUserStatus } =
+    useUserStore();
+  const [filterValue, setFilterValue] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [page, setPage] = useState(1);
+  const [sortDescriptor, setSortDescriptor] = useState({
+    column: "createdAt",
+    direction: "descending" as "ascending" | "descending",
   });
-  const [page, setPage] = React.useState(1);
 
-  const hasSearchFilter = Boolean(filterValue);
+  // Modal controls
+  const [selectedUser, setSelectedUser] = useState<UserModel | null>(null);
 
-  const headerColumns = React.useMemo(() => {
-    return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
-    );
-  }, [visibleColumns]);
-
-  const filteredItems = React.useMemo(() => {
-    let filteredUsers = [...users];
-
-    if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.name.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    }
-    if (
-      statusFilter !== "all" &&
-      Array.from(statusFilter).length !== statusOptions.length
-    ) {
-      filteredUsers = filteredUsers.filter((user) =>
-        Array.from(statusFilter).includes(user.status)
-      );
-    }
-
-    return filteredUsers;
-  }, [users, filterValue, statusFilter]);
-
-  const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
-
-  const items = React.useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return filteredItems.slice(start, end);
-  }, [page, filteredItems, rowsPerPage]);
-
-  const sortedItems = React.useMemo(() => {
-    return [...items].sort((a, b) => {
-      const first = a[sortDescriptor.column];
-      const second = b[sortDescriptor.column];
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
-  }, [sortDescriptor, items]);
-
-  const renderCell = React.useCallback(
-    (
-      user: {
-        [x: string]: any;
-        name: any;
-        email:
-          | string
-          | number
-          | boolean
-          | React.ReactElement<any, string | React.JSXElementConstructor<any>>
-          | Iterable<React.ReactNode>
-          | React.ReactPortal
-          | null
-          | undefined;
-        status: string | number;
+  // Fetch data when parameters change
+  useEffect(() => {
+    fetchUsers(
+      {
+        name: filterValue || undefined,
+        email: filterValue || undefined,
+        role: roleFilter !== "all" ? roleFilter : undefined,
+        isActive:
+          statusFilter !== "all" ? statusFilter === "active" : undefined,
+        sortBy: sortDescriptor.column,
+        sortOrder: sortDescriptor.direction === "ascending" ? "asc" : "desc",
       },
-      columnKey: string
-    ) => {
-      const cellValue = user[columnKey];
+      page,
+      rowsPerPage
+    );
+  }, [
+    page,
+    rowsPerPage,
+    statusFilter,
+    roleFilter,
+    filterValue,
+    sortDescriptor,
+    fetchUsers,
+  ]);
 
+  const handleSortChange = (descriptor: any) => {
+    setSortDescriptor({
+      column: descriptor.column,
+      direction: descriptor.direction,
+    });
+    setPage(1);
+  };
+
+  // Map API data to table format
+  const tableRows = useMemo<UserTableRow[]>(() => {
+    if (!users) return [];
+
+    return users.map((user) => ({
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      createdAt: new Date(user.createdAt),
+      original: user,
+    }));
+  }, [users]);
+
+  const renderCell = useCallback(
+    (user: UserTableRow, columnKey: string | number) => {
       switch (columnKey) {
         case "name":
           return (
             <User
+              name={user.name}
+              description={user.email}
               avatarProps={{
-                radius: "lg",
                 name: user.name,
                 getInitials: (name) =>
                   name
@@ -360,97 +201,122 @@ export default function UsersTable() {
                     .map((n) => n[0])
                     .join(""),
               }}
-              description={user.email}
-              name={cellValue}
             />
           );
-        case "role":
+
+        case "email":
           return (
-            <div className="flex flex-col">
-              <p className="text-bold text-small capitalize">
-                {cellValue.replace("_", " ")}
-              </p>
-            </div>
+            <a
+              href={`mailto:${user.email}`}
+              className="text-blue-500 hover:underline"
+            >
+              {user.email}
+            </a>
           );
-        case "status":
+
+        case "role":
           return (
             <Chip
               className="capitalize"
-              color={user.status === "active" ? "success" : "danger"}
+              color={user.role === "company_admin" ? "primary" : "default"}
               size="sm"
               variant="flat"
             >
-              {cellValue}
+              {user.role.replace("_", " ")}
             </Chip>
           );
+
+        case "isActive":
+          return (
+            <div className="flex items-center gap-3">
+              <Switch
+                onValueChange={() => toggleUserStatus(user.original)}
+                isSelected={user.original.isActive}
+                color="success"
+              />
+              <Chip
+                className="capitalize"
+                color={user.original.isActive ? "success" : "danger"}
+                size="sm"
+                variant="flat"
+              >
+                {user.isActive ? "Active" : "Not active"}
+              </Chip>
+            </div>
+          );
+
+        case "createdAt":
+          return (
+            <div className="flex flex-col">
+              <p className="font-medium">
+                {user.createdAt.toLocaleDateString()}
+              </p>
+              <p className="text-gray-500 text-sm">
+                {user.createdAt.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+          );
+
         case "actions":
           return (
             <div className="relative flex justify-end items-center gap-2">
               <Dropdown>
                 <DropdownTrigger>
                   <Button isIconOnly size="sm" variant="light">
-                    <VerticalDotsIcon className="text-default-300" />
+                    <VerticalDotsIcon />
                   </Button>
                 </DropdownTrigger>
-                <DropdownMenu>
-                  <DropdownItem key="view">View</DropdownItem>
+                <DropdownMenu aria-label="User Actions">
+                  <DropdownItem key="view">View Details</DropdownItem>
                   <DropdownItem key="edit">Edit</DropdownItem>
-                  <DropdownItem key="delete">Delete</DropdownItem>
+                  <DropdownItem key="delete" className="text-danger">
+                    Delete
+                  </DropdownItem>
                 </DropdownMenu>
               </Dropdown>
             </div>
           );
+
         default:
-          return cellValue;
+          return null;
       }
     },
-    []
+    [toggleUserStatus]
   );
 
-  const onNextPage = React.useCallback(() => {
-    if (page < pages) setPage(page + 1);
-  }, [page, pages]);
-
-  const onPreviousPage = React.useCallback(() => {
-    if (page > 1) setPage(page - 1);
-  }, [page]);
-
-  const onRowsPerPageChange = React.useCallback(
+  const onRowsPerPageChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setRowsPerPage(Number(e.target.value));
+      const newRowsPerPage = Number(e.target.value);
+      setRowsPerPage(newRowsPerPage);
       setPage(1);
     },
     []
   );
 
-  const onSearchChange = React.useCallback(
-    (value: React.SetStateAction<string>) => {
-      if (value) {
-        setFilterValue(value);
-        setPage(1);
-      } else {
-        setFilterValue("");
-      }
-    },
-    []
-  );
+  const onSearchChange = useCallback((value: string) => {
+    setFilterValue(value);
+    setPage(1);
+  }, []);
 
-  const onClear = React.useCallback(() => {
+  const onClear = useCallback(() => {
     setFilterValue("");
     setPage(1);
   }, []);
 
-  const topContent = React.useMemo(() => {
+  const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
           <Input
             isClearable
             className="w-full sm:max-w-[44%]"
-            placeholder="Search by name..."
+            placeholder="Search by name or email..."
             startContent={<SearchIcon />}
             value={filterValue}
-            onClear={() => onClear()}
+            onClear={onClear}
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
@@ -465,56 +331,66 @@ export default function UsersTable() {
               </DropdownTrigger>
               <DropdownMenu
                 disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={statusFilter}
-                selectionMode="multiple"
-                onSelectionChange={setStatusFilter}
+                aria-label="Status Filter"
+                selectedKeys={new Set([statusFilter])}
+                selectionMode="single"
+                onSelectionChange={(keys) =>
+                  setStatusFilter(String(Array.from(keys)[0] || "all"))
+                }
               >
-                {statusOptions.map((status) => (
-                  <DropdownItem key={status.uid} className="capitalize">
-                    {capitalize(status.name)}
-                  </DropdownItem>
-                ))}
+                <DropdownItem key="all">All Statuses</DropdownItem>
+                <>
+                  {statusOptions.map((status) => (
+                    <DropdownItem key={status.uid} className="capitalize">
+                      {capitalize(status.name)}
+                    </DropdownItem>
+                  ))}
+                </>
               </DropdownMenu>
             </Dropdown>
+
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<ChevronDownIcon className="text-small" />}
-                  variant="flat"
-                >
-                  Columns
+                <Button endContent={<ChevronDownIcon />} variant="flat">
+                  Role
                 </Button>
               </DropdownTrigger>
               <DropdownMenu
                 disallowEmptySelection
-                aria-label="Table Columns"
-                closeOnSelect={false}
-                selectedKeys={visibleColumns}
-                selectionMode="multiple"
-                onSelectionChange={setVisibleColumns}
+                aria-label="Role Filter"
+                selectedKeys={new Set([roleFilter])}
+                selectionMode="single"
+                onSelectionChange={(keys) =>
+                  setRoleFilter(String(Array.from(keys)[0] || "all"))
+                }
               >
-                {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize">
-                    {capitalize(column.name)}
-                  </DropdownItem>
-                ))}
+                <DropdownItem key="all">All Roles</DropdownItem>
+                <>
+                  {roleOptions.map((role) => (
+                    <DropdownItem key={role.uid} className="capitalize">
+                      {capitalize(role.name)}
+                    </DropdownItem>
+                  ))}
+                </>
               </DropdownMenu>
             </Dropdown>
+
             <AddUserModal />
           </div>
         </div>
+
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {filteredItems.length} users
+            {isLoading
+              ? "Loading users..."
+              : `Showing ${users?.length || 0} of ${meta?.total || 0} users`}
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
-              className="bg-transparent outline-none text-default-400 text-small"
+              className="bg-transparent outline-none text-default-400 text-small ml-1"
               onChange={onRowsPerPageChange}
-              defaultValue="5"
+              value={rowsPerPage}
             >
               <option value="5">5</option>
               <option value="10">10</option>
@@ -527,21 +403,26 @@ export default function UsersTable() {
   }, [
     filterValue,
     statusFilter,
-    visibleColumns,
-    onRowsPerPageChange,
-    users.length,
+    roleFilter,
     onSearchChange,
-    filteredItems.length,
+    onRowsPerPageChange,
+    users,
+    isLoading,
+    meta?.total,
+    rowsPerPage,
   ]);
 
-  const bottomContent = React.useMemo(() => {
-    const startItem = (page - 1) * rowsPerPage + 1;
-    const endItem = Math.min(page * rowsPerPage, filteredItems.length);
+  const bottomContent = useMemo(() => {
+    if (isLoading) return null;
+
+    const startItem = meta ? (meta.page - 1) * meta.limit + 1 : 0;
+    const endItem = meta ? Math.min(meta.page * meta.limit, meta.total) : 0;
+    const total = meta?.total || 0;
 
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {`Showing ${startItem} to ${endItem} of ${filteredItems.length} users`}
+          {`Showing ${startItem} to ${endItem} of ${total} users`}
         </span>
         <Pagination
           isCompact
@@ -549,30 +430,30 @@ export default function UsersTable() {
           showShadow
           color="primary"
           page={page}
-          total={pages}
+          total={meta?.pages || 1}
           onChange={setPage}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
-            isDisabled={pages === 1}
+            isDisabled={page === 1}
             size="sm"
             variant="flat"
-            onPress={onPreviousPage}
+            onPress={() => setPage(page - 1)}
           >
             Previous
           </Button>
           <Button
-            isDisabled={pages === 1}
+            isDisabled={page === (meta?.pages || 1)}
             size="sm"
             variant="flat"
-            onPress={onNextPage}
+            onPress={() => setPage(page + 1)}
           >
             Next
           </Button>
         </div>
       </div>
     );
-  }, [page, pages, filteredItems.length, rowsPerPage]);
+  }, [page, isLoading, meta]);
 
   return (
     <Table
@@ -581,14 +462,14 @@ export default function UsersTable() {
       bottomContent={bottomContent}
       bottomContentPlacement="outside"
       classNames={{
-        wrapper: "max-h-[382px]",
+        wrapper: "max-h-[500px]",
       }}
       sortDescriptor={sortDescriptor}
       topContent={topContent}
       topContentPlacement="outside"
-      onSortChange={setSortDescriptor}
+      onSortChange={handleSortChange}
     >
-      <TableHeader columns={headerColumns}>
+      <TableHeader columns={columns}>
         {(column) => (
           <TableColumn
             key={column.uid}
@@ -600,14 +481,15 @@ export default function UsersTable() {
         )}
       </TableHeader>
       <TableBody
-        emptyContent={"No users found"}
-        items={sortedItems}
-        loadingContent={<Spinner label="Loading..." />}
+        emptyContent={isLoading ? " " : "No users found"}
+        items={isLoading ? [] : tableRows}
+        loadingContent={<Spinner label="Loading users..." />}
+        loadingState={isLoading ? "loading" : "idle"}
       >
         {(item) => (
           <TableRow key={item.id}>
             {(columnKey) => (
-              <TableCell>{renderCell(item, String(columnKey))}</TableCell>
+              <TableCell>{renderCell(item, columnKey)}</TableCell>
             )}
           </TableRow>
         )}
