@@ -28,7 +28,7 @@ const SearchCriteria = ({ onChange }: Props) => {
   const fetchCriteria = async (search: string) => {
     setIsLoading(true);
     try {
-      const { data } = await api.get(`/api/v1/criteria?title=${search}`);
+      const { data } = await api.get(`/api/v1/criteria?name=${search}`);
       setCriteria(data.data || []);
     } catch (err) {
       console.error("Failed to fetch criteria:", err);
