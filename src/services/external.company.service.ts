@@ -2,13 +2,23 @@ import api from "@/util/axios";
 import { PaginatedResponse } from "@/models/others/PaginatedResponse";
 import { ExternalCompany } from "@/models/api/external.company.model";
 
+// Updated to accept filters
 export const getCompanies = async (
   page = 1,
-  limit = 20
+  limit = 20,
+  filters: any = {}
 ): Promise<PaginatedResponse<ExternalCompany>> => {
-  const res = await api.get(
-    `/api/v1/external-companies?page=${page}&limit=${limit}`
+  const params = {
+    page,
+    limit,
+    ...filters,
+  };
+
+  Object.keys(params).forEach(
+    (key) => params[key] === undefined && delete params[key]
   );
+
+  const res = await api.get("/api/v1/external-companies", { params });
   return res.data;
 };
 
@@ -23,21 +33,20 @@ export const createExternalCompany = async (input: {
   return res.data;
 };
 
-export const searchCompanies = async (
-  query: string,
-  page = 1,
-  limit = 10
-): Promise<PaginatedResponse<ExternalCompany>> => {
-  const res = await api.get(
-    `/api/v1/external-companies/search?query=${query}&page=${page}&limit=${limit}`
-  );
-  return res.data;
-};
-
 export const updateExternalCompany = async (
   id: string,
   updates: Partial<ExternalCompany>
 ): Promise<ExternalCompany> => {
   const res = await api.patch(`/api/v1/external-companies/${id}`, updates);
+  return res.data;
+};
+
+export const toggleStatus = async (
+  externalCompany: ExternalCompany
+): Promise<ExternalCompany> => {
+  const res = await api.patch(
+    `/api/v1/external-companies/${externalCompany._id}/status`,
+    { isActive: !externalCompany.isActive }
+  );
   return res.data;
 };

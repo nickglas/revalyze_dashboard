@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Table,
   TableHeader,
@@ -18,6 +18,7 @@ import {
   Avatar,
   Tooltip,
   useDisclosure,
+  Switch,
 } from "@heroui/react";
 import {
   ChevronDownIcon,
@@ -49,38 +50,33 @@ export function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const statusColorMap: Record<string, "success" | "danger"> = {
-  active: "success",
-  inactive: "danger",
-};
-
-const INITIAL_VISIBLE_COLUMNS = [
-  "name",
-  "email",
-  "phone",
-  "address",
-  "status",
-  "createdAt",
-  "actions",
-];
+interface ExternalCompanyTableRow {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  status: "active" | "inactive";
+  createdAt: Date;
+  original: ExternalCompany;
+}
 
 export default function ExternalCompaniesTable() {
-  const { companies, meta, isLoading, fetchCompanies } =
-    useExternalCompanyStore();
+  const {
+    companies,
+    meta,
+    isLoading,
+    fetchCompanies,
+    toggleExternalCompanyStatus,
+  } = useExternalCompanyStore();
   const [filterValue, setFilterValue] = useState("");
-  const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
-  );
   const [statusFilter, setStatusFilter] = useState("all");
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [sortDescriptor, setSortDescriptor] = useState<{
-    column: string;
-    direction: "ascending" | "descending";
-  }>({
-    column: "createdAt",
-    direction: "descending",
-  });
   const [page, setPage] = useState(1);
+  const [sortDescriptor, setSortDescriptor] = useState({
+    column: "createdAt",
+    direction: "descending" as "ascending" | "descending",
+  });
 
   // Modal controls
   const viewModal = useDisclosure();
@@ -100,16 +96,42 @@ export default function ExternalCompaniesTable() {
     editModal.onOpen();
   };
 
-  // Fetch data only if store is empty
+  // Fetch data when parameters change
   useEffect(() => {
-    if (!companies || companies.length === 0) {
-      fetchCompanies(1, 1000);
-    }
-  }, [companies, fetchCompanies]);
+    fetchCompanies(
+      {
+        name: filterValue || undefined,
+        email: filterValue || undefined,
+        phone: filterValue || undefined,
+        isActive:
+          statusFilter !== "all" ? statusFilter === "active" : undefined,
+        sortBy: sortDescriptor.column,
+        sortOrder: sortDescriptor.direction === "ascending" ? "asc" : "desc",
+      },
+      page,
+      rowsPerPage
+    );
+  }, [
+    page,
+    rowsPerPage,
+    statusFilter,
+    filterValue,
+    sortDescriptor,
+    fetchCompanies,
+  ]);
+
+  const handleSortChange = (descriptor: any) => {
+    setSortDescriptor({
+      column: descriptor.column,
+      direction: descriptor.direction,
+    });
+    setPage(1);
+  };
 
   // Map API data to table format
-  const externalCompanies = React.useMemo(() => {
+  const tableRows = useMemo<ExternalCompanyTableRow[]>(() => {
     if (!companies) return [];
+
     return companies.map((company) => ({
       id: company._id,
       name: company.name,
@@ -118,67 +140,12 @@ export default function ExternalCompaniesTable() {
       address: company.address,
       status: company.isActive ? "active" : "inactive",
       createdAt: new Date(company.createdAt),
+      original: company,
     }));
   }, [companies]);
 
-  const hasSearchFilter = Boolean(filterValue);
-
-  const headerColumns = React.useMemo(() => {
-    return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
-    );
-  }, [visibleColumns]);
-
-  const filteredItems = React.useMemo(() => {
-    let filteredCompanies = [...externalCompanies];
-
-    if (hasSearchFilter) {
-      filteredCompanies = filteredCompanies.filter(
-        (company) =>
-          company.name.toLowerCase().includes(filterValue.toLowerCase()) ||
-          company.email.toLowerCase().includes(filterValue.toLowerCase()) ||
-          company.phone.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    }
-
-    if (statusFilter !== "all") {
-      filteredCompanies = filteredCompanies.filter(
-        (company) => company.status === statusFilter
-      );
-    }
-
-    return filteredCompanies;
-  }, [externalCompanies, filterValue, statusFilter]);
-
-  const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
-
-  const items = React.useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return filteredItems.slice(start, end);
-  }, [page, filteredItems, rowsPerPage]);
-
-  const sortedItems = React.useMemo(() => {
-    return [...items].sort((a, b) => {
-      let first: any, second: any;
-
-      if (sortDescriptor.column === "createdAt") {
-        first = a.createdAt.getTime();
-        second = b.createdAt.getTime();
-      } else {
-        first = a[sortDescriptor.column as keyof typeof a];
-        second = b[sortDescriptor.column as keyof typeof b];
-      }
-
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
-  }, [sortDescriptor, items]);
-
-  const renderCell = React.useCallback(
-    (company: any, columnKey: React.Key) => {
-      const cellValue = company[columnKey as keyof typeof company];
-
+  const renderCell = useCallback(
+    (company: ExternalCompanyTableRow, columnKey: string | number) => {
       switch (columnKey) {
         case "name":
           return (
@@ -228,16 +195,23 @@ export default function ExternalCompaniesTable() {
 
         case "status":
           return (
-            <Chip
-              className="capitalize"
-              color={
-                statusColorMap[company.status as keyof typeof statusColorMap]
-              }
-              size="sm"
-              variant="flat"
-            >
-              {company.status}
-            </Chip>
+            <div className="flex items-center gap-3">
+              <Switch
+                onValueChange={() =>
+                  toggleExternalCompanyStatus(company.original)
+                }
+                isSelected={company.original.isActive}
+                color="success"
+              />
+              <Chip
+                className="capitalize"
+                color={company.original.isActive ? "success" : "danger"}
+                size="sm"
+                variant="flat"
+              >
+                {company.original.isActive ? "active" : "inactive"}
+              </Chip>
+            </div>
           );
 
         case "createdAt":
@@ -267,25 +241,13 @@ export default function ExternalCompaniesTable() {
                 <DropdownMenu aria-label="Company Actions">
                   <DropdownItem
                     key="view"
-                    onPress={() =>
-                      handleView(
-                        companies?.find(
-                          (c) => c._id === company.id
-                        ) as ExternalCompany
-                      )
-                    }
+                    onPress={() => handleView(company.original)}
                   >
                     View Details
                   </DropdownItem>
                   <DropdownItem
                     key="edit"
-                    onPress={() =>
-                      handleEdit(
-                        companies?.find(
-                          (c) => c._id === company.id
-                        ) as ExternalCompany
-                      )
-                    }
+                    onPress={() => handleEdit(company.original)}
                   >
                     Edit
                   </DropdownItem>
@@ -299,43 +261,32 @@ export default function ExternalCompaniesTable() {
           );
 
         default:
-          return cellValue;
+          return null;
       }
     },
-    [companies]
+    [handleView, handleEdit, toggleExternalCompanyStatus]
   );
 
-  const onNextPage = React.useCallback(() => {
-    if (page < pages) setPage(page + 1);
-  }, [page, pages]);
-
-  const onPreviousPage = React.useCallback(() => {
-    if (page > 1) setPage(page - 1);
-  }, [page]);
-
-  const onRowsPerPageChange = React.useCallback(
+  const onRowsPerPageChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setRowsPerPage(Number(e.target.value));
+      const newRowsPerPage = Number(e.target.value);
+      setRowsPerPage(newRowsPerPage);
       setPage(1);
     },
     []
   );
 
-  const onSearchChange = React.useCallback((value: string) => {
-    if (value) {
-      setFilterValue(value);
-      setPage(1);
-    } else {
-      setFilterValue("");
-    }
+  const onSearchChange = useCallback((value: string) => {
+    setFilterValue(value);
+    setPage(1);
   }, []);
 
-  const onClear = React.useCallback(() => {
+  const onClear = useCallback(() => {
     setFilterValue("");
     setPage(1);
   }, []);
 
-  const topContent = React.useMemo(() => {
+  const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
@@ -345,7 +296,7 @@ export default function ExternalCompaniesTable() {
             placeholder="Search by name, email, or phone..."
             startContent={<SearchIcon />}
             value={filterValue}
-            onClear={() => setFilterValue("")}
+            onClear={onClear}
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
@@ -384,15 +335,16 @@ export default function ExternalCompaniesTable() {
 
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Showing {filteredItems.length} of {externalCompanies.length}{" "}
-            companies
+            {isLoading
+              ? "Loading companies..."
+              : `Showing ${companies?.length || 0} of ${meta?.total || 0} companies`}
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
               className="bg-transparent outline-none text-default-400 text-small ml-1"
               onChange={onRowsPerPageChange}
-              defaultValue="5"
+              value={rowsPerPage}
             >
               <option value="5">5</option>
               <option value="10">10</option>
@@ -407,18 +359,23 @@ export default function ExternalCompaniesTable() {
     statusFilter,
     onSearchChange,
     onRowsPerPageChange,
-    filteredItems.length,
-    externalCompanies.length,
+    companies,
+    isLoading,
+    meta?.total,
+    rowsPerPage,
   ]);
 
-  const bottomContent = React.useMemo(() => {
-    const startItem = (page - 1) * rowsPerPage + 1;
-    const endItem = Math.min(page * rowsPerPage, filteredItems.length);
+  const bottomContent = useMemo(() => {
+    if (isLoading) return null;
+
+    const startItem = meta ? (meta.page - 1) * meta.limit + 1 : 0;
+    const endItem = meta ? Math.min(meta.page * meta.limit, meta.total) : 0;
+    const total = meta?.total || 0;
 
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {`Showing ${startItem} to ${endItem} of ${filteredItems.length} companies`}
+          {`Showing ${startItem} to ${endItem} of ${total} companies`}
         </span>
         <Pagination
           isCompact
@@ -426,47 +383,30 @@ export default function ExternalCompaniesTable() {
           showShadow
           color="primary"
           page={page}
-          total={pages}
+          total={meta?.pages || 1}
           onChange={setPage}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
-            isDisabled={pages === 1}
+            isDisabled={page === 1}
             size="sm"
             variant="flat"
-            onPress={onPreviousPage}
+            onPress={() => setPage(page - 1)}
           >
             Previous
           </Button>
           <Button
-            isDisabled={pages === 1}
+            isDisabled={page === (meta?.pages || 1)}
             size="sm"
             variant="flat"
-            onPress={onNextPage}
+            onPress={() => setPage(page + 1)}
           >
             Next
           </Button>
         </div>
       </div>
     );
-  }, [
-    page,
-    pages,
-    filteredItems.length,
-    rowsPerPage,
-    onPreviousPage,
-    onNextPage,
-  ]);
-
-  const handleSortChange = (descriptor: {
-    column: React.Key;
-    direction: "ascending" | "descending";
-  }) => {
-    setSortDescriptor({
-      column: String(descriptor.column),
-      direction: descriptor.direction,
-    });
-  };
+  }, [page, isLoading, meta]);
 
   return (
     <>
@@ -483,7 +423,7 @@ export default function ExternalCompaniesTable() {
         topContentPlacement="outside"
         onSortChange={handleSortChange}
       >
-        <TableHeader columns={headerColumns}>
+        <TableHeader columns={columns}>
           {(column) => (
             <TableColumn
               key={column.uid}
@@ -495,10 +435,10 @@ export default function ExternalCompaniesTable() {
           )}
         </TableHeader>
         <TableBody
-          emptyContent={"No companies found"}
-          items={sortedItems}
-          loadingState={isLoading ? "loading" : "idle"}
+          emptyContent={isLoading ? " " : "No companies found"}
+          items={isLoading ? [] : tableRows}
           loadingContent={<Spinner label="Loading companies..." />}
+          loadingState={isLoading ? "loading" : "idle"}
         >
           {(item) => (
             <TableRow key={item.id}>

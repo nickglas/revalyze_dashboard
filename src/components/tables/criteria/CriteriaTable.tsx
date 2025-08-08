@@ -44,14 +44,6 @@ export function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = [
-  "title",
-  "description",
-  "isActive",
-  "createdAt",
-  "actions",
-];
-
 export default function CriteriaTable() {
   const {
     criteria: storeCriteria,
