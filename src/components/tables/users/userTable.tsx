@@ -235,7 +235,7 @@ export default function UsersTable() {
                 color="success"
               />
               <Chip
-                className="capitalize"
+                className="capitalize p-2 min-w-20 text-center"
                 color={user.original.isActive ? "success" : "danger"}
                 size="sm"
                 variant="flat"

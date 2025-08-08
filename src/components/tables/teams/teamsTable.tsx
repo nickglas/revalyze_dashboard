@@ -225,7 +225,7 @@ export default function TeamsTable() {
                 color="success"
               />
               <Chip
-                className="capitalize"
+                className="capitalize p-2 min-w-20 text-center"
                 color={team.isActive ? "success" : "danger"}
                 size="sm"
                 variant="flat"

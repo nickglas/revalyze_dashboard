@@ -204,7 +204,7 @@ export default function ExternalCompaniesTable() {
                 color="success"
               />
               <Chip
-                className="capitalize"
+                className="capitalize p-2 min-w-20 text-center"
                 color={company.original.isActive ? "success" : "danger"}
                 size="sm"
                 variant="flat"
