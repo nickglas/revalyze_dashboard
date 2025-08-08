@@ -21,7 +21,7 @@ interface UserState {
 
   updateUser: (id: string, updates: Partial<User>) => Promise<User>;
 
-  toggleUserStatus: (user: User) => Promise<User>;
+  toggleUserStatus: (user: User) => Promise<User | undefined>;
 }
 
 export const useUserStore = create<UserState>()(

@@ -322,10 +322,7 @@ export default function UsersTable() {
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<ChevronDownIcon className="text-small" />}
-                  variant="flat"
-                >
+                <Button endContent={<ChevronDownIcon />} variant="flat">
                   Status
                 </Button>
               </DropdownTrigger>

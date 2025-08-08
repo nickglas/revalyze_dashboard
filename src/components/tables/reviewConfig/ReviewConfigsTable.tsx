@@ -219,7 +219,7 @@ export default function ReviewConfigsTable() {
               <Dropdown>
                 <DropdownTrigger>
                   <Button isIconOnly size="sm" variant="light">
-                    <VerticalDotsIcon className="text-default-300" />
+                    <VerticalDotsIcon />
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu aria-label="Review Config Actions">
@@ -285,10 +285,7 @@ export default function ReviewConfigsTable() {
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<ChevronDownIcon className="text-small" />}
-                  variant="flat"
-                >
+                <Button endContent={<ChevronDownIcon />} variant="flat">
                   Status
                 </Button>
               </DropdownTrigger>

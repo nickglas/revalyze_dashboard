@@ -305,7 +305,7 @@ export default function TranscriptsTable() {
               <Dropdown>
                 <DropdownTrigger>
                   <Button isIconOnly size="sm" variant="light">
-                    <VerticalDotsIcon className="text-default-300" />
+                    <VerticalDotsIcon />
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu aria-label="Transcript Actions">
@@ -373,10 +373,7 @@ export default function TranscriptsTable() {
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<ChevronDownIcon className="text-small" />}
-                  variant="flat"
-                >
+                <Button endContent={<ChevronDownIcon />} variant="flat">
                   Review Status
                 </Button>
               </DropdownTrigger>

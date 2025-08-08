@@ -235,7 +235,7 @@ export default function ExternalCompaniesTable() {
               <Dropdown>
                 <DropdownTrigger>
                   <Button isIconOnly size="sm" variant="light">
-                    <VerticalDotsIcon className="text-default-300" />
+                    <VerticalDotsIcon />
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu aria-label="Company Actions">
@@ -302,10 +302,7 @@ export default function ExternalCompaniesTable() {
           <div className="flex gap-3">
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<ChevronDownIcon className="text-small" />}
-                  variant="flat"
-                >
+                <Button endContent={<ChevronDownIcon />} variant="flat">
                   Status
                 </Button>
               </DropdownTrigger>
