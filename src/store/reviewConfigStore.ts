@@ -24,7 +24,7 @@ interface ReviewConfigState {
   updateReviewConfig: (
     id: string,
     data: UpdateReviewConfigDTO
-  ) => Promise<void>;
+  ) => Promise<ReviewConfig>;
   toggleStatus: (config: ReviewConfig) => Promise<void>;
 }
 
@@ -65,6 +65,7 @@ export const useReviewConfigStore = create<ReviewConfigState>()(
           set({ isLoading: false });
         }
       },
+
       updateReviewConfig: async (id, data) => {
         set({ isLoading: true });
         try {
@@ -77,9 +78,13 @@ export const useReviewConfigStore = create<ReviewConfigState>()(
               : null,
           }));
           toast.success("Review configuration updated successfully!");
-        } catch (err) {
-          toast.error("Failed to update review configuration");
-          console.error(err);
+          return updated; // Return the updated config
+        } catch (err: any) {
+          toast.error(
+            err?.response?.data?.message ||
+              "Failed to update review configuration"
+          );
+          throw err;
         } finally {
           set({ isLoading: false });
         }

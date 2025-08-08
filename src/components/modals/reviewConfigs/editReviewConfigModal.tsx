@@ -61,12 +61,8 @@ export default function EditReviewConfigModal({
     if (isOpen && config) {
       setFormData({
         name: config.name,
-        description: config.description,
+        description: config.description || "",
         isActive: config.isActive,
-        criteria: config.criteria.map((c) => ({
-          criterionId: c._id,
-          weight: c.weight,
-        })),
         modelSettings: {
           temperature: config.modelSettings.temperature,
           maxTokens: config.modelSettings.maxTokens,
@@ -77,7 +73,7 @@ export default function EditReviewConfigModal({
         config.criteria.map((c) => ({
           _id: c._id,
           title: c.title || "",
-          description: c?.description || "",
+          description: c.description || "",
           weight: c.weight,
         }))
       );
@@ -110,7 +106,7 @@ export default function EditReviewConfigModal({
   const validateField = (name: string, value: any) => {
     if (name === "name") {
       if (!value) return "Name is required.";
-      if (value.length < 5) return "Name must be at least 5 characters.";
+      if (value.length < 2) return "Name must be at least 2 characters.";
       if (value.length > 50) return "Name cannot exceed 50 characters.";
     }
 
@@ -185,14 +181,19 @@ export default function EditReviewConfigModal({
       newErrors.name = "Name is required.";
     }
 
+    // Validate criteria weights
     selectedCriteria.forEach((criterion) => {
       if (criterion.weight < 0 || criterion.weight > 1) {
         newErrors[`weight-${criterion._id}`] = "Weight must be between 0 and 1";
       }
     });
 
-    setErrors(newErrors);
+    // Validate at least one criterion
+    if (selectedCriteria.length === 0) {
+      newErrors.criteria = "At least one criterion is required";
+    }
 
+    setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
@@ -214,9 +215,9 @@ export default function EditReviewConfigModal({
       await updateReviewConfig(config._id, dataToSend);
       toast.success("Review configuration updated successfully!");
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Update failed:", error);
-      toast.error("Failed to update review configuration");
+      toast.error(error.message || "Failed to update review configuration");
     } finally {
       setIsSubmitting(false);
     }
