@@ -18,6 +18,7 @@ interface TeamState {
   fetchTeams: (filters: any, page?: number, limit?: number) => Promise<void>;
   createTeam: (input: CreateTeamDTO) => Promise<Team>;
   updateTeam: (id: string, input: UpdateTeamDTO) => Promise<Team>;
+  toggleTeamStatus: (team: Team) => Promise<void>;
 }
 
 export const useTeamStore = create<TeamState>()(
@@ -100,6 +101,21 @@ export const useTeamStore = create<TeamState>()(
           throw err;
         } finally {
           set({ isLoading: false });
+        }
+      },
+
+      toggleTeamStatus: async (team) => {
+        try {
+          const updated = await service.toggleStatus(team);
+          toast.success("Criterion status updated");
+          set((state) => ({
+            teams: state.teams
+              ? state.teams.map((c) => (c._id === updated._id ? updated : c))
+              : null,
+          }));
+        } catch (error) {
+          toast.error("Error toggling criterion status");
+          console.error("Failed to toggle status", error);
         }
       },
     }),

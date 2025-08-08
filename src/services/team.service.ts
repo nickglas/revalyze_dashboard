@@ -30,7 +30,7 @@ export const createTeam = async (input: CreateTeamDTOForAPI): Promise<Team> => {
 };
 
 export const toggleStatus = async (team: Team): Promise<Team> => {
-  const res = await api.patch(`/api/v1/teams/${team._id}/status`, {
+  const res = await api.patch(`/api/v1/teams/${team._id}/toggle-status`, {
     isActive: !team.isActive,
   });
   return res.data;

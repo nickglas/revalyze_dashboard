@@ -19,6 +19,7 @@ import {
   Badge,
   Tooltip,
   useDisclosure,
+  Switch,
 } from "@heroui/react";
 import {
   ChevronDownIcon,
@@ -55,20 +56,6 @@ export function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const statusColorMap = {
-  active: "success",
-  inactive: "danger",
-};
-
-const INITIAL_VISIBLE_COLUMNS = [
-  "name",
-  "manager",
-  "members",
-  "isActive",
-  "createdAt",
-  "actions",
-];
-
 interface TeamTableRow {
   id: string;
   name: string;
@@ -89,7 +76,8 @@ interface TeamTableRow {
 }
 
 export default function TeamsTable() {
-  const { teams, meta, isLoading, fetchTeams } = useTeamStore();
+  const { teams, meta, isLoading, fetchTeams, toggleTeamStatus } =
+    useTeamStore();
   const [filterValue, setFilterValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -230,14 +218,21 @@ export default function TeamsTable() {
           );
         case "isActive":
           return (
-            <Chip
-              className="capitalize"
-              size="sm"
-              variant="flat"
-              color={team.isActive ? "success" : "danger"}
-            >
-              {team.isActive ? "active" : "inactive"}
-            </Chip>
+            <div className="flex items-center gap-3">
+              <Switch
+                onValueChange={() => toggleTeamStatus(team.original)}
+                isSelected={team.isActive}
+                color="success"
+              />
+              <Chip
+                className="capitalize"
+                color={team.isActive ? "success" : "danger"}
+                size="sm"
+                variant="flat"
+              >
+                {team.isActive ? "active" : "inactive"}
+              </Chip>
+            </div>
           );
         case "createdAt":
           return (

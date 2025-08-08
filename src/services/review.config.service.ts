@@ -29,19 +29,11 @@ export const createConfig = async (
   return res.data;
 };
 
-// export const toggleStatus = async (team: Team): Promise<Team> => {
-//   const res = await api.patch(`/api/v1/teams/${team._id}/status`, {
-//     isActive: !team.isActive,
-//   });
-//   return res.data;
-// };
-
-// export const updateTeam = async (
-//   id: string,
-//   updates: UpdateTeamDTO
-// ): Promise<Team> => {
-//   console.warn(id);
-//   console.warn(updates);
-//   const res = await api.patch(`/api/v1/teams/${id}`, updates);
-//   return res.data;
-// };
+export const toggleStatus = async (
+  reviewConfig: ReviewConfig
+): Promise<ReviewConfig> => {
+  const res = await api.patch(`/api/v1/teams/${reviewConfig._id}/status`, {
+    isActive: !reviewConfig.isActive,
+  });
+  return res.data;
+};
