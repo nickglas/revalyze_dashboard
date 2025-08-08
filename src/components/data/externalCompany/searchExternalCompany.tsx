@@ -18,9 +18,10 @@ function useDebounce<T>(value: T, delay = 750): T {
 type Props = {
   value?: ExternalCompany; // Selected company object
   onChange?: (value: string, company: ExternalCompany | null) => void;
+  label?: string;
 };
 
-const SearchExternalCompany = ({ value, onChange }: Props) => {
+const SearchExternalCompany = ({ value, onChange, label }: Props) => {
   const [inputValue, setInputValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedQuery = useDebounce(searchQuery);
@@ -106,7 +107,7 @@ const SearchExternalCompany = ({ value, onChange }: Props) => {
           if (onChange) onChange("", null);
         }
       }}
-      label="Contact belongs to"
+      label={label || "Contact belongs to"}
       labelPlacement="outside"
       placeholder="Start typing to search companies"
       isRequired

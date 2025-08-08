@@ -21,6 +21,7 @@ import {
 } from "@heroui/react";
 import { SearchIcon } from "@/components/icons";
 import { ChevronDownIcon, VerticalDotsIcon } from "../users/userTable";
+import AddTranscriptModal from "@/components/modals/transcripts/addTranscriptModal";
 
 // Mock transcript data based on your entity model
 const transcriptData = {
@@ -399,9 +400,7 @@ export default function TranscriptsTable() {
               </DropdownMenu>
             </Dropdown>
 
-            <Button color="primary" endContent={<span>+</span>}>
-              Upload Transcript
-            </Button>
+            <AddTranscriptModal />
           </div>
         </div>
 
