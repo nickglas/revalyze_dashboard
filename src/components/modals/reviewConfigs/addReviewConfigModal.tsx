@@ -4,16 +4,14 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   useDisclosure,
 } from "@heroui/modal";
-import { Button, Input, Textarea, Switch, Divider, Form } from "@heroui/react";
+import { Button, Input, Textarea, Switch, Form } from "@heroui/react";
 import { toast } from "react-toastify";
 import {
   CreateReviewConfigDTO,
   CriterionSelectionDTO,
 } from "@/models/dto/review.config.dto";
-import { useUserStore } from "@/store/userStore";
 import SearchCriteria from "@/components/data/criteria/searchCriteria";
 import { CriteriaSelection } from "@/components/criteriaSelection";
 import { useReviewConfigStore } from "@/store/reviewConfigStore";
@@ -24,7 +22,6 @@ export default function AddReviewConfigModal() {
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useUserStore();
 
   const [postData, setPostData] = useState<CreateReviewConfigDTO>({
     name: "",
@@ -168,7 +165,7 @@ export default function AddReviewConfigModal() {
     }
 
     selectedCriteria.forEach((criterion) => {
-      if (criterion.weight < 0 || criterion.weight > 1) {
+      if (criterion.weight < 0.1 || criterion.weight > 1) {
         newErrors[`weight-${criterion._id}`] = "Weight must be between 0 and 1";
       }
     });
@@ -228,7 +225,7 @@ export default function AddReviewConfigModal() {
                   <div className="flex flex-col w-full gap-4">
                     {/* Progress Steps */}
                     <div className="flex justify-between mb-4">
-                      {[1, 2, 3].map((step) => (
+                      {[1, 2].map((step) => (
                         <div
                           key={step}
                           className={`flex-1 flex flex-col items-center ${
@@ -247,7 +244,6 @@ export default function AddReviewConfigModal() {
                           <span className="text-xs mt-1">
                             {step === 1 && "Basic Info"}
                             {step === 2 && "Criteria"}
-                            {step === 3 && "Model"}
                           </span>
                         </div>
                       ))}
@@ -389,13 +385,17 @@ export default function AddReviewConfigModal() {
                           Previous
                         </Button>
 
-                        <Button onPress={() => setTab(tab + 1)} color="primary">
-                          Next
+                        <Button
+                          color="primary"
+                          form="review-config-form"
+                          type="submit"
+                        >
+                          Submit
                         </Button>
                       </div>
                     )}
 
-                    {tab === 2 && (
+                    {/* {tab === 2 && (
                       <div className="flex gap-4 mt-4">
                         <Button onPress={() => setTab(tab - 1)} variant="ghost">
                           Previous
@@ -409,7 +409,7 @@ export default function AddReviewConfigModal() {
                           Submit
                         </Button>
                       </div>
-                    )}
+                    )} */}
                   </div>
                 </Form>
               </ModalBody>

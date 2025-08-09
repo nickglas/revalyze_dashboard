@@ -1,3 +1,4 @@
+import { Contact } from "@/models/api/contact.api.model";
 import { User } from "@/models/api/user.model";
 import api from "@/util/axios";
 import { Autocomplete, AutocompleteItem } from "@heroui/react";
@@ -15,31 +16,31 @@ function useDebounce<T>(value: T, delay = 750): T {
 }
 
 type Props = {
-  value?: User;
-  onChange?: (value: User | null) => void;
-  label?: string;
+  value?: Contact;
+  onChange?: (value: Contact | null) => void;
   required: boolean;
+  label?: string;
 };
 
-const SearchUsers = ({ value, onChange, required, label }: Props) => {
+const SearchContacts = ({ value, onChange, required, label }: Props) => {
   const [inputValue, setInputValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedQuery = useDebounce(searchQuery);
-  const [users, setUsers] = useState<User[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const isInitialMount = useRef(true);
   const isSelection = useRef(false);
 
-  const fetchUser = async (search: string) => {
+  const fetchContacts = async (search: string) => {
     setIsLoading(true);
     try {
-      const { data } = await api.get(`/api/v1/users?name=${search}`);
+      const { data } = await api.get(`/api/v1/contacts?name=${search}`);
       const transformed = (data?.data || []).map((user: User) => ({
         ...user,
         key: user._id,
         label: user.name,
       }));
-      setUsers(transformed);
+      setContacts(transformed);
     } catch (err) {
       console.error("Failed to fetch users:", err);
     } finally {
@@ -49,7 +50,7 @@ const SearchUsers = ({ value, onChange, required, label }: Props) => {
 
   useEffect(() => {
     if (value) {
-      setInputValue(value.name);
+      setInputValue(value.firstName);
     } else {
       setInputValue("");
     }
@@ -62,9 +63,9 @@ const SearchUsers = ({ value, onChange, required, label }: Props) => {
     }
 
     if (debouncedQuery.trim().length > 0) {
-      fetchUser(debouncedQuery);
+      fetchContacts(debouncedQuery);
     } else {
-      setUsers([]);
+      setContacts([]);
     }
   }, [debouncedQuery]);
 
@@ -78,13 +79,13 @@ const SearchUsers = ({ value, onChange, required, label }: Props) => {
       inputValue={inputValue}
       onInputChange={handleInputChange}
       isLoading={isLoading}
-      items={users}
+      items={contacts}
       selectedKey={value?._id}
       onSelectionChange={(key) => {
-        const selected = users.find((c) => c._id === key);
+        const selected = contacts.find((c) => c._id === key);
         if (selected) {
           isSelection.current = true;
-          setInputValue(selected.name);
+          setInputValue(selected.firstName);
           if (onChange) onChange(selected);
           isSelection.current = false;
         } else {
@@ -92,16 +93,18 @@ const SearchUsers = ({ value, onChange, required, label }: Props) => {
           if (onChange) onChange(null);
         }
       }}
-      label={label || "Search for users"}
+      label={label || "Search for contacts"}
       labelPlacement="outside"
-      placeholder="Start typing to search for users"
+      placeholder="Start typing to search for contacts"
       isRequired={required}
     >
       {(item) => (
-        <AutocompleteItem key={item._id}>{item.name}</AutocompleteItem>
+        <AutocompleteItem key={item._id}>
+          {item.firstName} {item.lastName}
+        </AutocompleteItem>
       )}
     </Autocomplete>
   );
 };
 
-export default SearchUsers;
+export default SearchContacts;

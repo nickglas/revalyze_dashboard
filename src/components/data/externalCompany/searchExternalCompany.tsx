@@ -16,12 +16,18 @@ function useDebounce<T>(value: T, delay = 750): T {
 }
 
 type Props = {
-  value?: ExternalCompany; // Selected company object
+  value?: ExternalCompany;
   onChange?: (value: string, company: ExternalCompany | null) => void;
   label?: string;
+  isRequired?: boolean;
 };
 
-const SearchExternalCompany = ({ value, onChange, label }: Props) => {
+const SearchExternalCompany = ({
+  value,
+  onChange,
+  label,
+  isRequired,
+}: Props) => {
   const [inputValue, setInputValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedQuery = useDebounce(searchQuery);
@@ -51,7 +57,6 @@ const SearchExternalCompany = ({ value, onChange, label }: Props) => {
     }
   };
 
-  // Set initial input value when value changes
   useEffect(() => {
     if (value) {
       setInputValue(value.name);
@@ -60,7 +65,6 @@ const SearchExternalCompany = ({ value, onChange, label }: Props) => {
     }
   }, [value]);
 
-  // Handle search trigger
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -73,14 +77,12 @@ const SearchExternalCompany = ({ value, onChange, label }: Props) => {
       setCompanies([]);
     }
 
-    // Reset selection flag after search
     isSelection.current = false;
   }, [debouncedQuery]);
 
   const handleInputChange = (value: string) => {
     setInputValue(value);
 
-    // Only set search query if we're not in "selection mode"
     if (!isSelection.current) {
       setSearchQuery(value);
     }
@@ -98,7 +100,6 @@ const SearchExternalCompany = ({ value, onChange, label }: Props) => {
         const selected = companies.find((c) => c._id === key);
         if (selected) {
           console.warn(selected);
-          // Set selection flag to prevent unnecessary search
           isSelection.current = true;
           setInputValue(selected.name);
           if (onChange) onChange(key as string, selected);
@@ -110,7 +111,7 @@ const SearchExternalCompany = ({ value, onChange, label }: Props) => {
       label={label || "Contact belongs to"}
       labelPlacement="outside"
       placeholder="Start typing to search companies"
-      isRequired
+      isRequired={isRequired || false}
     >
       {(item) => (
         <AutocompleteItem key={item._id}>{item.name}</AutocompleteItem>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Table,
   TableHeader,
@@ -18,212 +18,217 @@ import {
   Avatar,
   Tooltip,
   Badge,
+  Select,
+  SelectItem,
+  useDisclosure,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "@heroui/react";
-import { SearchIcon } from "@/components/icons";
-import { ChevronDownIcon, VerticalDotsIcon } from "../users/userTable";
+import { useTranscriptStore } from "@/store/transcriptStore";
+import { Transcript } from "@/models/api/transcript.api.model";
+import {
+  ReviewStatus,
+  TranscriptSummaryDto,
+} from "@/models/dto/transcripts/transcript.summary.dto";
 import AddTranscriptModal from "@/components/modals/transcripts/addTranscriptModal";
 
-// Mock transcript data based on your entity model
-const transcriptData = {
-  data: [
-    {
-      _id: "687b85ef3d0b6f56ee5cfb76",
-      employeeId: "687d23483cb8c1c33f349909",
-      employeeName: "Nick Glas",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      externalCompanyId: "687d23483cb8c1c33f349900",
-      contactId: "687d23483cb8c1c33f349901",
-      contactName: "Sarah Johnson",
-      content:
-        "We discussed the new project requirements and timeline. The client was very enthusiastic about our proposal and seems ready to move forward.",
-      timestamp: "2025-07-20T10:30:00.000Z",
-      uploadedBy: "Jane Admin",
-      isReviewed: true,
-    },
-    {
-      _id: "687d234d3cb8c1c33f349911",
-      employeeId: "687d23483cb8c1c33f349909",
-      employeeName: "Nick Glas",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      externalCompanyId: "687d23483cb8c1c33f349900",
-      contactId: "687d23483cb8c1c33f349902",
-      contactName: "Michael Chen",
-      content:
-        "Technical support call regarding API integration issues. The client was frustrated with the documentation but appreciated the quick resolution.",
-      timestamp: "2025-07-19T14:45:00.000Z",
-      uploadedBy: "Jane Admin",
-      isReviewed: false,
-    },
-    {
-      _id: "687d234f3cb8c1c33f349916",
-      employeeId: "687d23483cb8c1c33f349911",
-      employeeName: "Emma Rodriguez",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      externalCompanyId: "687d23483cb8c1c33f349901",
-      contactId: "687d23483cb8c1c33f349903",
-      contactName: "David Wilson",
-      content:
-        "Contract renewal discussion. The client requested additional features and extended trial period.",
-      timestamp: "2025-07-18T11:20:00.000Z",
-      uploadedBy: "Jane Admin",
-      isReviewed: false,
-    },
-    {
-      _id: "687d23513cb8c1c33f34991b",
-      employeeId: "687d23483cb8c1c33f349911",
-      employeeName: "Emma Rodriguez",
-      companyId: "687b85ef3d0b6f56ee5cfb74",
-      externalCompanyId: "687d23483cb8c1c33f349902",
-      contactId: "687d23483cb8c1c33f349904",
-      contactName: "Priya Patel",
-      content:
-        "Complaint about service interruption. Client was very upset about the downtime but calmed down after explanation of the issue.",
-      timestamp: "2025-07-17T16:15:00.000Z",
-      uploadedBy: "Jane Admin",
-      isReviewed: true,
-    },
-  ],
-  meta: {
-    total: 4,
-    page: 1,
-    limit: 10,
-    pages: 1,
-  },
-};
+// Icons
+export const SearchIcon = () => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="1em"
+    role="presentation"
+    viewBox="0 0 24 24"
+    width="1em"
+  >
+    <path
+      d="M11.5 21C16.7467 21 21 16.7467 21 11.5C21 6.25329 16.7467 2 11.5 2C6.25329 2 2 6.25329 2 11.5C2 16.7467 6.25329 21 11.5 21Z"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+    />
+    <path
+      d="M22 22L20 20"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+    />
+  </svg>
+);
 
-// Map API data to table format
-const transcripts = transcriptData.data.map((transcript) => ({
-  id: transcript._id,
-  employeeName: transcript.employeeName,
-  contact: transcript.contactName,
-  content:
-    transcript.content.substring(0, 100) +
-    (transcript.content.length > 100 ? "..." : ""),
-  fullContent: transcript.content,
-  timestamp: new Date(transcript.timestamp),
-  uploadedBy: transcript.uploadedBy,
-  isReviewed: transcript.isReviewed,
-}));
+export const ChevronDownIcon = () => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="1em"
+    role="presentation"
+    viewBox="0 0 24 24"
+    width="1em"
+  >
+    <path
+      d="m19.92 8.95-6.52 6.52c-.77.77-2.03.77-2.8 0L4.08 8.95"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeMiterlimit={10}
+      strokeWidth={1.5}
+    />
+  </svg>
+);
 
-export const columns = [
+export const VerticalDotsIcon = () => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="1em"
+    role="presentation"
+    viewBox="0 0 24 24"
+    width="1em"
+  >
+    <path
+      d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const ALL_COLUMNS = [
   { name: "EMPLOYEE", uid: "employeeName", sortable: true },
-  { name: "CONTACT", uid: "contact", sortable: true },
-  { name: "CONTENT", uid: "content" },
+  { name: "CONTACT", uid: "contactName", sortable: true },
+  { name: "CONTENT", uid: "contentPreview" },
   { name: "DATE", uid: "timestamp", sortable: true },
-  { name: "UPLOADED BY", uid: "uploadedBy", sortable: true },
-  { name: "REVIEWED", uid: "isReviewed", sortable: true },
+  { name: "UPLOADED BY", uid: "uploadedByName", sortable: true },
+  { name: "REVIEW STATUS", uid: "reviewStatus", sortable: true },
   { name: "ACTIONS", uid: "actions" },
 ];
 
 export const reviewStatusOptions = [
-  { name: "Reviewed", uid: "true" },
-  { name: "Not Reviewed", uid: "false" },
+  { name: "All Statuses", uid: "all" },
+  { name: "Not Started", uid: "NOT_STARTED" },
+  { name: "In Progress", uid: "IN_PROGRESS" },
+  { name: "Completed", uid: "COMPLETED" },
 ];
+
+export const reviewStatusColorMap = {
+  NOT_STARTED: "default",
+  IN_PROGRESS: "warning",
+  COMPLETED: "success",
+  ERROR: "danger",
+};
 
 export function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 }
 
-const INITIAL_VISIBLE_COLUMNS = [
-  "employeeName",
-  "contact",
-  "content",
-  "timestamp",
-  "uploadedBy",
-  "isReviewed",
-  "actions",
-];
+interface TranscriptTableRow {
+  id: string;
+  employeeName: string;
+  contactName: string;
+  contentPreview: string;
+  uploadedByName: string;
+  timestamp: Date;
+  reviewStatus: ReviewStatus;
+  isReviewed: boolean;
+  original: TranscriptSummaryDto;
+}
 
 export default function TranscriptsTable() {
+  const { transcripts, meta, isLoading, fetchTranscripts } =
+    useTranscriptStore();
   const [filterValue, setFilterValue] = useState("");
-  const [visibleColumns, setVisibleColumns] = useState(
-    new Set(INITIAL_VISIBLE_COLUMNS)
-  );
-  const [reviewFilter, setReviewFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [sortDescriptor, setSortDescriptor] = useState<{
-    column: string;
-    direction: "ascending" | "descending";
-  }>({
-    column: "timestamp",
-    direction: "descending",
-  });
   const [page, setPage] = useState(1);
+  const [sortDescriptor, setSortDescriptor] = useState({
+    column: "timestamp",
+    direction: "descending" as "ascending" | "descending",
+  });
+  const [selectedColumns, setSelectedColumns] = useState<string[]>(
+    ALL_COLUMNS.map((col) => col.uid)
+  );
 
-  const hasSearchFilter = Boolean(filterValue);
+  // Full content modal
+  const contentModal = useDisclosure();
+  const [selectedTranscript, setSelectedTranscript] =
+    useState<TranscriptSummaryDto | null>(null);
 
-  const headerColumns = React.useMemo(() => {
-    return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid)
+  // Fetch data when parameters change
+  useEffect(() => {
+    fetchTranscripts(
+      {
+        search: filterValue || undefined,
+        reviewStatus: statusFilter !== "all" ? statusFilter : undefined,
+        sortBy: sortDescriptor.column,
+        sortOrder: sortDescriptor.direction === "ascending" ? "asc" : "desc",
+      },
+      page,
+      rowsPerPage
     );
-  }, [visibleColumns]);
+  }, [
+    page,
+    rowsPerPage,
+    statusFilter,
+    filterValue,
+    sortDescriptor,
+    fetchTranscripts,
+  ]);
 
-  const filteredItems = React.useMemo(() => {
-    let filteredTranscripts = [...transcripts];
-
-    if (hasSearchFilter) {
-      filteredTranscripts = filteredTranscripts.filter(
-        (transcript) =>
-          transcript.employeeName
-            .toLowerCase()
-            .includes(filterValue.toLowerCase()) ||
-          transcript.contact
-            .toLowerCase()
-            .includes(filterValue.toLowerCase()) ||
-          transcript.fullContent
-            .toLowerCase()
-            .includes(filterValue.toLowerCase())
-      );
-    }
-
-    if (reviewFilter !== "all") {
-      filteredTranscripts = filteredTranscripts.filter(
-        (transcript) => transcript.isReviewed.toString() === reviewFilter
-      );
-    }
-
-    return filteredTranscripts;
-  }, [transcripts, filterValue, reviewFilter]);
-
-  const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
-
-  const items = React.useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return filteredItems.slice(start, end);
-  }, [page, filteredItems, rowsPerPage]);
-
-  const sortedItems = React.useMemo(() => {
-    return [...items].sort((a, b) => {
-      let first: any, second: any;
-
-      if (sortDescriptor.column === "timestamp") {
-        first = a.timestamp.getTime();
-        second = b.timestamp.getTime();
-      } else {
-        first = a[sortDescriptor.column as keyof typeof a];
-        second = b[sortDescriptor.column as keyof typeof b];
-      }
-
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
+  const handleSortChange = (descriptor: any) => {
+    setSortDescriptor({
+      column: descriptor.column,
+      direction: descriptor.direction,
     });
-  }, [sortDescriptor, items]);
+    setPage(1);
+  };
 
-  const renderCell = React.useCallback(
-    (transcript: any, columnKey: React.Key) => {
-      const cellValue = transcript[columnKey as keyof typeof transcript];
+  // Map API data to table format
+  const tableRows = useMemo<TranscriptTableRow[]>(() => {
+    if (!transcripts) return [];
 
+    return transcripts.map((transcript) => ({
+      id: transcript.id,
+      employeeName: transcript.employeeName || "Unknown",
+      contactName: transcript.contactName || "Unknown",
+      contentPreview: transcript.contentPreview,
+      uploadedByName: transcript.uploadedByName || "Unknown", // Changed to match DTO
+      timestamp: new Date(transcript.timestamp),
+      reviewStatus: transcript.reviewStatus,
+      isReviewed: transcript.isReviewed,
+      original: transcript, // Store original data
+    }));
+  }, [transcripts]);
+
+  // Filter columns based on selection
+  const visibleColumns = useMemo(() => {
+    return ALL_COLUMNS.filter((column) => selectedColumns.includes(column.uid));
+  }, [selectedColumns]);
+
+  // Handle view full content
+  const handleViewContent = (transcript: TranscriptSummaryDto) => {
+    setSelectedTranscript(transcript);
+    contentModal.onOpen();
+  };
+
+  const renderCell = useCallback(
+    (transcript: TranscriptTableRow, columnKey: string | number) => {
       switch (columnKey) {
         case "employeeName":
           return (
             <div className="flex items-center gap-3">
               <Avatar
                 name={transcript.employeeName}
-                getInitials={(name: string) =>
+                getInitials={(name) =>
                   name
                     .split(" ")
-                    .map((n: string) => n[0])
+                    .map((n) => n[0])
                     .join("")
                 }
               />
@@ -231,29 +236,25 @@ export default function TranscriptsTable() {
             </div>
           );
 
-        case "contact":
+        case "contactName":
           return (
             <div className="flex items-center gap-3">
               <Avatar
-                name={transcript.contact}
-                getInitials={(name: string) =>
+                name={transcript.contactName}
+                getInitials={(name) =>
                   name
                     .split(" ")
-                    .map((n: string) => n[0])
+                    .map((n) => n[0])
                     .join("")
                 }
               />
-              <span className="font-medium">{transcript.contact}</span>
+              <span className="font-medium">{transcript.contactName}</span>
             </div>
           );
 
-        case "content":
+        case "contentPreview":
           return (
-            <Tooltip content={transcript.fullContent}>
-              <div className="max-w-[300px] truncate text-gray-600">
-                {transcript.content}
-              </div>
-            </Tooltip>
+            <div className="max-w-[300px]">{transcript.contentPreview}</div>
           );
 
         case "timestamp":
@@ -271,33 +272,36 @@ export default function TranscriptsTable() {
             </div>
           );
 
-        case "uploadedBy":
+        case "uploadedByName":
           return (
             <div className="flex items-center gap-3">
               <Avatar
-                name={transcript.uploadedBy}
-                getInitials={(name: string) =>
+                name={transcript.uploadedByName}
+                getInitials={(name) =>
                   name
                     .split(" ")
-                    .map((n: string) => n[0])
+                    .map((n) => n[0])
                     .join("")
                 }
               />
-              <span>{transcript.uploadedBy}</span>
+              <span>{transcript.uploadedByName}</span>
             </div>
           );
 
-        case "isReviewed":
+        case "reviewStatus":
           return (
             <Chip
               className="capitalize"
-              color={transcript.isReviewed ? "success" : "warning"}
               size="sm"
               variant="flat"
+              color={transcript.isReviewed ? "success" : "warning"}
             >
-              {transcript.isReviewed ? "Reviewed" : "Pending"}
+              {transcript.reviewStatus?.replace("_", " ")}
             </Chip>
           );
+
+        case "contentPreview":
+          return <p>{transcript.contentPreview}</p>;
 
         case "actions":
           return (
@@ -309,11 +313,13 @@ export default function TranscriptsTable() {
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu aria-label="Transcript Actions">
-                  <DropdownItem key="view">View</DropdownItem>
+                  <DropdownItem key="view">View Full Content</DropdownItem>
                   <DropdownItem key="edit">Edit</DropdownItem>
                   <DropdownItem key="delete">Delete</DropdownItem>
                   <DropdownItem key="review" className="text-primary">
-                    Start Review
+                    {transcript.reviewStatus === "NOT_STARTED"
+                      ? "Start Review"
+                      : "Continue Review"}
                   </DropdownItem>
                 </DropdownMenu>
               </Dropdown>
@@ -321,43 +327,32 @@ export default function TranscriptsTable() {
           );
 
         default:
-          return cellValue;
+          return null;
       }
     },
     []
   );
 
-  const onNextPage = React.useCallback(() => {
-    if (page < pages) setPage(page + 1);
-  }, [page, pages]);
-
-  const onPreviousPage = React.useCallback(() => {
-    if (page > 1) setPage(page - 1);
-  }, [page]);
-
-  const onRowsPerPageChange = React.useCallback(
+  const onRowsPerPageChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setRowsPerPage(Number(e.target.value));
+      const newRowsPerPage = Number(e.target.value);
+      setRowsPerPage(newRowsPerPage);
       setPage(1);
     },
     []
   );
 
-  const onSearchChange = React.useCallback((value: string) => {
-    if (value) {
-      setFilterValue(value);
-      setPage(1);
-    } else {
-      setFilterValue("");
-    }
+  const onSearchChange = useCallback((value: string) => {
+    setFilterValue(value);
+    setPage(1);
   }, []);
 
-  const onClear = React.useCallback(() => {
+  const onClear = useCallback(() => {
     setFilterValue("");
     setPage(1);
   }, []);
 
-  const topContent = React.useMemo(() => {
+  const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between gap-3 items-end">
@@ -367,7 +362,7 @@ export default function TranscriptsTable() {
             placeholder="Search by employee, contact, or content..."
             startContent={<SearchIcon />}
             value={filterValue}
-            onClear={() => setFilterValue("")}
+            onClear={onClear}
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
@@ -380,38 +375,51 @@ export default function TranscriptsTable() {
               <DropdownMenu
                 disallowEmptySelection
                 aria-label="Review Status Filter"
-                selectedKeys={new Set([reviewFilter])}
+                selectedKeys={new Set([statusFilter])}
                 selectionMode="single"
                 onSelectionChange={(keys) =>
-                  setReviewFilter(String(Array.from(keys)[0] || "all"))
+                  setStatusFilter(String(Array.from(keys)[0] || "all"))
                 }
               >
-                <DropdownItem key="all">All</DropdownItem>
-                <>
-                  {reviewStatusOptions.map((status) => (
-                    <DropdownItem key={status.uid} className="capitalize">
-                      {status.name}
-                    </DropdownItem>
-                  ))}
-                </>
+                {reviewStatusOptions.map((status) => (
+                  <DropdownItem key={status.uid} className="capitalize">
+                    {status.name}
+                  </DropdownItem>
+                ))}
               </DropdownMenu>
             </Dropdown>
 
+            {/* Column Visibility Selector */}
+            <Select
+              selectionMode="multiple"
+              placeholder="Select columns"
+              className="max-w-[150px] rounded-md"
+              size="md"
+              selectedKeys={selectedColumns}
+              onSelectionChange={(keys) =>
+                setSelectedColumns(Array.from(keys as Set<string>))
+              }
+            >
+              {ALL_COLUMNS.map((column) => (
+                <SelectItem key={column.uid}>{column.name}</SelectItem>
+              ))}
+            </Select>
             <AddTranscriptModal />
           </div>
         </div>
 
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Showing {filteredItems.length} of {transcriptData.meta.total}{" "}
-            transcripts
+            {isLoading
+              ? "Loading transcripts..."
+              : `Showing ${transcripts?.length || 0} of ${meta?.total || 0} transcripts`}
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
               className="bg-transparent outline-none text-default-400 text-small ml-1"
               onChange={onRowsPerPageChange}
-              defaultValue="5"
+              value={rowsPerPage}
             >
               <option value="5">5</option>
               <option value="10">10</option>
@@ -423,20 +431,27 @@ export default function TranscriptsTable() {
     );
   }, [
     filterValue,
-    reviewFilter,
+    statusFilter,
     onSearchChange,
     onRowsPerPageChange,
-    filteredItems.length,
+    transcripts,
+    isLoading,
+    meta?.total,
+    rowsPerPage,
+    selectedColumns,
   ]);
 
-  const bottomContent = React.useMemo(() => {
-    const startItem = (page - 1) * rowsPerPage + 1;
-    const endItem = Math.min(page * rowsPerPage, filteredItems.length);
+  const bottomContent = useMemo(() => {
+    if (isLoading) return null;
+
+    const startItem = meta ? (meta.page - 1) * meta.limit + 1 : 0;
+    const endItem = meta ? Math.min(meta.page * meta.limit, meta.total) : 0;
+    const total = meta?.total || 0;
 
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {`Showing ${startItem} to ${endItem} of ${filteredItems.length} transcripts`}
+          {`Showing ${startItem} to ${endItem} of ${total} transcripts`}
         </span>
         <Pagination
           isCompact
@@ -444,87 +459,72 @@ export default function TranscriptsTable() {
           showShadow
           color="primary"
           page={page}
-          total={pages}
+          total={meta?.pages || 1}
           onChange={setPage}
         />
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
           <Button
-            isDisabled={pages === 1}
+            isDisabled={page === 1}
             size="sm"
             variant="flat"
-            onPress={onPreviousPage}
+            onPress={() => setPage(page - 1)}
           >
             Previous
           </Button>
           <Button
-            isDisabled={pages === 1}
+            isDisabled={page === (meta?.pages || 1)}
             size="sm"
             variant="flat"
-            onPress={onNextPage}
+            onPress={() => setPage(page + 1)}
           >
             Next
           </Button>
         </div>
       </div>
     );
-  }, [
-    page,
-    pages,
-    filteredItems.length,
-    rowsPerPage,
-    onPreviousPage,
-    onNextPage,
-  ]);
-
-  // Handler to convert SortDescriptor column to string
-  const handleSortChange = (descriptor: {
-    column: React.Key;
-    direction: "ascending" | "descending";
-  }) => {
-    setSortDescriptor({
-      column: String(descriptor.column),
-      direction: descriptor.direction,
-    });
-  };
+  }, [page, isLoading, meta]);
 
   return (
-    <Table
-      isHeaderSticky
-      aria-label="Transcripts table"
-      bottomContent={bottomContent}
-      bottomContentPlacement="outside"
-      classNames={{
-        wrapper: "max-h-[500px]",
-      }}
-      sortDescriptor={sortDescriptor}
-      topContent={topContent}
-      topContentPlacement="outside"
-      onSortChange={handleSortChange}
-    >
-      <TableHeader columns={headerColumns}>
-        {(column) => (
-          <TableColumn
-            key={column.uid}
-            align={column.uid === "actions" ? "center" : "start"}
-            allowsSorting={column.sortable}
-          >
-            {column.name}
-          </TableColumn>
-        )}
-      </TableHeader>
-      <TableBody
-        emptyContent={"No transcripts found"}
-        items={sortedItems}
-        loadingContent={<Spinner label="Loading transcripts..." />}
+    <div>
+      <Table
+        isHeaderSticky
+        aria-label="Transcripts table"
+        bottomContent={bottomContent}
+        bottomContentPlacement="outside"
+        classNames={{
+          wrapper: "max-h-[550px]",
+        }}
+        sortDescriptor={sortDescriptor}
+        topContent={topContent}
+        topContentPlacement="outside"
+        onSortChange={handleSortChange}
       >
-        {(item) => (
-          <TableRow key={item.id}>
-            {(columnKey) => (
-              <TableCell>{renderCell(item, columnKey)}</TableCell>
-            )}
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+        <TableHeader columns={visibleColumns}>
+          {(column) => (
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "center" : "start"}
+              allowsSorting={column.sortable}
+            >
+              {column.name}
+            </TableColumn>
+          )}
+        </TableHeader>
+        <TableBody
+          emptyContent={isLoading ? " " : "No transcripts found"}
+          items={isLoading ? [] : tableRows}
+          loadingContent={<Spinner label="Loading transcripts..." />}
+          loadingState={isLoading ? "loading" : "idle"}
+        >
+          {(item) => (
+            <TableRow key={item.id}>
+              {(columnKey) => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

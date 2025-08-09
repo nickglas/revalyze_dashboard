@@ -8,7 +8,7 @@ import {
   ModalFooter,
   useDisclosure,
 } from "@heroui/modal";
-import { Button, Input, Textarea, Switch, Form } from "@heroui/react";
+import { Button, Input, Textarea, Switch, Form, Alert } from "@heroui/react";
 import { useCriteriaStore } from "@/store/criteriaStore";
 
 export default function AddCriteriaModal() {
@@ -111,8 +111,14 @@ export default function AddCriteriaModal() {
                 Create criteria
               </ModalHeader>
               <ModalBody>
+                <div className="w-full flex items-center">
+                  <Alert
+                    color="warning"
+                    title={`This is some simple test to indicate a warning`}
+                  />
+                </div>
                 <Form id="criteria-form" onSubmit={handleSubmit}>
-                  <div className="flex flex-col w-full gap-4">
+                  <div className="flex flex-col w-full gap-4 mt-4">
                     <Input
                       isRequired
                       isInvalid={!!errors.title}

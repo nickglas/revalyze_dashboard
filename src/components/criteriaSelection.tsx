@@ -28,7 +28,7 @@ export const CriteriaSelection: React.FC<CriteriaSelectionProps> = ({
       <TableHeader>
         <TableColumn>TITLE</TableColumn>
         <TableColumn>DESCRIPTION</TableColumn>
-        <TableColumn width={120}>WEIGHT</TableColumn>
+        <TableColumn width={80}>WEIGHT</TableColumn>
         <TableColumn width={80}>ACTIONS</TableColumn>
       </TableHeader>
       <TableBody emptyContent="No criteria selected yet">
@@ -38,14 +38,14 @@ export const CriteriaSelection: React.FC<CriteriaSelectionProps> = ({
               <p className="font-medium">{criterion.title}</p>
             </TableCell>
             <TableCell>
-              <p className="text-sm text-gray-600 line-clamp-2">
+              <p className="text-sm text-gray-600 truncate w-26 ">
                 {criterion.description}
               </p>
             </TableCell>
             <TableCell>
               <Input
                 type="number"
-                min="0"
+                min="0.1"
                 max="1"
                 step="0.1"
                 value={criterion.weight.toString()}
