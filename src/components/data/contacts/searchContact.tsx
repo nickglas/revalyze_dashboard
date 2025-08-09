@@ -99,9 +99,7 @@ const SearchContacts = ({ value, onChange, required, label }: Props) => {
       isRequired={required}
     >
       {(item) => (
-        <AutocompleteItem key={item._id}>
-          {item.firstName} {item.lastName}
-        </AutocompleteItem>
+        <AutocompleteItem key={item._id}>{item.firstName}</AutocompleteItem>
       )}
     </Autocomplete>
   );

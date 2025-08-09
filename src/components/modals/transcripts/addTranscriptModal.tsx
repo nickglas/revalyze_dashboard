@@ -5,18 +5,9 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   useDisclosure,
 } from "@heroui/modal";
-import {
-  Button,
-  Input,
-  Textarea,
-  Switch,
-  Form,
-  DatePicker,
-} from "@heroui/react";
-import { useCriteriaStore } from "@/store/criteriaStore";
+import { Button, Input, Textarea, Form, DatePicker } from "@heroui/react";
 import SearchExternalCompany from "@/components/data/externalCompany/searchExternalCompany";
 import SearchUsers from "@/components/data/users/searchUsers";
 import SearchContacts from "@/components/data/contacts/searchContact";
@@ -24,6 +15,29 @@ import SearchContacts from "@/components/data/contacts/searchContact";
 export default function AddTranscriptModal() {
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const [tab, setTab] = useState(0);
+  const [fileContent, setFileContent] = useState("");
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Only allow .txt files
+    if (file.type !== "text/plain") {
+      alert("Only .txt files are allowed.");
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      setFileContent(text);
+    };
+    reader.onerror = () => {
+      alert("Error reading file.");
+    };
+    reader.readAsText(file);
+  };
 
   return (
     <>
@@ -73,15 +87,19 @@ export default function AddTranscriptModal() {
                         <Input
                           size="md"
                           type="file"
+                          accept=".txt"
                           label="Select a file"
                           labelPlacement="outside"
+                          onChange={handleFileChange}
                         />
                         <Textarea
                           label="Description"
                           labelPlacement="outside"
                           minRows={10}
                           placeholder="Enter your description"
-                          isClearable={true}
+                          isClearable
+                          value={fileContent}
+                          onChange={(e) => setFileContent(e.target.value)}
                         />
                       </>
                     )}
