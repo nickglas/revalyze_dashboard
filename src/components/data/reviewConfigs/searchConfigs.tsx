@@ -1,4 +1,5 @@
 import { Contact } from "@/models/api/contact.api.model";
+import { ReviewConfig } from "@/models/api/review.config.api.model";
 import { User } from "@/models/api/user.model";
 import api from "@/util/axios";
 import { Autocomplete, AutocompleteItem } from "@heroui/react";
@@ -16,43 +17,40 @@ function useDebounce<T>(value: T, delay = 750): T {
 }
 
 type Props = {
-  value?: Contact;
-  onChange?: (value: Contact | null) => void;
+  value?: ReviewConfig;
+  onChange?: (value: ReviewConfig | null) => void;
   required: boolean;
   label?: string;
-  companyId?: string;
+  isDisabled?: boolean;
 };
 
-const SearchContacts = ({
+const SearchConfigs = ({
   value,
   onChange,
   required,
   label,
-  companyId,
+  isDisabled,
 }: Props) => {
   const [inputValue, setInputValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedQuery = useDebounce(searchQuery);
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [configs, setConfigs] = useState<ReviewConfig[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const isInitialMount = useRef(true);
   const isSelection = useRef(false);
 
-  const fetchContacts = async (search: string) => {
+  const fetchConfigs = async (search: string) => {
     setIsLoading(true);
     try {
-      const companyFilter = companyId ? `&externalCompanyId=${companyId}` : "";
-      const { data } = await api.get(
-        `/api/v1/contacts?name=${search}${companyFilter}`
-      );
+      const { data } = await api.get(`/api/v1/review-configs?name=${search}`);
       const transformed = (data?.data || []).map((user: User) => ({
         ...user,
         key: user._id,
         label: user.name,
       }));
-      setContacts(transformed);
+      setConfigs(transformed);
     } catch (err) {
-      console.error("Failed to fetch users:", err);
+      console.error("Failed to fetch review-configs:", err);
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +58,7 @@ const SearchContacts = ({
 
   useEffect(() => {
     if (value) {
-      setInputValue(value.firstName);
+      setInputValue(value.name);
     } else {
       setInputValue("");
     }
@@ -73,9 +71,9 @@ const SearchContacts = ({
     }
 
     if (debouncedQuery.trim().length > 0) {
-      fetchContacts(debouncedQuery);
+      fetchConfigs(debouncedQuery);
     } else {
-      setContacts([]);
+      setConfigs([]);
     }
   }, [debouncedQuery]);
 
@@ -89,13 +87,14 @@ const SearchContacts = ({
       inputValue={inputValue}
       onInputChange={handleInputChange}
       isLoading={isLoading}
-      items={contacts}
+      isDisabled={isDisabled}
+      items={configs}
       selectedKey={value?._id}
       onSelectionChange={(key) => {
-        const selected = contacts.find((c) => c._id === key);
+        const selected = configs.find((c) => c._id === key);
         if (selected) {
           isSelection.current = true;
-          setInputValue(selected.firstName);
+          setInputValue(selected.name);
           if (onChange) onChange(selected);
           isSelection.current = false;
         } else {
@@ -103,16 +102,16 @@ const SearchContacts = ({
           if (onChange) onChange(null);
         }
       }}
-      label={label || "Search for contacts"}
+      label={label || "Search for configs"}
       labelPlacement="outside"
-      placeholder="Start typing to search for contacts"
+      placeholder="Start typing to search for configs"
       isRequired={required}
     >
       {(item) => (
-        <AutocompleteItem key={item._id}>{item.firstName}</AutocompleteItem>
+        <AutocompleteItem key={item._id}>{item.name}</AutocompleteItem>
       )}
     </Autocomplete>
   );
 };
 
-export default SearchContacts;
+export default SearchConfigs;

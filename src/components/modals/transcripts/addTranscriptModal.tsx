@@ -15,15 +15,16 @@ import {
   Textarea,
   Spinner,
   Alert,
+  Checkbox,
 } from "@heroui/react";
-import SearchExternalCompany from "@/components/data/externalCompany/searchExternalCompany";
 import SearchUsers from "@/components/data/users/searchUsers";
-import SearchContacts from "@/components/data/contacts/searchContact";
 import { useTranscriptStore } from "@/store/transcriptStore";
 import { CreateTranscriptDTO } from "@/models/dto/create.transcript.dto";
 import { formatISO, startOfDay } from "date-fns";
 import { parseDate, getLocalTimeZone } from "@internationalized/date";
 import { toast } from "react-toastify";
+import CompanyContactSelector from "@/components/data/externalCompany/companyContactSelector";
+import SearchConfigs from "@/components/data/reviewConfigs/searchConfigs";
 
 const MAX_SIZE = 100 * 1024 * 1024; // 100MB
 const CHUNK_SIZE = 1024 * 1024; // 1MB
@@ -38,7 +39,6 @@ export default function AddTranscriptModal() {
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const { createTranscript } = useTranscriptStore();
   const [tab, setTab] = useState(0);
-  const [value, setValue] = React.useState(parseDate("2024-04-04"));
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [fileLoading, setFileLoading] = useState(false);
@@ -46,13 +46,19 @@ export default function AddTranscriptModal() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<
-    Omit<CreateTranscriptDTO, "timestamp"> & { timestamp: Date | null }
+    Omit<CreateTranscriptDTO, "timestamp"> & {
+      timestamp: Date | null;
+      autoStartReview: boolean;
+      reviewConfigId: string;
+    }
   >({
     content: "",
     timestamp: getTodayAtMidnight(),
     employeeId: "",
     externalCompanyId: "",
     contactId: "",
+    autoStartReview: false,
+    reviewConfigId: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -64,8 +70,10 @@ export default function AddTranscriptModal() {
         content: "",
         timestamp: getTodayAtMidnight(),
         employeeId: "",
-        externalCompanyId: "",
-        contactId: "",
+        externalCompanyId: undefined,
+        contactId: undefined,
+        autoStartReview: true,
+        reviewConfigId: "",
       });
       setErrors({});
       setTab(0);
@@ -157,6 +165,13 @@ export default function AddTranscriptModal() {
 
       if (!formData.timestamp) {
         newErrors.timestamp = "Conversation date is required";
+      }
+
+      if (formData.autoStartReview) {
+        if (!formData.reviewConfigId || formData.reviewConfigId.trim() === "") {
+          newErrors.reviewConfigId =
+            "Review config is required when auto start review is enabled";
+        }
       }
     }
 
@@ -310,19 +325,16 @@ export default function AddTranscriptModal() {
                           </p>
                         )}
 
-                        <SearchExternalCompany
-                          label="Search for company"
-                          onChange={(id, company) =>
-                            updateField("externalCompanyId", company?._id || "")
-                          }
-                        />
-
-                        <SearchContacts
-                          required={false}
-                          label="Search for contact"
-                          onChange={(contact) =>
-                            updateField("contactId", contact?._id || "")
-                          }
+                        <CompanyContactSelector
+                          selectedCompanyId={formData.externalCompanyId}
+                          selectedContactId={formData.contactId}
+                          onChange={({ company, contact }) => {
+                            updateField(
+                              "externalCompanyId",
+                              company?._id || undefined
+                            );
+                            updateField("contactId", contact?._id || undefined);
+                          }}
                         />
 
                         <DatePicker
@@ -359,6 +371,29 @@ export default function AddTranscriptModal() {
                           isInvalid={!!errors.timestamp}
                           errorMessage={errors.timestamp}
                         />
+                        <SearchConfigs
+                          required
+                          isDisabled={!formData.autoStartReview}
+                          label="Set config"
+                          onChange={(config) =>
+                            updateField("reviewConfigId", config?._id || "")
+                          }
+                        />
+                        {errors.reviewConfigId && (
+                          <p className="text-danger text-sm mt-1">
+                            {errors.reviewConfigId}
+                          </p>
+                        )}
+
+                        <Checkbox
+                          size="sm"
+                          isSelected={formData.autoStartReview}
+                          onValueChange={(checked) =>
+                            updateField("autoStartReview", checked)
+                          }
+                        >
+                          Auto start review process
+                        </Checkbox>
                       </>
                     )}
                   </div>
@@ -390,6 +425,9 @@ export default function AddTranscriptModal() {
                         type="submit"
                         form="transcript-form"
                         isLoading={isSubmitting}
+                        isDisabled={
+                          fileLoading || Object.keys(errors).length > 0
+                        }
                       >
                         {isSubmitting ? "Uploading..." : "Upload"}
                       </Button>

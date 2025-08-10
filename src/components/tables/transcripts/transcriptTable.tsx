@@ -254,7 +254,9 @@ export default function TranscriptsTable() {
 
         case "contentPreview":
           return (
-            <div className="max-w-[300px]">{transcript.contentPreview}</div>
+            <div className="max-w-[300px] truncate">
+              {transcript.contentPreview}
+            </div>
           );
 
         case "timestamp":

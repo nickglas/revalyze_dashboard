@@ -4,4 +4,6 @@ export interface CreateTranscriptDTO {
   externalCompanyId?: string;
   contactId?: string;
   timestamp: string;
+  autoStartReview: boolean;
+  reviewConfigId?: string;
 }
