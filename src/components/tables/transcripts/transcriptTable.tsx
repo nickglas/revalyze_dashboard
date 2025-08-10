@@ -263,12 +263,6 @@ export default function TranscriptsTable() {
               <p className="font-medium">
                 {transcript.timestamp.toLocaleDateString()}
               </p>
-              <p className="text-gray-500 text-sm">
-                {transcript.timestamp.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
             </div>
           );
 
@@ -299,9 +293,6 @@ export default function TranscriptsTable() {
               {transcript.reviewStatus?.replace("_", " ")}
             </Chip>
           );
-
-        case "contentPreview":
-          return <p>{transcript.contentPreview}</p>;
 
         case "actions":
           return (

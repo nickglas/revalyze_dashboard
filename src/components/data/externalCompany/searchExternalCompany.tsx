@@ -17,7 +17,7 @@ function useDebounce<T>(value: T, delay = 750): T {
 
 type Props = {
   value?: ExternalCompany;
-  onChange?: (value: string, company: ExternalCompany | null) => void;
+  onChange?: (id: string, company: ExternalCompany | null) => void;
   label?: string;
   isRequired?: boolean;
 };
