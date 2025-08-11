@@ -1,6 +1,7 @@
 import api from "@/util/axios";
 import { PaginatedResponse } from "@/models/others/PaginatedResponse";
 import { User } from "@/models/api/user.model";
+import { CreateUserDto } from "@/models/dto/users/create.user.dto";
 
 export const getUsers = async (
   page = 1,
@@ -21,12 +22,7 @@ export const getUsers = async (
   return res.data;
 };
 
-export const createUser = async (input: {
-  name: string;
-  email: string;
-  role: "employee" | "company_admin";
-  isActive: boolean;
-}): Promise<User> => {
+export const createUser = async (input: CreateUserDto): Promise<User> => {
   const res = await api.post("/api/v1/users", input);
   return res.data;
 };

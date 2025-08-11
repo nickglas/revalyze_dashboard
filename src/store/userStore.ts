@@ -4,6 +4,7 @@ import { PaginationMeta } from "@/models/others/PaginationMeta";
 import * as service from "@/services/user.service";
 import { toast } from "react-toastify";
 import { User } from "@/models/api/user.model";
+import { CreateUserDto } from "@/models/dto/users/create.user.dto";
 
 interface UserState {
   users: User[] | null;
@@ -12,12 +13,7 @@ interface UserState {
 
   fetchUsers: (filters: any, page?: number, limit?: number) => Promise<void>;
 
-  createUser: (input: {
-    name: string;
-    email: string;
-    role: "employee" | "company_admin";
-    isActive: boolean;
-  }) => Promise<User>;
+  createUser: (input: CreateUserDto) => Promise<User>;
 
   updateUser: (id: string, updates: Partial<User>) => Promise<User>;
 
@@ -52,7 +48,6 @@ export const useUserStore = create<UserState>()(
         set({ isLoading: true });
         try {
           const newUser = await service.createUser(input);
-          toast.success("User created");
           set((state) => ({
             users: state.users ? [newUser, ...state.users] : [newUser],
             meta: state.meta

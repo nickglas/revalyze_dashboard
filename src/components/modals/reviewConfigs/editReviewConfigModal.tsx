@@ -188,11 +188,6 @@ export default function EditReviewConfigModal({
       }
     });
 
-    // Validate at least one criterion
-    if (selectedCriteria.length === 0) {
-      newErrors.criteria = "At least one criterion is required";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };

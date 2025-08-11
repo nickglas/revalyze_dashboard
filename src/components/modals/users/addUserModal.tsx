@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   ModalContent,
@@ -9,72 +9,131 @@ import {
 } from "@heroui/modal";
 import { Button } from "@heroui/button";
 import { Form, Input, Select, SelectItem, Switch } from "@heroui/react";
+import SearchTeams from "@/components/data/teams/searchTeams";
+import { Team } from "@/models/api/team.api.model";
+import { toast } from "react-toastify";
+import { useUserStore } from "@/store/userStore";
+import {
+  CreateUserDto,
+  SelectedTeamDTO,
+} from "@/models/dto/users/create.user.dto";
 
 export const userRoles = [
-  { key: "admin", label: "Admin" },
+  { key: "company_admin", label: "Admin" },
   { key: "employee", label: "Employee" },
 ];
 
-const teamsList = [
-  { id: "engineering", name: "Engineering" },
-  { id: "design", name: "Design" },
-  { id: "marketing", name: "Marketing" },
-];
+interface FormData {
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+}
 
 export default function AddUserModal() {
-  const [submitted, setSubmitted] = React.useState<{
-    [k: string]: FormDataEntryValue;
-  } | null>(null);
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const [selectedTeams, setSelectedTeams] = useState<SelectedTeamDTO[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createUser } = useUserStore();
 
-  const [errors, setErrors] = React.useState<{ [key: string]: string }>({});
-  const [selectedTeams, setSelectedTeams] = React.useState<string[]>([]);
-  const [managerStatus, setManagerStatus] = React.useState<{
-    [teamId: string]: boolean;
-  }>({});
+  const [formData, setFormData] = useState<FormData>({
+    name: "",
+    email: "",
+    role: "employee",
+    isActive: true,
+  });
 
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-
-  const onSubmit = (e: {
-    preventDefault: () => void;
-    currentTarget: HTMLFormElement | undefined;
-  }) => {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const data = Object.fromEntries(new FormData(form));
-
-    const newErrors: Record<string, string> = {};
-
-    if (!data.name) newErrors.name = "Please enter a name";
-    if (!data.email) newErrors.email = "Please enter an email";
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        name: "",
+        email: "",
+        role: "employee",
+        isActive: true,
+      });
+      setSelectedTeams([]);
+      setErrors({});
     }
+  }, [isOpen]);
 
-    // Simulate submit payload
-    const payload = {
-      ...data,
-      teams: selectedTeams.map((id) => ({
-        id,
-        isManager: managerStatus[id] || false,
-      })),
-    };
+  const updateField = <K extends keyof FormData>(
+    field: K,
+    value: FormData[K]
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
 
-    console.log("Submitted user:", payload);
-    setErrors({});
-    setSubmitted(payload);
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
   };
 
-  const handleTeamSelection = (keys: string[]) => {
-    setSelectedTeams(keys);
-    setManagerStatus((prev) => {
-      const updated: typeof prev = {};
-      keys.forEach((id) => {
-        updated[id] = prev[id] ?? false;
-      });
-      return updated;
-    });
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Please enter a name";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Please enter an email";
+    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const payload: CreateUserDto = {
+        ...formData,
+
+        teams: selectedTeams.map(({ team, isManager }) => ({
+          id: team._id,
+          isManager,
+        })),
+      };
+
+      await createUser(payload);
+
+      console.log("Submitting user:", payload);
+      toast.success("User created successfully!");
+      onClose();
+    } catch (error) {
+      console.error("Error creating user:", error);
+      toast.error("Failed to create user");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleTeamSelected = (team: Team | null) => {
+    if (!team) return;
+
+    if (selectedTeams.some((t) => t.team._id === team._id)) {
+      toast.warn(`${team.name} is already added`);
+      return;
+    }
+    setSelectedTeams((prev) => [...prev, { team, isManager: false }]);
+  };
+
+  const handleToggleManager = (teamId: string) => {
+    setSelectedTeams((prev) =>
+      prev.map((t) =>
+        t.team._id === teamId ? { ...t, isManager: !t.isManager } : t
+      )
+    );
+  };
+
+  const removeTeam = (teamId: string) => {
+    setSelectedTeams((prev) => prev.filter((t) => t.team._id !== teamId));
   };
 
   return (
@@ -92,27 +151,30 @@ export default function AddUserModal() {
               <ModalBody>
                 <Form
                   className="w-full space-y-4 flex flex-col"
-                  validationErrors={errors}
-                  onReset={() => setSubmitted(null)}
-                  onSubmit={onSubmit}
+                  onSubmit={handleSubmit}
+                  id="create-user-form"
                 >
                   <Input
                     isRequired
-                    errorMessage={errors.name}
                     label="Name"
                     labelPlacement="outside"
-                    name="name"
                     placeholder="Enter the new user's name"
+                    value={formData.name}
+                    onValueChange={(value) => updateField("name", value)}
+                    isInvalid={!!errors.name}
+                    errorMessage={errors.name}
                   />
 
                   <Input
                     isRequired
-                    errorMessage={errors.email}
                     label="Email"
                     labelPlacement="outside"
-                    name="email"
                     placeholder="Enter new user's email"
                     type="email"
+                    value={formData.email}
+                    onValueChange={(value) => updateField("email", value)}
+                    isInvalid={!!errors.email}
+                    errorMessage={errors.email}
                   />
 
                   <Select
@@ -120,91 +182,78 @@ export default function AddUserModal() {
                     label="Select role"
                     placeholder="Select a role"
                     labelPlacement="outside"
-                    defaultSelectedKeys={["employee"]}
-                    isRequired
-                    name="role"
+                    selectedKeys={[formData.role]}
+                    onSelectionChange={(keys) => {
+                      const key = Array.from(keys)[0] as string;
+                      updateField("role", key);
+                    }}
                   >
                     {(role) => (
                       <SelectItem key={role.key}>{role.label}</SelectItem>
                     )}
                   </Select>
 
-                  <Select
-                    label="Select teams"
-                    placeholder="Choose one or more teams"
-                    labelPlacement="outside"
-                    selectionMode="multiple"
-                    selectedKeys={selectedTeams}
-                    onSelectionChange={(keys) => handleTeamSelection([...keys])}
-                    name="teams"
-                  >
-                    {teamsList.map((team) => (
-                      <SelectItem key={team.id}>{team.name}</SelectItem>
-                    ))}
-                  </Select>
+                  <SearchTeams
+                    required={false}
+                    label="Assign teams"
+                    onChange={handleTeamSelected}
+                  />
 
                   {selectedTeams.length > 0 && (
                     <div className="flex flex-col gap-2 w-full">
                       <p className="text-sm text-gray-500 font-medium">
-                        Set manager status per team:
+                        Team assignments:
                       </p>
-                      {selectedTeams.map((id) => {
-                        const team = teamsList.find((t) => t.id === id);
-                        return (
-                          <div
-                            key={id}
-                            className="flex items-center justify-between"
-                          >
-                            <span>{team?.name}</span>
-                            <Switch
-                              isSelected={managerStatus[id]}
+                      {selectedTeams.map(({ team, isManager }) => (
+                        <div
+                          key={team._id}
+                          className="flex items-center justify-between border-b pb-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">{team.name}</span>
+                            <Button
                               size="sm"
-                              onChange={(val) =>
-                                setManagerStatus((prev) => ({
-                                  ...prev,
-                                  [id]: val,
-                                }))
-                              }
+                              variant="light"
+                              color="danger"
+                              onPress={() => removeTeam(team._id)}
                             >
-                              Manager
-                            </Switch>
+                              Remove
+                            </Button>
                           </div>
-                        );
-                      })}
+                          <Switch
+                            size="sm"
+                            isSelected={isManager}
+                            onValueChange={() => handleToggleManager(team._id)}
+                          >
+                            Manager
+                          </Switch>
+                        </div>
+                      ))}
                     </div>
                   )}
 
                   <Switch
-                    defaultSelected
                     color="primary"
                     size="sm"
-                    name="enabled"
+                    isSelected={formData.isActive}
+                    onValueChange={(value) => updateField("isActive", value)}
                   >
                     Enable user
                   </Switch>
-
-                  {errors.terms && (
-                    <span className="text-danger text-small">
-                      {errors.terms}
-                    </span>
-                  )}
-
-                  {submitted && (
-                    <div className="text-small text-default-500 mt-4">
-                      Submitted data:
-                      <pre className="text-xs bg-gray-100 p-2 rounded mt-1">
-                        {JSON.stringify(submitted, null, 2)}
-                      </pre>
-                    </div>
-                  )}
                 </Form>
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="light" onPress={onClose}>
-                  Close
+                  Cancel
                 </Button>
-                <Button color="primary" type="submit" form="form">
-                  Add user
+                <Button
+                  color="primary"
+                  type="submit"
+                  form="create-user-form"
+                  isLoading={isSubmitting}
+                  isDisabled={isSubmitting}
+                >
+                  {isSubmitting ? "Creating..." : "Add user"}
                 </Button>
               </ModalFooter>
             </>

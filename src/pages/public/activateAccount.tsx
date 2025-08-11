@@ -1,42 +1,92 @@
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { Form, Input, Button } from "@heroui/react";
-import api from "@/util/axios";
 import { toast } from "react-toastify";
+import api from "@/util/axios";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Icon } from "@iconify/react";
 
 export default function ActivateAccountPage() {
-  const [params] = useSearchParams();
-  const token = params.get("token");
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [isVisible, setIsVisible] = useState(false);
 
-  const [submitting, setSubmitting] = useState(false);
+  const toggleVisibility = () => setIsVisible(!isVisible);
+  const token = searchParams.get("token");
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!token) {
       navigate("/login");
     }
-  }, [token]);
+  }, [token, navigate]);
+
+  useEffect(() => {
+    const validateToken = async () => {
+      try {
+        const res = await api.get(`/api/v1/auth/activate-tokens/${token}`);
+        if (!res || res.data.valid === false) {
+          navigate("/login");
+        }
+      } catch (err) {
+        navigate("/login");
+      }
+    };
+    if (token) validateToken();
+  }, [token, navigate]);
+
+  const validatePassword = (password: string): string | null => {
+    if (password.length < 8) {
+      return "Password must be at least 8 characters long.";
+    }
+    if (!/[A-Z]/.test(password)) {
+      return "Password must contain at least one uppercase letter.";
+    }
+    if (!/[0-9]/.test(password)) {
+      return "Password must contain at least one number.";
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      return "Password must contain at least one special character.";
+    }
+    return null;
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     const formData = new FormData(e.currentTarget);
     const password = formData.get("password") as string;
-    const confirm = formData.get("confirm") as string;
+    const repeatPassword = formData.get("repeat_password") as string;
 
-    if (password !== confirm) {
-      toast.error("Passwords do not match");
+    const validationError = validatePassword(password);
+    if (validationError) {
+      setPasswordError(validationError);
       return;
     }
 
+    if (password !== repeatPassword) {
+      setPasswordError("Passwords do not match.");
+      return;
+    } else {
+      setPasswordError("");
+    }
+
+    if (!token) {
+      toast.error("Invalid or missing token");
+      return;
+    }
+
+    setLoading(true);
     try {
-      setSubmitting(true);
       await api.post("/api/v1/auth/activate", { token, password });
-      toast.success("Account activated successfully");
+      toast.success("Account activated successfully.");
+      setSubmitted(true);
       navigate("/login");
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Activation failed.");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Activation failed.");
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -51,36 +101,68 @@ export default function ActivateAccountPage() {
           </p>
         </div>
 
-        <Form
-          className="flex flex-col gap-3"
-          validationBehavior="native"
-          onSubmit={handleSubmit}
-        >
+        <Form className="flex flex-col gap-3" onSubmit={handleSubmit}>
           <Input
             isRequired
             label="Password"
             name="password"
             placeholder="Enter your password"
-            type="password"
+            type={isVisible ? "text" : "password"}
             variant="bordered"
+            endContent={
+              <button type="button" onClick={toggleVisibility}>
+                {isVisible ? (
+                  <Icon
+                    className="pointer-events-none text-2xl text-default-400"
+                    icon="solar:eye-closed-linear"
+                  />
+                ) : (
+                  <Icon
+                    className="pointer-events-none text-2xl text-default-400"
+                    icon="solar:eye-bold"
+                  />
+                )}
+              </button>
+            }
           />
 
-          <Input
-            isRequired
-            label="repeat password"
-            name="repeat_password"
-            placeholder="Confirm your password"
-            type="password"
-            variant="bordered"
-          />
+          <div className="flex w-full flex-col mb-4">
+            <Input
+              isRequired
+              label="Repeat password"
+              name="repeat_password"
+              placeholder="Confirm your password"
+              type={isVisible ? "text" : "password"}
+              variant="bordered"
+              endContent={
+                <button type="button" onClick={toggleVisibility}>
+                  {isVisible ? (
+                    <Icon
+                      className="pointer-events-none text-2xl text-default-400"
+                      icon="solar:eye-closed-linear"
+                    />
+                  ) : (
+                    <Icon
+                      className="pointer-events-none text-2xl text-default-400"
+                      icon="solar:eye-bold"
+                    />
+                  )}
+                </button>
+              }
+            />
+            {passwordError && (
+              <p className="text-sm text-red-500 mt-1 ml-1">{passwordError}</p>
+            )}
+          </div>
 
           <Button
             className="w-full"
             color="primary"
             type="submit"
-            isLoading={true}
+            isLoading={loading}
+            isDisabled={submitted}
           >
-            Activate account
+            Activate Account
           </Button>
         </Form>
       </div>

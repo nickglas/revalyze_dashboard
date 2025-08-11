@@ -52,7 +52,7 @@ export default function ResetPasswordPage() {
       setPasswordError("Passwords do not match.");
       return;
     } else {
-      setPasswordError(""); // clear previous error
+      setPasswordError("");
     }
 
     if (!token) {
