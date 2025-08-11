@@ -16,11 +16,15 @@ import {
   Spinner,
   Alert,
   Checkbox,
+  RadioGroup,
+  Radio,
+  Select,
+  SelectItem,
 } from "@heroui/react";
 import SearchUsers from "@/components/data/users/searchUsers";
 import { useTranscriptStore } from "@/store/transcriptStore";
 import { CreateTranscriptDTO } from "@/models/dto/create.transcript.dto";
-import { formatISO, startOfDay } from "date-fns";
+import { formatISO } from "date-fns";
 import { parseDate, getLocalTimeZone } from "@internationalized/date";
 import { toast } from "react-toastify";
 import CompanyContactSelector from "@/components/data/externalCompany/companyContactSelector";
@@ -39,6 +43,7 @@ export default function AddTranscriptModal() {
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const { createTranscript } = useTranscriptStore();
   const [tab, setTab] = useState(0);
+  const [reviewProcess, setReviewProcess] = useState("skip");
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [fileLoading, setFileLoading] = useState(false);
@@ -48,8 +53,8 @@ export default function AddTranscriptModal() {
   const [formData, setFormData] = useState<
     Omit<CreateTranscriptDTO, "timestamp"> & {
       timestamp: Date | null;
-      autoStartReview: boolean;
-      reviewConfigId: string;
+      reviewConfigId: string | undefined;
+      reviewType: string;
     }
   >({
     content: "",
@@ -57,8 +62,9 @@ export default function AddTranscriptModal() {
     employeeId: "",
     externalCompanyId: "",
     contactId: "",
+    reviewConfigId: undefined,
+    reviewType: "both",
     autoStartReview: false,
-    reviewConfigId: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -72,8 +78,9 @@ export default function AddTranscriptModal() {
         employeeId: "",
         externalCompanyId: undefined,
         contactId: undefined,
-        autoStartReview: true,
-        reviewConfigId: "",
+        reviewConfigId: undefined,
+        reviewType: "both",
+        autoStartReview: false,
       });
       setErrors({});
       setTab(0);
@@ -167,25 +174,25 @@ export default function AddTranscriptModal() {
         newErrors.timestamp = "Conversation date is required";
       }
 
-      if (formData.autoStartReview) {
-        if (!formData.reviewConfigId || formData.reviewConfigId.trim() === "") {
-          newErrors.reviewConfigId =
-            "Review config is required when auto start review is enabled";
-        }
-      }
+      // if (formData.autoStartReview) {
+      //   if (!formData.reviewConfigId || formData.reviewConfigId.trim() === "") {
+      //     newErrors.reviewConfigId =
+      //       "Review config is required when auto start review is enabled";
+      //   }
+      // }
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = (newTab: number) => {
     if (!validateForm()) return;
-    setTab(1);
+    setTab(newTab);
   };
 
-  const handleBackStep = () => {
-    setTab(0);
+  const handleBackStep = (newTab: number) => {
+    setTab(newTab);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -194,13 +201,19 @@ export default function AddTranscriptModal() {
 
     setIsSubmitting(true);
     try {
-      await createTranscript({
+      const payload: CreateTranscriptDTO = {
         ...formData,
         timestamp: formData.timestamp
           ? formatISO(formData.timestamp, { representation: "complete" })
           : "",
-      });
+      };
 
+      if (!formData.autoStartReview) {
+        delete payload.reviewType;
+        delete payload.reviewConfigId;
+      }
+
+      await createTranscript(payload);
       onClose();
     } catch (err) {
       console.error("Upload failed:", err);
@@ -208,7 +221,6 @@ export default function AddTranscriptModal() {
       setIsSubmitting(false);
     }
   };
-
   // Helper to update form fields
   const updateField = <K extends keyof typeof formData>(
     field: K,
@@ -240,7 +252,7 @@ export default function AddTranscriptModal() {
               </ModalHeader>
               <ModalBody>
                 <div className="flex justify-between mb-4">
-                  {[1, 2].map((step) => (
+                  {[1, 2, 3].map((step) => (
                     <div
                       key={step}
                       className={`flex-1 flex flex-col items-center ${
@@ -259,6 +271,7 @@ export default function AddTranscriptModal() {
                       <span className="text-xs mt-1">
                         {step === 1 && "Transcript"}
                         {step === 2 && "Details"}
+                        {step === 3 && "Review"}
                       </span>
                     </div>
                   ))}
@@ -371,12 +384,63 @@ export default function AddTranscriptModal() {
                           isInvalid={!!errors.timestamp}
                           errorMessage={errors.timestamp}
                         />
+                      </>
+                    )}
+                    {tab === 2 && (
+                      <>
+                        <RadioGroup
+                          label="Enable/disable review process"
+                          orientation="horizontal"
+                          value={formData.autoStartReview ? "start" : "skip"}
+                          size="sm"
+                          onValueChange={(val) => {
+                            const autoStart = val === "start";
+                            updateField("autoStartReview", autoStart);
+                          }}
+                        >
+                          <Radio value="start">Start review</Radio>
+                          <Radio value="skip">Skip review</Radio>
+                        </RadioGroup>
+                        <Select
+                          label="Select review type"
+                          labelPlacement="outside"
+                          selectedKeys={[formData.reviewType]}
+                          onSelectionChange={(val) => {
+                            if (val.anchorKey) {
+                              updateField("reviewType", val.anchorKey);
+                            }
+                          }}
+                          size="sm"
+                          isDisabled={formData.autoStartReview === false}
+                          isRequired={formData.autoStartReview}
+                        >
+                          <SelectItem key="sentiment">
+                            Sentiment analysis
+                          </SelectItem>
+                          <SelectItem key="performance">
+                            Performance analysis
+                          </SelectItem>
+                          <SelectItem key="both">
+                            Sentiment & Performance analysis
+                          </SelectItem>
+                        </Select>
                         <SearchConfigs
-                          required
-                          isDisabled={!formData.autoStartReview}
+                          required={
+                            (formData.reviewType === "performance" ||
+                              formData.reviewType === "both") &&
+                            formData.autoStartReview
+                          }
+                          isDisabled={
+                            !formData.autoStartReview ||
+                            formData.reviewType === "sentiment"
+                          }
                           label="Set config"
+                          size="sm"
                           onChange={(config) =>
-                            updateField("reviewConfigId", config?._id || "")
+                            updateField(
+                              "reviewConfigId",
+                              config?._id || undefined
+                            )
                           }
                         />
                         {errors.reviewConfigId && (
@@ -384,16 +448,6 @@ export default function AddTranscriptModal() {
                             {errors.reviewConfigId}
                           </p>
                         )}
-
-                        <Checkbox
-                          size="sm"
-                          isSelected={formData.autoStartReview}
-                          onValueChange={(checked) =>
-                            updateField("autoStartReview", checked)
-                          }
-                        >
-                          Auto start review process
-                        </Checkbox>
                       </>
                     )}
                   </div>
@@ -408,7 +462,9 @@ export default function AddTranscriptModal() {
                       </Button>
                       <Button
                         color="primary"
-                        onPress={handleNextStep}
+                        onPress={() => {
+                          handleNextStep(tab + 1);
+                        }}
                         isDisabled={fileLoading}
                       >
                         Next step
@@ -417,7 +473,28 @@ export default function AddTranscriptModal() {
                   )}
                   {tab === 1 && (
                     <>
-                      <Button variant="light" onPress={handleBackStep}>
+                      <Button
+                        variant="light"
+                        onPress={() => handleBackStep(tab - 1)}
+                      >
+                        Back
+                      </Button>
+                      <Button
+                        color="primary"
+                        onPress={() => {
+                          handleNextStep(tab + 1);
+                        }}
+                      >
+                        Next step
+                      </Button>
+                    </>
+                  )}
+                  {tab === 2 && (
+                    <>
+                      <Button
+                        variant="light"
+                        onPress={() => handleBackStep(tab - 1)}
+                      >
                         Back
                       </Button>
                       <Button

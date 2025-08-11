@@ -22,6 +22,7 @@ type Props = {
   required: boolean;
   label?: string;
   isDisabled?: boolean;
+  size?: "sm" | "md" | "lg";
 };
 
 const SearchConfigs = ({
@@ -30,6 +31,7 @@ const SearchConfigs = ({
   required,
   label,
   isDisabled,
+  size,
 }: Props) => {
   const [inputValue, setInputValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -89,6 +91,7 @@ const SearchConfigs = ({
       isLoading={isLoading}
       isDisabled={isDisabled}
       items={configs}
+      size={size || "md"}
       selectedKey={value?._id}
       onSelectionChange={(key) => {
         const selected = configs.find((c) => c._id === key);

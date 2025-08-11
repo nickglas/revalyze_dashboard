@@ -6,4 +6,5 @@ export interface CreateTranscriptDTO {
   timestamp: string;
   autoStartReview: boolean;
   reviewConfigId?: string;
+  reviewType?: "sentiment" | "performance" | "both";
 }
