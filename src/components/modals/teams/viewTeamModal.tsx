@@ -6,7 +6,7 @@ import {
   ModalBody,
   ModalFooter,
 } from "@heroui/modal";
-import { Button, Chip, Avatar, Badge } from "@heroui/react";
+import { Button, Input, Textarea, Switch, Avatar, Badge } from "@heroui/react";
 import { Team } from "@/models/api/team.api.model";
 
 interface ViewTeamModalProps {
@@ -22,95 +22,78 @@ export default function ViewTeamModal({
 }: ViewTeamModalProps) {
   if (!team) return null;
 
-  // Find manager
   const manager = team.users.find((u) => u.isManager)?.user;
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="lg">
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="md">
       <ModalContent>
         {(onClose) => (
           <>
-            <ModalHeader className="flex flex-col gap-1">
-              Team Details: {team.name}
-            </ModalHeader>
+            <ModalHeader className="flex flex-col gap-1">View Team</ModalHeader>
             <ModalBody>
-              <div className="flex flex-col gap-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">
-                      Team Name
-                    </h3>
-                    <p className="mt-1 font-medium">{team.name}</p>
-                  </div>
+              <div className="flex flex-col w-full gap-4">
+                <Input
+                  label="Team Name"
+                  labelPlacement="outside"
+                  value={team.name}
+                  isDisabled
+                />
 
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">
-                      Status
-                    </h3>
-                    <Chip
-                      className="capitalize mt-1"
-                      color={team.isActive ? "success" : "danger"}
-                      size="sm"
-                      variant="flat"
-                    >
-                      {team.isActive ? "Active" : "Inactive"}
-                    </Chip>
-                  </div>
+                <Textarea
+                  label="Description"
+                  labelPlacement="outside"
+                  value={team.description || ""}
+                  isDisabled
+                />
 
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">
-                      Manager
-                    </h3>
-                    {manager ? (
-                      <div className="flex items-center gap-2 mt-1">
-                        <Avatar name={manager.name} size="sm" />
-                        <span>{manager.name}</span>
-                      </div>
-                    ) : (
-                      <p className="mt-1 text-gray-500">No manager assigned</p>
-                    )}
-                  </div>
+                <Input
+                  label="Manager"
+                  labelPlacement="outside"
+                  value={manager ? manager.name : "No manager assigned"}
+                  isDisabled
+                />
 
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">
-                      Created At
-                    </h3>
-                    <p className="mt-1">
-                      {new Date(team.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
+                <Input
+                  label="Created At"
+                  labelPlacement="outside"
+                  value={new Date(team.createdAt).toLocaleDateString()}
+                  isDisabled
+                />
+
+                <Switch isDisabled isSelected={team.isActive}>
+                  Active
+                </Switch>
 
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">
-                    Description
-                  </h3>
-                  <p className="text-gray-700">
-                    {team.description || "No description provided"}
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">
+                  <label className="text-sm font-medium text-gray-500 mb-1">
                     Team Members ({team.users.length})
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  </label>
+                  <div className="flex flex-col gap-2 max-h-48 overflow-y-auto ">
                     {team.users.map((member) => (
                       <div
                         key={member.user._id}
-                        className="flex items-center gap-3 p-2 border rounded-lg"
+                        className="flex items-center justify-between gap-3"
                       >
-                        <Avatar name={member.user.name} />
-                        <div>
-                          <p className="font-medium">{member.user.name}</p>
-                          <p className="text-gray-500 text-sm">
-                            {member.user.email}
-                          </p>
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            className="text-gray-300"
+                            name={member.user.name}
+                            size="sm"
+                          />
+                          <div>
+                            <p className="font-medium text-sm text-gray-500">
+                              {member.user.name}
+                            </p>
+                            <p className="text-gray-500 text-sm">
+                              {member.user.email}
+                            </p>
+                          </div>
                         </div>
+
                         {member.isManager && (
-                          <Badge className="ml-auto" color="primary">
+                          <span className="text-tiny text-gray-500">
                             Manager
-                          </Badge>
+                          </span>
                         )}
                       </div>
                     ))}
