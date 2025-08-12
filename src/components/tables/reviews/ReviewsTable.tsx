@@ -26,6 +26,7 @@ import {
   SearchIcon,
   VerticalDotsIcon,
 } from "../users/userTable";
+import AddReviewModal from "@/components/modals/reviews/addReviewModal";
 
 export const ALL_COLUMNS = [
   { name: "EMPLOYEE", uid: "employeeName", sortable: true },
@@ -404,6 +405,7 @@ export default function ReviewsTable() {
                 <SelectItem key={column.uid}>{column.name}</SelectItem>
               ))}
             </Select>
+            <AddReviewModal />
           </div>
         </div>
 
