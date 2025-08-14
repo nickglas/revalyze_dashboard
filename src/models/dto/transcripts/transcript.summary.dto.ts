@@ -8,11 +8,18 @@ export enum ReviewStatus {
 export interface TranscriptSummaryDto {
   id: string;
   uploadedByName: string;
+  employeeId: string;
   employeeName: string;
-  contactName: string;
-  externalCompany: string | null;
+  employeeEmail: string;
+  contactId: string | null;
+  contactFirstName: string | null;
+  contactEmail: string | null;
+  externalCompanyId: string | null;
+  externalCompanyName: string | null;
+  externalCompanyEmail: string | null;
   timestamp: Date;
   reviewStatus: ReviewStatus;
   isReviewed: boolean;
   contentPreview: string;
+  createdAt: Date;
 }

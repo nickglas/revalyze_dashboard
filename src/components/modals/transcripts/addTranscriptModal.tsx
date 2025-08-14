@@ -14,21 +14,31 @@ import {
   DatePicker,
   Textarea,
   Spinner,
-  Alert,
-  Checkbox,
   RadioGroup,
   Radio,
   Select,
   SelectItem,
+  Table,
+  TableHeader,
+  TableColumn,
+  TableRow,
+  TableCell,
+  TableBody,
+  NumberInput,
+  Tooltip,
 } from "@heroui/react";
-import SearchUsers from "@/components/data/users/searchUsers";
 import { useTranscriptStore } from "@/store/transcriptStore";
 import { CreateTranscriptDTO } from "@/models/dto/create.transcript.dto";
 import { formatISO } from "date-fns";
-import { parseDate, getLocalTimeZone } from "@internationalized/date";
 import { toast } from "react-toastify";
-import CompanyContactSelector from "@/components/data/externalCompany/companyContactSelector";
-import SearchConfigs from "@/components/data/reviewConfigs/searchConfigs";
+import { ReviewConfig } from "@/models/api/review.config.api.model";
+import EmployeeSelection from "@/components/new/EmployeeSelection";
+import CompanyContactSelection from "@/components/new/CompanyContactSelector";
+import ConversationDatePicker from "@/components/new/ConversationDatePicker";
+import CriteriaWeightsEditor from "@/components/new/CriteriaWeightsEditor";
+import ReviewConfigSelector from "@/components/new/ReviewConfigSelector";
+import ReviewTypeSelector from "@/components/new/ReviewTypeSelector";
+import ReviewAutoStartToggle from "@/components/new/ReviewAutoStartToggle";
 
 const MAX_SIZE = 100 * 1024 * 1024; // 100MB
 const CHUNK_SIZE = 1024 * 1024; // 1MB
@@ -43,7 +53,12 @@ export default function AddTranscriptModal() {
   const { isOpen, onOpen, onClose, onOpenChange } = useDisclosure();
   const { createTranscript } = useTranscriptStore();
   const [tab, setTab] = useState(0);
-  const [reviewProcess, setReviewProcess] = useState("skip");
+  const [selectedConfig, setSelectedConfig] = useState<
+    ReviewConfig | undefined
+  >(undefined);
+  const [editedWeights, setEditedWeights] = useState<Record<string, number>>(
+    {}
+  );
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [fileLoading, setFileLoading] = useState(false);
@@ -55,6 +70,7 @@ export default function AddTranscriptModal() {
       timestamp: Date | null;
       reviewConfigId: string | undefined;
       reviewType: string;
+      criteriaWeights?: Array<{ criterionId: string; weight: number }>;
     }
   >({
     content: "",
@@ -65,6 +81,7 @@ export default function AddTranscriptModal() {
     reviewConfigId: undefined,
     reviewType: "both",
     autoStartReview: false,
+    criteriaWeights: [],
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -81,9 +98,12 @@ export default function AddTranscriptModal() {
         reviewConfigId: undefined,
         reviewType: "both",
         autoStartReview: false,
+        criteriaWeights: undefined,
       });
       setErrors({});
       setTab(0);
+      setSelectedConfig(undefined);
+      setEditedWeights({});
 
       if (textareaRef.current) {
         textareaRef.current.value = "";
@@ -93,6 +113,19 @@ export default function AddTranscriptModal() {
       }
     }
   }, [isOpen]);
+
+  // Initialize edited weights when config is selected
+  useEffect(() => {
+    if (selectedConfig) {
+      const initialWeights: Record<string, number> = {};
+      selectedConfig.criteria.forEach((criterion) => {
+        initialWeights[criterion._id] = criterion.weight;
+      });
+      setEditedWeights(initialWeights);
+    } else {
+      setEditedWeights({});
+    }
+  }, [selectedConfig]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -173,13 +206,6 @@ export default function AddTranscriptModal() {
       if (!formData.timestamp) {
         newErrors.timestamp = "Conversation date is required";
       }
-
-      // if (formData.autoStartReview) {
-      //   if (!formData.reviewConfigId || formData.reviewConfigId.trim() === "") {
-      //     newErrors.reviewConfigId =
-      //       "Review config is required when auto start review is enabled";
-      //   }
-      // }
     }
 
     setErrors(newErrors);
@@ -211,16 +237,27 @@ export default function AddTranscriptModal() {
       if (!formData.autoStartReview) {
         delete payload.reviewType;
         delete payload.reviewConfigId;
+      } else if (formData.autoStartReview && selectedConfig) {
+        const weights = Object.entries(editedWeights);
+
+        if (weights.length > 0) {
+          payload.criteriaWeights = weights.map(([criterionId, weight]) => ({
+            criterionId,
+            weight,
+          }));
+        }
       }
 
       await createTranscript(payload);
       onClose();
     } catch (err) {
       console.error("Upload failed:", err);
+      toast.error("Failed to upload transcript");
     } finally {
       setIsSubmitting(false);
     }
   };
+
   // Helper to update form fields
   const updateField = <K extends keyof typeof formData>(
     field: K,
@@ -234,6 +271,23 @@ export default function AddTranscriptModal() {
     }
   };
 
+  // Handle weight change for a criterion
+  const handleWeightChange = (criterionId: string, value: number) => {
+    setEditedWeights((prev) => ({
+      ...prev,
+      [criterionId]: value,
+    }));
+  };
+
+  // Handle criterion removal
+  const handleRemoveCriterion = (criterionId: string) => {
+    setEditedWeights((prev) => {
+      const newWeights = { ...prev };
+      delete newWeights[criterionId];
+      return newWeights;
+    });
+  };
+
   return (
     <>
       <Button onPress={onOpen} variant="solid" color="primary">
@@ -242,7 +296,7 @@ export default function AddTranscriptModal() {
       <Modal
         isOpen={isOpen}
         onOpenChange={onOpenChange}
-        size={tab === 0 ? "2xl" : "md"}
+        size={tab === 0 ? "2xl" : "xl"}
       >
         <ModalContent>
           {(onClose) => (
@@ -325,129 +379,68 @@ export default function AddTranscriptModal() {
                     )}
                     {tab === 1 && (
                       <>
-                        <SearchUsers
-                          required
-                          label="Search for employee"
-                          onChange={(user) =>
-                            updateField("employeeId", user?._id || "")
-                          }
+                        <EmployeeSelection
+                          onChange={(id) => updateField("employeeId", id)}
+                          error={errors.employeeId}
                         />
-                        {errors.employeeId && (
-                          <p className="text-danger text-sm -mt-3">
-                            {errors.employeeId}
-                          </p>
-                        )}
 
-                        <CompanyContactSelector
-                          selectedCompanyId={formData.externalCompanyId}
-                          selectedContactId={formData.contactId}
-                          onChange={({ company, contact }) => {
-                            updateField(
-                              "externalCompanyId",
-                              company?._id || undefined
-                            );
-                            updateField("contactId", contact?._id || undefined);
+                        <CompanyContactSelection
+                          companyId={formData.externalCompanyId}
+                          contactId={formData.contactId}
+                          onChange={(companyId, contactId) => {
+                            updateField("externalCompanyId", companyId);
+                            updateField("contactId", contactId);
                           }}
                         />
 
-                        <DatePicker
-                          label="Conversation Date"
-                          labelPlacement="outside"
-                          value={
-                            formData.timestamp
-                              ? parseDate(
-                                  formatISO(formData.timestamp, {
-                                    representation: "date",
-                                  })
-                                )
-                              : undefined
-                          }
-                          onChange={(value) => {
-                            if (value) {
-                              const jsDate = value.toDate(getLocalTimeZone());
-                              const today = getTodayAtMidnight();
-
-                              if (jsDate > today) {
-                                toast.warn(
-                                  "Conversation date cannot be in the future"
-                                );
-                                updateField("timestamp", today);
-                                return;
-                              }
-
-                              updateField("timestamp", jsDate);
-                            } else {
-                              updateField("timestamp", null as any);
-                            }
-                          }}
-                          isRequired
-                          isInvalid={!!errors.timestamp}
-                          errorMessage={errors.timestamp}
+                        <ConversationDatePicker
+                          value={formData.timestamp}
+                          onChange={(date) => updateField("timestamp", date)}
+                          error={errors.timestamp}
                         />
                       </>
                     )}
                     {tab === 2 && (
                       <>
-                        <RadioGroup
-                          label="Enable/disable review process"
-                          orientation="horizontal"
-                          value={formData.autoStartReview ? "start" : "skip"}
-                          size="sm"
-                          onValueChange={(val) => {
-                            const autoStart = val === "start";
-                            updateField("autoStartReview", autoStart);
-                          }}
-                        >
-                          <Radio value="start">Start review</Radio>
-                          <Radio value="skip">Skip review</Radio>
-                        </RadioGroup>
-                        <Select
-                          label="Select review type"
-                          labelPlacement="outside"
-                          selectedKeys={[formData.reviewType]}
-                          onSelectionChange={(val) => {
-                            if (val.anchorKey) {
-                              updateField("reviewType", val.anchorKey);
-                            }
-                          }}
-                          size="sm"
-                          isDisabled={formData.autoStartReview === false}
-                          isRequired={formData.autoStartReview}
-                        >
-                          <SelectItem key="sentiment">
-                            Sentiment analysis
-                          </SelectItem>
-                          <SelectItem key="performance">
-                            Performance analysis
-                          </SelectItem>
-                          <SelectItem key="both">
-                            Sentiment & Performance analysis
-                          </SelectItem>
-                        </Select>
-                        <SearchConfigs
-                          required={
-                            (formData.reviewType === "performance" ||
-                              formData.reviewType === "both") &&
-                            formData.autoStartReview
+                        <ReviewAutoStartToggle
+                          autoStart={formData.autoStartReview}
+                          onAutoStartChange={(autoStart) =>
+                            updateField("autoStartReview", autoStart)
                           }
-                          isDisabled={
+                        />
+
+                        <ReviewTypeSelector
+                          reviewType={formData.reviewType}
+                          onReviewTypeChange={(type) =>
+                            updateField("reviewType", type)
+                          }
+                          disabled={!formData.autoStartReview}
+                        />
+
+                        <ReviewConfigSelector
+                          reviewType={formData.reviewType}
+                          onChange={(config) => {
+                            updateField("reviewConfigId", config?._id);
+                            setSelectedConfig(config);
+                          }}
+                          error={errors.reviewConfigId}
+                          disabled={
                             !formData.autoStartReview ||
                             formData.reviewType === "sentiment"
                           }
-                          label="Set config"
-                          size="sm"
-                          onChange={(config) =>
-                            updateField(
-                              "reviewConfigId",
-                              config?._id || undefined
-                            )
-                          }
                         />
-                        {errors.reviewConfigId && (
-                          <p className="text-danger text-sm mt-1">
-                            {errors.reviewConfigId}
-                          </p>
-                        )}
+
+                        {formData.autoStartReview &&
+                          selectedConfig &&
+                          (formData.reviewType === "performance" ||
+                            formData.reviewType === "both") && (
+                            <CriteriaWeightsEditor
+                              selectedConfig={selectedConfig}
+                              editedWeights={editedWeights}
+                              onWeightChange={handleWeightChange}
+                              onRemoveCriterion={handleRemoveCriterion}
+                            />
+                          )}
                       </>
                     )}
                   </div>

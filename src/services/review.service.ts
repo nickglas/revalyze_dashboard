@@ -20,3 +20,11 @@ export const getReviews = async (
   const res = await api.get(`/api/v1/reviews`, { params });
   return res.data;
 };
+
+export const createReview = async (
+  input: CreateReviewDTO
+): Promise<ReviewSummaryDto> => {
+  console.warn(input);
+  const res = await api.post("/api/v1/reviews", input);
+  return res.data;
+};

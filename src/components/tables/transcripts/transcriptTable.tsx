@@ -102,7 +102,7 @@ export const VerticalDotsIcon = () => (
 
 export const ALL_COLUMNS = [
   { name: "EMPLOYEE", uid: "employeeName", sortable: true },
-  { name: "CONTACT", uid: "contactName", sortable: true },
+  { name: "CONTACT", uid: "contactFirstName", sortable: true },
   { name: "CONTENT", uid: "contentPreview" },
   { name: "DATE", uid: "timestamp", sortable: true },
   { name: "UPLOADED BY", uid: "uploadedByName", sortable: true },
@@ -131,7 +131,7 @@ export function capitalize(s: string) {
 interface TranscriptTableRow {
   id: string;
   employeeName: string;
-  contactName: string;
+  contactFirstName: string;
   contentPreview: string;
   uploadedByName: string;
   timestamp: Date;
@@ -196,7 +196,7 @@ export default function TranscriptsTable() {
     return transcripts.map((transcript) => ({
       id: transcript.id,
       employeeName: transcript.employeeName || "Unknown",
-      contactName: transcript.contactName || "Unknown",
+      contactFirstName: transcript.contactFirstName || "Unknown",
       contentPreview: transcript.contentPreview,
       uploadedByName: transcript.uploadedByName || "Unknown", // Changed to match DTO
       timestamp: new Date(transcript.timestamp),
@@ -236,11 +236,11 @@ export default function TranscriptsTable() {
             </div>
           );
 
-        case "contactName":
+        case "contactFirstName":
           return (
             <div className="flex items-center gap-3">
               <Avatar
-                name={transcript.contactName}
+                name={transcript.contactFirstName}
                 getInitials={(name) =>
                   name
                     .split(" ")
@@ -248,7 +248,7 @@ export default function TranscriptsTable() {
                     .join("")
                 }
               />
-              <span className="font-medium">{transcript.contactName}</span>
+              <span className="font-medium">{transcript.contactFirstName}</span>
             </div>
           );
 

@@ -1,6 +1,4 @@
-import { Contact } from "@/models/api/contact.api.model";
-import { ReviewConfig } from "@/models/api/review.config.api.model";
-import { User } from "@/models/api/user.model";
+import { TranscriptSummaryDto } from "@/models/dto/transcripts/transcript.summary.dto";
 import api from "@/util/axios";
 import { Autocomplete, AutocompleteItem } from "@heroui/react";
 import { useEffect, useState, useRef } from "react";
@@ -17,42 +15,42 @@ function useDebounce<T>(value: T, delay = 750): T {
 }
 
 type Props = {
-  value?: ReviewConfig;
-  onChange?: (value: ReviewConfig | undefined) => void;
+  value?: TranscriptSummaryDto;
+  onChange?: (value: TranscriptSummaryDto | null) => void;
   required: boolean;
   label?: string;
   isDisabled?: boolean;
-  size?: "sm" | "md" | "lg";
 };
 
-const SearchConfigs = ({
+const SearchTranscripts = ({
   value,
   onChange,
   required,
   label,
   isDisabled,
-  size,
 }: Props) => {
   const [inputValue, setInputValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedQuery = useDebounce(searchQuery);
-  const [configs, setConfigs] = useState<ReviewConfig[]>([]);
+  const [transcripts, setTranscripts] = useState<TranscriptSummaryDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const isInitialMount = useRef(true);
   const isSelection = useRef(false);
 
-  const fetchConfigs = async (search: string) => {
+  const fetchTranscripts = async (search: string) => {
     setIsLoading(true);
     try {
-      const { data } = await api.get(`/api/v1/review-configs?name=${search}`);
-      const transformed = (data?.data || []).map((user: User) => ({
-        ...user,
-        key: user._id,
-        label: user.name,
-      }));
-      setConfigs(transformed);
+      const { data } = await api.get(`/api/v1/transcripts?search=${search}`);
+      const transformed = (data?.data || []).map(
+        (transcripts: TranscriptSummaryDto) => ({
+          ...transcripts,
+          key: transcripts.id,
+          label: transcripts.id,
+        })
+      );
+      setTranscripts(transformed);
     } catch (err) {
-      console.error("Failed to fetch review-configs:", err);
+      console.error("Failed to fetch transcript:", err);
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +58,7 @@ const SearchConfigs = ({
 
   useEffect(() => {
     if (value) {
-      setInputValue(value.name);
+      setInputValue(value.id);
     } else {
       setInputValue("");
     }
@@ -73,9 +71,9 @@ const SearchConfigs = ({
     }
 
     if (debouncedQuery.trim().length > 0) {
-      fetchConfigs(debouncedQuery);
+      fetchTranscripts(debouncedQuery);
     } else {
-      setConfigs([]);
+      setTranscripts([]);
     }
   }, [debouncedQuery]);
 
@@ -90,31 +88,28 @@ const SearchConfigs = ({
       onInputChange={handleInputChange}
       isLoading={isLoading}
       isDisabled={isDisabled}
-      items={configs}
-      size={size || "md"}
-      selectedKey={value?._id}
+      items={transcripts}
+      selectedKey={value?.id}
       onSelectionChange={(key) => {
-        const selected = configs.find((c) => c._id === key);
+        const selected = transcripts.find((c) => c.id === key);
         if (selected) {
           isSelection.current = true;
-          setInputValue(selected.name);
+          setInputValue(selected.id);
           if (onChange) onChange(selected);
           isSelection.current = false;
         } else {
           setInputValue("");
-          if (onChange) onChange(undefined);
+          if (onChange) onChange(null);
         }
       }}
-      label={label || "Search for configs"}
+      label={label || "Search for transcripts"}
       labelPlacement="outside"
-      placeholder="Start typing to search for configs"
+      placeholder="Start typing to search for transcripts"
       isRequired={required}
     >
-      {(item) => (
-        <AutocompleteItem key={item._id}>{item.name}</AutocompleteItem>
-      )}
+      {(item) => <AutocompleteItem key={item.id}>{item.id}</AutocompleteItem>}
     </Autocomplete>
   );
 };
 
-export default SearchConfigs;
+export default SearchTranscripts;

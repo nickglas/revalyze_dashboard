@@ -1,3 +1,8 @@
+export interface CriteriaWeight {
+  criterionId: string;
+  weight: number;
+}
+
 export interface CreateTranscriptDTO {
   content: string;
   employeeId?: string;
@@ -6,5 +11,6 @@ export interface CreateTranscriptDTO {
   timestamp: string;
   autoStartReview: boolean;
   reviewConfigId?: string;
+  criteriaWeights?: CriteriaWeight[];
   reviewType?: "sentiment" | "performance" | "both";
 }

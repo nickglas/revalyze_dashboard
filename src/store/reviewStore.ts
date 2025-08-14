@@ -11,6 +11,7 @@ interface ReviewState {
   isLoading: boolean;
 
   fetchReviews: (filters: any, page?: number, limit?: number) => Promise<void>;
+  createReview: (input: CreateReviewDTO) => Promise<ReviewSummaryDto>;
 }
 
 export const useReviewStore = create<ReviewState>()(
@@ -32,6 +33,30 @@ export const useReviewStore = create<ReviewState>()(
           toast.error("Failed to fetch teams");
           console.error(err);
           set({ reviews: null, meta: null });
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      createReview: async (input: CreateReviewDTO) => {
+        set({ isLoading: true });
+        try {
+          const newReview = await service.createReview(input);
+          toast.success("Criterion created");
+          set((state) => ({
+            reviews: state.reviews
+              ? [newReview, ...state.reviews]
+              : [newReview],
+            meta: state.meta
+              ? { ...state.meta, total: state.meta.total + 1 }
+              : state.meta,
+          }));
+          return newReview;
+        } catch (err: any) {
+          toast.error(
+            err?.response?.data?.message || "Failed to create review"
+          );
+          throw err;
         } finally {
           set({ isLoading: false });
         }
