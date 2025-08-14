@@ -1,6 +1,7 @@
 import api from "@/util/axios";
 import { PaginatedResponse } from "@/models/others/PaginatedResponse";
 import { ReviewSummaryDto } from "@/models/dto/reviews/review.summary.dto";
+import { ReviewDetailDTO } from "@/models/dto/reviews/detail.review.dto";
 
 export const getReviews = async (
   page = 1,
@@ -24,7 +25,11 @@ export const getReviews = async (
 export const createReview = async (
   input: CreateReviewDTO
 ): Promise<ReviewSummaryDto> => {
-  console.warn(input);
   const res = await api.post("/api/v1/reviews", input);
+  return res.data;
+};
+
+export const getById = async (id: string): Promise<ReviewDetailDTO> => {
+  const res = await api.get(`/api/v1/reviews/${id}`);
   return res.data;
 };

@@ -27,6 +27,7 @@ import {
   VerticalDotsIcon,
 } from "../users/userTable";
 import AddReviewModal from "@/components/modals/reviews/addReviewModal";
+import ViewReviewModal from "@/components/modals/reviews/viewReviewModal";
 
 export const ALL_COLUMNS = [
   { name: "EMPLOYEE", uid: "employeeName", sortable: true },
@@ -83,6 +84,8 @@ export default function ReviewsTable() {
   const [selectedColumns, setSelectedColumns] = useState<string[]>(
     ALL_COLUMNS.map((col) => col.uid)
   );
+  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   useEffect(() => {
     fetchReviews(
@@ -103,6 +106,11 @@ export default function ReviewsTable() {
     sortDescriptor,
     fetchReviews,
   ]);
+
+  const handleViewDetails = (reviewId: string) => {
+    setSelectedId(reviewId);
+    setIsViewModalOpen(true);
+  };
 
   const handleSortChange = (descriptor: any) => {
     setSortDescriptor({
@@ -311,7 +319,12 @@ export default function ReviewsTable() {
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu aria-label="Review Actions">
-                  <DropdownItem key="view">View Details</DropdownItem>
+                  <DropdownItem
+                    key="view"
+                    onPress={() => handleViewDetails(review.id)}
+                  >
+                    View Details
+                  </DropdownItem>
                   <DropdownItem key="edit">Edit</DropdownItem>
                   <DropdownItem key="delete">Delete</DropdownItem>
                   <DropdownItem
@@ -526,6 +539,11 @@ export default function ReviewsTable() {
           )}
         </TableBody>
       </Table>
+      <ViewReviewModal
+        reviewId={selectedId}
+        isOpen={isViewModalOpen}
+        onOpenChange={setIsViewModalOpen}
+      />
     </div>
   );
 }
