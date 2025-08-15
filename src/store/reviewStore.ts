@@ -8,6 +8,8 @@ import { ReviewDetailDTO } from "@/models/dto/reviews/detail.review.dto";
 
 interface ReviewState {
   reviews: ReviewSummaryDto[] | null;
+  reviewDetails: Record<string, ReviewDetailDTO>;
+  selectedReview: ReviewDetailDTO | null;
   meta: PaginationMeta | null;
   isLoading: boolean;
 
@@ -22,6 +24,8 @@ export const useReviewStore = create<ReviewState>()(
       reviews: null,
       meta: null,
       isLoading: false,
+      reviewDetails: {},
+      selectedReview: null,
 
       fetchReviews: async (filters: any = {}, page = 1, limit = 5) => {
         set({ isLoading: true });
@@ -41,29 +45,20 @@ export const useReviewStore = create<ReviewState>()(
       },
 
       fetchById: async (id: string) => {
+        const { reviewDetails } = get();
+
+        if (reviewDetails[id]) {
+          set({ selectedReview: reviewDetails[id] });
+          return reviewDetails[id];
+        }
+
         set({ isLoading: true });
         try {
           const selectedReview = await service.getById(id);
-
-          set((state) => {
-            const existingIndex =
-              state.reviews?.findIndex((r) => r._id === selectedReview._id) ??
-              -1;
-
-            if (existingIndex !== -1 && state.reviews) {
-              const updatedReviews = [...state.reviews];
-              updatedReviews[existingIndex] = selectedReview;
-              return { reviews: updatedReviews };
-            } else {
-              return {
-                reviews: [selectedReview, ...(state.reviews || [])],
-                meta: state.meta
-                  ? { ...state.meta, total: state.meta.total + 1 }
-                  : state.meta,
-              };
-            }
-          });
-
+          set((state) => ({
+            selectedReview,
+            reviewDetails: { ...state.reviewDetails, [id]: selectedReview },
+          }));
           return selectedReview;
         } catch (err: any) {
           toast.error(err?.response?.data?.message || "Failed to fetch review");
@@ -101,6 +96,8 @@ export const useReviewStore = create<ReviewState>()(
       name: "reviews-storage",
       partialize: (state) => ({
         reviews: state.reviews,
+        reviewDetails: state.reviewDetails,
+        selectedReview: state.selectedReview,
         meta: state.meta,
       }),
     }
