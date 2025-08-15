@@ -240,6 +240,8 @@ export default function EditReviewConfigModal({
                     onSelectionChange={(key) => setActiveTab(key as string)}
                     fullWidth
                     color="primary"
+                    key={`isOpen-${isOpen}`}
+                    disableAnimation
                   >
                     <Tab key="general" title="General info">
                       <div className="flex flex-col gap-4 mt-2">

@@ -150,6 +150,7 @@ export default function ViewReviewModal({
                     fullWidth
                     size="md"
                     color="primary"
+                    disableAnimation
                   >
                     <Tab key={"overview"} title={"Overview"}>
                       <Card>
@@ -277,7 +278,12 @@ export default function ViewReviewModal({
                           <h1>Scores and feedback</h1>
                         </CardHeader>
                         <CardBody>
-                          <Tabs color="primary" fullWidth size="sm">
+                          <Tabs
+                            color="primary"
+                            fullWidth
+                            size="sm"
+                            disableAnimation
+                          >
                             <Tab title="Performance">
                               <RenderPerformance />
                             </Tab>
