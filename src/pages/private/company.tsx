@@ -1,5 +1,5 @@
 // src/pages/CompanyPage.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Tabs,
   Tab,
@@ -25,13 +25,14 @@ import {
 import {
   FaRegBuilding,
   FaRegCreditCard,
-  FaUsers,
   FaChartLine,
   FaCopy,
   FaSync,
   FaExclamationTriangle,
 } from "react-icons/fa";
-import { RiH1 } from "react-icons/ri";
+import { useCompanyStore } from "@/store/companyStore";
+import { CompanyDetails } from "@/models/dto/company/company.detailed.dto";
+import UpdateCompanyCard from "@/components/company/UpdateCompanyCard";
 
 const renewalHistory = [
   {
@@ -55,6 +56,43 @@ const renewalHistory = [
 const CompanyPage = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<Partial<CompanyDetails>>({});
+
+  const {
+    companyDetails,
+    getCompanyDetails,
+    updateCompanyDetails,
+    isUpdating,
+  } = useCompanyStore();
+
+  useEffect(() => {
+    getCompanyDetails();
+  }, []);
+
+  useEffect(() => {
+    if (companyDetails) {
+      setFormData({
+        name: companyDetails.name,
+        email: companyDetails.email,
+        phone: companyDetails.phone,
+        address: companyDetails.address,
+      });
+    }
+  }, [companyDetails]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    if (!formData) return;
+    try {
+      await updateCompanyDetails(formData);
+    } catch (error) {
+      // Error handled in store
+    }
+  };
 
   // Mock company data
   const [company, setCompany] = useState({
@@ -151,19 +189,6 @@ const CompanyPage = () => {
     },
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setCompany((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setCompany((prev) => ({
-      ...prev,
-      address: { ...prev.address, [name]: value },
-    }));
-  };
-
   const handleRegenerateApiKey = () => {
     setIsLoading(true);
     setTimeout(() => {
@@ -190,74 +215,7 @@ const CompanyPage = () => {
   const renderProfileTab = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Company Information */}
-      <Card className="bg-[#1e1e1e]">
-        <CardHeader>
-          <h2 className="text-lg font-semibold">Company Information</h2>
-        </CardHeader>
-        <CardBody className="space-y-4">
-          <Input
-            label="Company Name"
-            name="name"
-            value={company.name}
-            onChange={handleInputChange}
-          />
-          <Input
-            label="Main company Email"
-            name="mainEmail"
-            type="email"
-            value={company.mainEmail}
-            onChange={handleInputChange}
-          />
-          <Input
-            label="Phone"
-            name="phone"
-            value={company.phone}
-            onChange={handleInputChange}
-          />
-
-          <div className="pt-4">
-            <h3 className="text-md font-medium mb-3">Address</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="Street"
-                name="street"
-                value={company.address.street}
-                onChange={handleAddressChange}
-              />
-              <Input
-                label="City"
-                name="city"
-                value={company.address.city}
-                onChange={handleAddressChange}
-                className="bg-[#2a2a2a]"
-              />
-              <Input
-                label="State/Province"
-                name="state"
-                value={company.address.state}
-                onChange={handleAddressChange}
-              />
-              <Input
-                label="Postal Code"
-                name="postalCode"
-                value={company.address.postalCode}
-                onChange={handleAddressChange}
-                className="bg-[#2a2a2a]"
-              />
-              <Input
-                label="Country"
-                name="country"
-                value={company.address.country}
-                onChange={handleAddressChange}
-              />
-            </div>
-          </div>
-        </CardBody>
-        <CardFooter className="flex justify-end gap-2">
-          <Button variant="ghost">Cancel</Button>
-          <Button color="primary">Save Changes</Button>
-        </CardFooter>
-      </Card>
+      <UpdateCompanyCard />
 
       {/* API Key Management */}
       <Card className="bg-[#1e1e1e]">
