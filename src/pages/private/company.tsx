@@ -33,6 +33,7 @@ import {
 import { useCompanyStore } from "@/store/companyStore";
 import { CompanyDetails } from "@/models/dto/company/company.detailed.dto";
 import UpdateCompanyCard from "@/components/company/UpdateCompanyCard";
+import AvailablePlansCard from "@/components/plans/AvailablePlansCard";
 
 const renewalHistory = [
   {
@@ -430,80 +431,7 @@ const CompanyPage = () => {
         </Card>
 
         {/* Available Plans */}
-        <Card className="bg-[#1e1e1e]">
-          <CardHeader>
-            <h2 className="text-lg font-semibold">Available Plans</h2>
-          </CardHeader>
-          <CardBody className="space-y-4">
-            {/* Plan 1 */}
-            <div className="border border-gray-700 rounded-lg p-4 hover:border-primary transition-colors">
-              <div className="flex justify-between">
-                <h3 className="font-bold">Starter Plan</h3>
-                <span className="text-primary font-bold">$49/mo</span>
-              </div>
-              <p className="text-gray-500 text-sm my-2">
-                For small teams getting started
-              </p>
-              <ul className="text-sm space-y-1 mb-4">
-                <li>• 5 users</li>
-                <li>• 100 transcripts/month</li>
-                <li>• 50 reviews/month</li>
-                <li>• Basic support</li>
-              </ul>
-              <Button className="w-full">Select Plan</Button>
-            </div>
-
-            {/* Current Plan */}
-            <div className="border border-primary rounded-lg p-4 bg-primary/10">
-              <div className="flex justify-between">
-                <div className="flex gap-2 items-center">
-                  <h3 className="font-bold">Business Plan</h3>
-                  <Chip color="primary" size="sm">
-                    Current
-                  </Chip>
-                </div>
-                <span className="text-primary font-bold">$99/mo</span>
-              </div>
-              <p className="text-gray-500 text-sm my-2">
-                For growing businesses
-              </p>
-              <ul className="text-sm space-y-1 mb-4">
-                <li>• 10 users</li>
-                <li>• 500 transcripts/month</li>
-                <li>• 200 reviews/month</li>
-                <li>• Priority support</li>
-                <li>• Advanced analytics</li>
-              </ul>
-              <Button
-                variant="solid"
-                color="primary"
-                className="w-full"
-                disabled
-              >
-                Current Plan
-              </Button>
-            </div>
-
-            {/* Plan 3 */}
-            <div className="border border-gray-700 rounded-lg p-4 hover:border-primary transition-colors">
-              <div className="flex justify-between">
-                <h3 className="font-bold">Enterprise Plan</h3>
-                <span className="text-primary font-bold">$199/mo</span>
-              </div>
-              <p className="text-gray-500 text-sm my-2">
-                For large organizations
-              </p>
-              <ul className="text-sm space-y-1 mb-4">
-                <li>• Unlimited users</li>
-                <li>• 2000 transcripts/month</li>
-                <li>• 500 reviews/month</li>
-                <li>• 24/7 premium support</li>
-                <li>• Custom integrations</li>
-              </ul>
-              <Button className="w-full">Select Plan</Button>
-            </div>
-          </CardBody>
-        </Card>
+        <AvailablePlansCard />
       </div>
     </>
   );
