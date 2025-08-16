@@ -1,3 +1,5 @@
+import { subscriptionDetailsDTO } from "../subscriptions/subscription.detail.dto";
+
 export interface CompanyDetails {
   _id: string;
   name: string;
@@ -7,4 +9,5 @@ export interface CompanyDetails {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  subscription: subscriptionDetailsDTO;
 }
