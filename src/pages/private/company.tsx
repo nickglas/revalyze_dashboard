@@ -35,6 +35,7 @@ import { CompanyDetails } from "@/models/dto/company/company.detailed.dto";
 import UpdateCompanyCard from "@/components/company/UpdateCompanyCard";
 import AvailablePlansCard from "@/components/plans/AvailablePlansCard";
 import SubscriptionDowngradeWarning from "@/components/plans/SubscriptionDowngradeWarning";
+import CurrentSubscription from "@/components/plans/CurrentSubscription";
 
 const renewalHistory = [
   {
@@ -284,123 +285,7 @@ const CompanyPage = () => {
       <SubscriptionDowngradeWarning />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Current Subscription */}
-        <Card className="bg-[#1e1e1e]">
-          <CardBody className="space-y-6">
-            <div className="flex flex-wrap justify-between items-center gap-4">
-              <div>
-                <h3 className="text-lg font-bold">
-                  {subscription.productName}
-                </h3>
-                <p className="text-gray-400">
-                  ${subscription.amount}/{subscription.interval}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <Chip
-                  color={
-                    subscription.status === "active" ? "success" : "warning"
-                  }
-                >
-                  {subscription.status}
-                </Chip>
-                {subscription.cancelAtPeriodEnd && (
-                  <Chip color="warning" variant="dot">
-                    Ending Soon
-                  </Chip>
-                )}
-              </div>
-            </div>
-
-            <Divider className="bg-gray-700" />
-
-            {subscription.cancelAtPeriodEnd && (
-              <div className="p-3 bg-yellow-900/20 rounded-lg border border-yellow-500/30">
-                <div className="flex items-center gap-4">
-                  <div className="text-yellow-500">
-                    <FaChartLine className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h1 className="text-sm font-medium text-yellow-300">
-                      Scheduled Downgrade
-                    </h1>
-                    <p className="text-sm text-yellow-500">
-                      Your subscription will be downgraded to the{" "}
-                      {subscription.scheduledDowngrade} plan on{" "}
-                      {new Date(
-                        subscription.currentPeriodEnd
-                      ).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <Button
-                    size="md"
-                    variant="solid"
-                    color="danger"
-                    className="ml-auto"
-                    onClick={handleCancelDowngrade}
-                  >
-                    {}
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            <div>
-              <h4 className="font-medium mb-4">Usage</h4>
-              <div className="space-y-6 mb-4">
-                <div>
-                  <div className="flex justify-between mb-1 text-sm">
-                    <span>Active Users</span>
-                    <span>
-                      {subscription.usedUsers} / {subscription.allowedUsers}
-                    </span>
-                  </div>
-                  <Progress
-                    value={
-                      (subscription.usedUsers / subscription.allowedUsers) * 100
-                    }
-                    className="h-2"
-                    color="primary"
-                  />
-                </div>
-                <div>
-                  <div className="flex justify-between mb-1 text-sm">
-                    <span>Transcripts</span>
-                    <span>
-                      {subscription.usedTranscripts} /{" "}
-                      {subscription.allowedTranscripts}
-                    </span>
-                  </div>
-                  <Progress
-                    value={
-                      (subscription.usedTranscripts /
-                        subscription.allowedTranscripts) *
-                      100
-                    }
-                    className="h-2"
-                    color="primary"
-                  />
-                </div>
-                <div>
-                  <div className="flex justify-between mb-1 text-sm">
-                    <span>Reviews</span>
-                    <span>
-                      {subscription.usedReviews} / {subscription.allowedReviews}
-                    </span>
-                  </div>
-                  <Progress
-                    value={
-                      (subscription.usedReviews / subscription.allowedReviews) *
-                      100
-                    }
-                    className="h-2"
-                    color="primary"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
+        <CurrentSubscription />
 
         {/* Available Plans */}
         <AvailablePlansCard />

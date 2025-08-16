@@ -3,8 +3,10 @@ import { persist } from "zustand/middleware";
 import { PaginationMeta } from "@/models/others/PaginationMeta";
 import { CompanyDetails } from "@/models/dto/company/company.detailed.dto";
 import {
+  cancelScheduledDowngrade,
   getCompanyDetail,
   updateCompanyDetail,
+  updateSubscription,
 } from "@/services/company.service";
 import { toast } from "react-toastify";
 
@@ -17,6 +19,9 @@ interface CompanyState {
 
   getCompanyDetails: () => Promise<CompanyDetails | null>;
   updateCompanyDetails: (updateData: Partial<CompanyDetails>) => Promise<void>;
+  cancelScheduledDowngrade: () => Promise<void>;
+  updateSubscription: (priceId: string) => Promise<void>;
+  reset: () => void;
 }
 
 export const useCompanyStore = create<CompanyState>()(
@@ -30,9 +35,9 @@ export const useCompanyStore = create<CompanyState>()(
       async getCompanyDetails() {
         const { companyDetails } = get();
 
-        if (companyDetails) {
-          return null;
-        }
+        // if (companyDetails) {
+        //   return null;
+        // }
 
         set({ isLoading: true });
         try {
@@ -66,6 +71,57 @@ export const useCompanyStore = create<CompanyState>()(
           set({ isUpdating: false });
         }
       },
+
+      async cancelScheduledDowngrade() {
+        set({ isUpdating: true });
+        try {
+          await cancelScheduledDowngrade();
+          toast.success("Scheduled downgrade cancelled successfully");
+          set((state) => {
+            if (!state.companyDetails) return {};
+            return {
+              companyDetails: {
+                ...state.companyDetails,
+                subscription: {
+                  ...state.companyDetails.subscription,
+                  scheduledUpdate: undefined,
+                },
+              },
+            };
+          });
+        } catch (err: any) {
+          toast.error(
+            err?.response?.data?.message ||
+              "Failed to cancel scheduled downgrade"
+          );
+          throw err;
+        } finally {
+          set({ isUpdating: false });
+        }
+      },
+
+      async updateSubscription(priceId: string) {
+        set({ isUpdating: true });
+        try {
+          await updateSubscription(priceId);
+          toast.success("Subscription updated successfully");
+        } catch (err: any) {
+          toast.error(
+            err?.response?.data?.message || "Failed to update company details"
+          );
+          throw err;
+        } finally {
+          set({ isUpdating: false });
+        }
+      },
+
+      reset: () =>
+        set({
+          companyDetails: null,
+          meta: null,
+          isLoading: false,
+          isUpdating: false,
+        }),
     }),
 
     {

@@ -12,12 +12,10 @@ interface UserState {
   isLoading: boolean;
 
   fetchUsers: (filters: any, page?: number, limit?: number) => Promise<void>;
-
   createUser: (input: CreateUserDto) => Promise<User>;
-
   updateUser: (id: string, updates: Partial<User>) => Promise<User>;
-
   toggleUserStatus: (user: User) => Promise<User | undefined>;
+  reset: () => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -97,6 +95,13 @@ export const useUserStore = create<UserState>()(
           console.error("Failed to toggle status", error);
         }
       },
+
+      reset: () =>
+        set({
+          users: null,
+          meta: null,
+          isLoading: false,
+        }),
     }),
 
     {

@@ -19,6 +19,7 @@ interface TeamState {
   createTeam: (input: CreateTeamDTO) => Promise<Team>;
   updateTeam: (id: string, input: UpdateTeamDTO) => Promise<Team>;
   toggleTeamStatus: (team: Team) => Promise<void>;
+  reset: () => void;
 }
 
 export const useTeamStore = create<TeamState>()(
@@ -118,12 +119,19 @@ export const useTeamStore = create<TeamState>()(
           console.error("Failed to toggle status", error);
         }
       },
+
+      reset: () =>
+        set({
+          teams: null,
+          meta: null,
+          isLoading: false,
+        }),
     }),
 
     {
       name: "teams-storage",
       partialize: (state) => ({
-        criteria: state.teams,
+        teams: state.teams,
         meta: state.meta,
       }),
     }

@@ -9,6 +9,7 @@ interface PlanState {
   isLoading: boolean;
 
   getPlans: () => Promise<void>;
+  reset: () => void;
 }
 
 export const usePlanStore = create<PlanState>()(
@@ -32,6 +33,12 @@ export const usePlanStore = create<PlanState>()(
           set({ isLoading: false });
         }
       },
+
+      reset: () =>
+        set({
+          plans: null,
+          isLoading: false,
+        }),
     }),
     {
       name: "plans-storage",

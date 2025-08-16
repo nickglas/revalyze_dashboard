@@ -21,6 +21,8 @@ interface CriteriaState {
     id: string,
     updates: Partial<Criterion>
   ) => Promise<Criterion>;
+
+  reset: () => void;
 }
 
 export const useCriteriaStore = create<CriteriaState>()(
@@ -71,7 +73,6 @@ export const useCriteriaStore = create<CriteriaState>()(
 
       toggleCriterionStatus: async (criterion) => {
         try {
-          console.warn(criterion);
           const updated = await service.toggleStatus(criterion);
           toast.success("Criterion status updated");
           set((state) => ({
@@ -103,6 +104,13 @@ export const useCriteriaStore = create<CriteriaState>()(
           set({ isLoading: false });
         }
       },
+
+      reset: () =>
+        set({
+          criteria: null,
+          meta: null,
+          isLoading: false,
+        }),
     }),
 
     {

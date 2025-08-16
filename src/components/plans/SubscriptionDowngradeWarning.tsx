@@ -4,7 +4,8 @@ import { useEffect } from "react";
 import { FaExclamationTriangle } from "react-icons/fa";
 
 const SubscriptionDowngradeWarning = () => {
-  const { companyDetails, getCompanyDetails } = useCompanyStore();
+  const { companyDetails, getCompanyDetails, cancelScheduledDowngrade } =
+    useCompanyStore();
 
   useEffect(() => {
     getCompanyDetails();
@@ -35,9 +36,7 @@ const SubscriptionDowngradeWarning = () => {
             color="danger"
             size="md"
             className="text-md font-semibold"
-            onPress={() => {
-              console.log("Cancel downgrade clicked");
-            }}
+            onPress={cancelScheduledDowngrade}
           >
             Cancel Downgrade
           </Button>

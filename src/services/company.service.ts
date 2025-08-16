@@ -13,3 +13,13 @@ export const updateCompanyDetail = async (
   const res = await api.patch(`/api/v1/companies`, updateData);
   return res.data;
 };
+
+export const cancelScheduledDowngrade = async (): Promise<void> => {
+  await api.delete(`/api/v1/companies/subscriptions/scheduled`);
+};
+
+export const updateSubscription = async (priceId: string): Promise<void> => {
+  await api.patch(`/api/v1/companies/subscriptions`, {
+    priceId: priceId,
+  });
+};

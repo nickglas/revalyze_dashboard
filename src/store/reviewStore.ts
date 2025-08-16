@@ -16,6 +16,7 @@ interface ReviewState {
   fetchReviews: (filters: any, page?: number, limit?: number) => Promise<void>;
   fetchById: (id: string) => Promise<ReviewDetailDTO>;
   createReview: (input: CreateReviewDTO) => Promise<ReviewSummaryDto>;
+  reset: () => void;
 }
 
 export const useReviewStore = create<ReviewState>()(
@@ -90,6 +91,14 @@ export const useReviewStore = create<ReviewState>()(
           set({ isLoading: false });
         }
       },
+
+      reset: () =>
+        set({
+          reviews: null,
+          reviewDetails: {},
+          meta: null,
+          isLoading: false,
+        }),
     }),
 
     {

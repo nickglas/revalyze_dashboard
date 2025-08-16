@@ -17,6 +17,7 @@ interface TranscriptState {
     limit?: number
   ) => Promise<void>;
   createTranscript: (data: CreateTranscriptDTO) => Promise<void>;
+  reset: () => void;
 }
 
 export const useTranscriptStore = create<TranscriptState>()(
@@ -48,7 +49,6 @@ export const useTranscriptStore = create<TranscriptState>()(
         try {
           await service.createTranscript(data);
           toast.success("Transcript uploaded successfully!");
-          // Refresh the list after creation
           await get().fetchTranscripts({}, 1, get().meta?.limit || 5);
         } catch (err) {
           toast.error("Failed to upload transcript");
@@ -57,6 +57,13 @@ export const useTranscriptStore = create<TranscriptState>()(
           set({ isLoading: false });
         }
       },
+
+      reset: () =>
+        set({
+          transcripts: null,
+          meta: null,
+          isLoading: false,
+        }),
     }),
 
     {

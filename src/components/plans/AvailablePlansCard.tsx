@@ -14,7 +14,8 @@ import React, { useEffect, useMemo, useState } from "react";
 
 const AvailablePlansCard = () => {
   const { plans, getPlans, isLoading } = usePlanStore();
-  const { companyDetails, getCompanyDetails } = useCompanyStore();
+  const { companyDetails, getCompanyDetails, updateSubscription } =
+    useCompanyStore();
   const [isYearly, setIsYearly] = useState(false);
 
   const maxSavings = useMemo(() => {
@@ -240,6 +241,11 @@ const AvailablePlansCard = () => {
                     getPriceId(plan) === companyDetails?.subscription.priceId ||
                     isYearlyUnavailable
                   }
+                  onPress={() => {
+                    const newPrice = getPriceId(plan);
+
+                    if (newPrice) updateSubscription(newPrice);
+                  }}
                 >
                   {getPriceId(plan) === companyDetails?.subscription.priceId
                     ? "Current Plan"

@@ -23,6 +23,7 @@ interface ContactState {
   }) => Promise<Contact>;
   toggleContactStatus: (contact: Contact) => Promise<void>;
   updateContact: (id: string, updates: Partial<Contact>) => Promise<Contact>;
+  reset: () => void;
 }
 
 export const useContactStore = create<ContactState>()(
@@ -109,6 +110,13 @@ export const useContactStore = create<ContactState>()(
           console.error("Failed to toggle status", error);
         }
       },
+
+      reset: () =>
+        set({
+          contacts: null,
+          meta: null,
+          isLoading: false,
+        }),
     }),
 
     {

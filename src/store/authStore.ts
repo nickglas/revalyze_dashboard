@@ -2,6 +2,16 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import axios from "axios";
 import { isTokenExpired } from "@/util/jwt";
+import { useCompanyStore } from "./companyStore";
+import { useContactStore } from "./contactStore";
+import { useCriteriaStore } from "./criteriaStore";
+import { useExternalCompanyStore } from "./externalCompanyStore";
+import { usePlanStore } from "./planStore";
+import { useReviewConfigStore } from "./reviewConfigStore";
+import { useReviewStore } from "./reviewStore";
+import { useTeamStore } from "./teamStore";
+import { useTranscriptStore } from "./transcriptStore";
+import { useUserStore } from "./userStore";
 
 interface AuthState {
   user: string | null;
@@ -25,17 +35,14 @@ export const useAuthStore = create<AuthState>()(
       async checkAuth() {
         const { accessToken, refreshToken, setTokens, clearTokens } = get();
 
-        // 1. No tokens available
         if (!accessToken && !refreshToken) {
           return false;
         }
 
-        // 2. Access token is valid
         if (accessToken && !isTokenExpired(accessToken)) {
           return true;
         }
 
-        // 3. Try to refresh tokens
         if (refreshToken) {
           try {
             const res = await axios.post(
@@ -60,7 +67,6 @@ export const useAuthStore = create<AuthState>()(
           }
         }
 
-        // 4. Default case - no valid tokens
         clearTokens();
         return false;
       },
@@ -76,9 +82,19 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        // Clear tokens first to prevent any API calls during logout
         get().clearTokens();
         set({ user: null });
+
+        useCompanyStore.getState().reset();
+        useContactStore.getState().reset();
+        useCriteriaStore.getState().reset();
+        useExternalCompanyStore.getState().reset();
+        usePlanStore.getState().reset();
+        useReviewConfigStore.getState().reset();
+        useReviewStore.getState().reset();
+        useTeamStore.getState().reset();
+        useTranscriptStore.getState().reset();
+        useUserStore.getState().reset();
       },
 
       setTokens: (access, refresh) =>

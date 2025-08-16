@@ -32,6 +32,8 @@ interface ExternalCompanyState {
     id: string,
     updates: Partial<ExternalCompany>
   ) => Promise<ExternalCompany>;
+
+  reset: () => void;
 }
 
 export const useExternalCompanyStore = create<ExternalCompanyState>()(
@@ -41,11 +43,10 @@ export const useExternalCompanyStore = create<ExternalCompanyState>()(
       meta: null,
       isLoading: false,
 
-      // Updated to accept filters
       fetchCompanies: async (filters: any = {}, page = 1, limit = 20) => {
         set({ isLoading: true });
         try {
-          const res = await service.getCompanies(page, limit, filters); // Pass filters
+          const res = await service.getCompanies(page, limit, filters);
           set({
             companies: res.data,
             meta: res.meta,
@@ -118,6 +119,13 @@ export const useExternalCompanyStore = create<ExternalCompanyState>()(
           set({ isLoading: false });
         }
       },
+
+      reset: () =>
+        set({
+          companies: null,
+          meta: null,
+          isLoading: false,
+        }),
     }),
 
     {

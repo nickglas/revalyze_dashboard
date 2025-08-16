@@ -26,6 +26,7 @@ interface ReviewConfigState {
     data: UpdateReviewConfigDTO
   ) => Promise<ReviewConfig>;
   toggleStatus: (config: ReviewConfig) => Promise<void>;
+  reset: () => void;
 }
 
 export const useReviewConfigStore = create<ReviewConfigState>()(
@@ -111,6 +112,13 @@ export const useReviewConfigStore = create<ReviewConfigState>()(
           set({ isLoading: false });
         }
       },
+
+      reset: () =>
+        set({
+          reviewConfigs: null,
+          meta: null,
+          isLoading: false,
+        }),
     }),
 
     {
