@@ -34,6 +34,7 @@ import { useCompanyStore } from "@/store/companyStore";
 import { CompanyDetails } from "@/models/dto/company/company.detailed.dto";
 import UpdateCompanyCard from "@/components/company/UpdateCompanyCard";
 import AvailablePlansCard from "@/components/plans/AvailablePlansCard";
+import SubscriptionDowngradeWarning from "@/components/plans/SubscriptionDowngradeWarning";
 
 const renewalHistory = [
   {
@@ -280,36 +281,7 @@ const CompanyPage = () => {
 
   const renderSubscriptionTab = () => (
     <>
-      <Card className="bg-yellow-900/20 border-yellow-500/50">
-        <CardBody className="flex items-center gap-4">
-          <FaExclamationTriangle className="text-yellow-500 text-3xl flex-shrink-0" />
-          <div className="flex flex-col items-center gap-4">
-            <h3 className="font-medium text-xl">Scheduled Downgrade</h3>
-            <p className="text-lg text-yellow-300 text-center">
-              Your subscription will downgrade to{" "}
-              <span className="font-semibold">
-                {subscription.scheduledDowngrade}
-              </span>{" "}
-              at the end of your billing period on{" "}
-              {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
-            </p>
-            <Button
-              variant="solid"
-              color="danger"
-              size="md"
-              className="text-md font-semibold"
-              onClick={() =>
-                setSubscription((prev) => ({
-                  ...prev,
-                  cancelAtPeriodEnd: false,
-                }))
-              }
-            >
-              Cancel Downgrade
-            </Button>
-          </div>
-        </CardBody>
-      </Card>
+      <SubscriptionDowngradeWarning />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Current Subscription */}
         <Card className="bg-[#1e1e1e]">
