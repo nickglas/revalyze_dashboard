@@ -8,57 +8,19 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 export default function DashboardPage() {
-  const [isLoading, setIsLoading] = useState(true);
   const [filterKey, setFilterKey] = useState<"day" | "week" | "month" | "year">(
     "month"
   );
-  const { isLoadingTrends } = useInsightStore();
+  const {
+    isLoadingTrends,
+    isLoadingCriteriaSummary,
+    criteriaSummary,
+    fetchCriteriaSummary,
+  } = useInsightStore();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1200);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const resourceUsage = [
-    { title: "User Limit", used: 24, total: 50, color: "#3B82F6" },
-    { title: "Transcripts", used: 120, total: 500, color: "#10B981" },
-    { title: "Reviews", used: 42, total: 100, color: "#F59E0B" },
-  ];
-
-  // Mock metric data
-  const metrics = [
-    {
-      title: "Avg. Performance",
-      value: "8.2/10",
-      change: "+2.3%",
-      color: "text-green-500",
-      lastYear: 7.5,
-    },
-    {
-      title: "Employee Sentiment",
-      value: "7.5/10",
-      change: "+1.8%",
-      color: "text-green-500",
-      lastYear: 7.1,
-    },
-    {
-      title: "Reviews Completed",
-      value: "42/87",
-      change: "+12",
-      color: "text-emerald-500",
-      lastYear: 35,
-    },
-    {
-      title: "Active Employees",
-      value: "24",
-      change: "+3",
-      color: "text-green-500",
-      lastYear: 21,
-    },
-  ];
+    fetchCriteriaSummary(filterKey);
+  }, [filterKey]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -89,16 +51,12 @@ export default function DashboardPage() {
               <h2 className="text-lg font-semibold">Users</h2>
             </CardHeader>
             <CardBody className="px-2 py-1 flex items-center justify-center overflow-hidden">
-              {isLoading ? (
-                <Skeleton className="h-[200px] w-full rounded-lg" />
-              ) : (
-                <ResourceGauce
-                  title={"Users"}
-                  value={66}
-                  total={100}
-                  color={"yellow"}
-                />
-              )}
+              <ResourceGauce
+                title={"Users"}
+                value={66}
+                total={100}
+                color={"yellow"}
+              />
             </CardBody>
             <CardFooter className="px-4 pb-2 text-gray-500">
               <Link to={"/"} className="text-tiny">
@@ -111,33 +69,95 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Card key={i} className="bg-[#1e1e1e] shadow-sm">
-            <CardBody className="p-4">
-              {isLoading ? (
-                <Skeleton className="h-6 w-3/4 rounded-lg" />
-              ) : (
-                <>
-                  <div className="flex justify-between items-start">
-                    <h3 className="text-foreground text-lg font-medium">
-                      Empathie
-                    </h3>
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex items-center gap-2">
-                      <p className="text-2xl font-bold">7/10</p>
-                      <p className={`text-sm mt-1 text-green-500`}>+1.6</p>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {criteriaSummary?.map((criterion) => {
+          const changeValue = criterion.changePercentage;
+          const isPositive = changeValue > 0;
+          const isNegative = changeValue < 0;
+          const isNeutral = changeValue === 0;
+
+          return (
+            <Card
+              key={criterion.criterion}
+              className="bg-[#1e1e1e] shadow-sm h-full"
+            >
+              <CardBody className="p-4 flex flex-col justify-between h-full">
+                {/* Title Section - Fixed Height */}
+                <div className="mb-4">
+                  <h3 className="text-foreground text-base font-medium leading-tight min-h-[2.5rem] flex items-center">
+                    {criterion.criterion}
+                  </h3>
+                </div>
+
+                {/* Score and Change Section */}
+                <div className="mt-auto">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-2xl font-bold text-foreground">
+                      {criterion.currentScore}/10
+                    </p>
+                    <div
+                      className={`flex items-center gap-1 text-sm font-medium ${
+                        isPositive
+                          ? "text-green-500"
+                          : isNegative
+                            ? "text-red-500"
+                            : "text-gray-500"
+                      }`}
+                    >
+                      {/* Arrow Icons */}
+                      {isPositive && (
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                      {isNegative && (
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                      {isNeutral && (
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                      <span>
+                        {isPositive ? "+" : ""}
+                        {criterion.changePercentage}
+                      </span>
                     </div>
-                    <span className="text-gray-500 text-sm">
-                      Compared to last filter
-                    </span>
                   </div>
-                </>
-              )}
-            </CardBody>
-          </Card>
-        ))}
+                  <span className="text-gray-500 text-sm">
+                    Compared to last {filterKey}
+                  </span>
+                </div>
+              </CardBody>
+            </Card>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2">

@@ -2,13 +2,18 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { toast } from "react-toastify";
 import { DailyTrendMetricDTO } from "@/models/dto/insights/daily.trend.metric.dto";
-import { getTrends } from "@/services/insight.service";
+import { getTrends, getCriteriaSummary } from "@/services/insight.service";
+import { CriterionSummaryDTO } from "@/models/dto/insights/criterion.summary.dto";
 
 interface InsightState {
   dailyTrendMetrics: DailyTrendMetricDTO | null;
+  criteriaSummary: CriterionSummaryDTO[] | null;
+
   isLoadingTrends: boolean;
+  isLoadingCriteriaSummary: boolean;
 
   getDailyTrendMetrics: (filter?: string) => Promise<void>;
+  fetchCriteriaSummary: (filter?: string) => Promise<void>;
   reset: () => void;
 }
 
@@ -17,7 +22,9 @@ export const useInsightStore = create<InsightState>()(
     (set, get) => ({
       // Remove unused 'get' parameter
       dailyTrendMetrics: null,
+      criteriaSummary: null,
       isLoadingTrends: false,
+      isLoadingCriteriaSummary: false,
 
       async getDailyTrendMetrics(filter?: string) {
         set({ isLoadingTrends: true });
@@ -36,9 +43,25 @@ export const useInsightStore = create<InsightState>()(
         }
       },
 
+      async fetchCriteriaSummary(filter?: string) {
+        set({ isLoadingCriteriaSummary: true });
+        try {
+          const res = await getCriteriaSummary(filter);
+          set({ criteriaSummary: res });
+        } catch (err) {
+          toast.error("Failed to fetch daily metrics");
+          console.error(err);
+          set({ dailyTrendMetrics: null });
+        } finally {
+          set({ isLoadingCriteriaSummary: false });
+        }
+      },
+
       reset: () =>
         set({
           dailyTrendMetrics: null,
+          criteriaSummary: null,
+          isLoadingCriteriaSummary: false,
           isLoadingTrends: false,
         }),
     }),
@@ -46,6 +69,9 @@ export const useInsightStore = create<InsightState>()(
       name: "insight-storage",
       partialize: (state) => ({
         dailyTrendMetrics: state.dailyTrendMetrics,
+        criteriaSummary: state.criteriaSummary,
+        isLoadingCriteriaSummary: state.isLoadingCriteriaSummary,
+        isLoadingTrends: state.isLoadingTrends,
       }),
     }
   )
