@@ -7,26 +7,7 @@ import {
   ModalFooter,
   useDisclosure,
 } from "@heroui/modal";
-import {
-  Button,
-  Input,
-  Form,
-  DatePicker,
-  Textarea,
-  Spinner,
-  RadioGroup,
-  Radio,
-  Select,
-  SelectItem,
-  Table,
-  TableHeader,
-  TableColumn,
-  TableRow,
-  TableCell,
-  TableBody,
-  NumberInput,
-  Tooltip,
-} from "@heroui/react";
+import { Button, Input, Form, Textarea, Spinner } from "@heroui/react";
 import { useTranscriptStore } from "@/store/transcriptStore";
 import { CreateTranscriptDTO } from "@/models/dto/create.transcript.dto";
 import { formatISO } from "date-fns";
@@ -330,7 +311,6 @@ export default function AddTranscriptModal() {
                     </div>
                   ))}
                 </div>
-
                 <Form id="transcript-form" onSubmit={handleSubmit}>
                   <div className="flex flex-col w-full gap-4">
                     {tab === 0 && (
