@@ -1,4 +1,3 @@
-import { color } from "framer-motion";
 import Chart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
 
