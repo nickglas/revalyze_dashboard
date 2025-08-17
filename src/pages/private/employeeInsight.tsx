@@ -1207,6 +1207,14 @@ export default function EmployeeInsightsPage() {
                     </Select>
                   </div>
 
+                  <Select
+                    label="Select role"
+                    placeholder="Select a role"
+                    labelPlacement="outside"
+                  >
+                    <SelectItem key="a">a</SelectItem>
+                  </Select>
+
                   <div className="flex items-end">
                     <Button variant="flat">Apply Filters</Button>
                   </div>

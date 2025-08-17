@@ -1,18 +1,18 @@
-import CriteriaChart from "@/components/charts/criteriaChart";
-import EmployeeSentimentChart from "@/components/charts/employeeSentimentChart";
 import MonthlyPerformanceChart from "@/components/charts/monthlyPerformanceChart";
 import { ResourceGauce } from "@/components/charts/ResourceGauge";
-import ReviewStatusChart from "@/components/charts/reviewStatusChart";
-import RoleSentimentChart from "@/components/charts/roleSentimentChart";
-import SentimentPerformanceChart from "@/components/charts/SentimentPerformanceChart";
+import { useInsightStore } from "@/store/insightStore";
 import { Button } from "@heroui/button";
-import { Skeleton } from "@heroui/react";
+import { Divider, Select, SelectItem, Skeleton } from "@heroui/react";
 import { Card, CardHeader, CardBody, CardFooter } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [filterKey, setFilterKey] = useState<"day" | "week" | "month" | "year">(
+    "month"
+  );
+  const { isLoadingTrends } = useInsightStore();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -64,15 +64,56 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Performance Dashboard</h1>
-        <Button color="primary" variant="solid">
-          Generate Report
-        </Button>
+        <div className="flex gap-4">
+          <Select
+            defaultSelectedKeys={[filterKey]}
+            className="max-w-lg w-[100px]"
+            size="sm"
+            onSelectionChange={(key) => setFilterKey(key.anchorKey)}
+          >
+            <SelectItem key={"day"}>Day</SelectItem>
+            <SelectItem key={"week"}>Week</SelectItem>
+            <SelectItem key={"month"}>Month</SelectItem>
+            <SelectItem key={"year"}>Year</SelectItem>
+          </Select>
+          <Button color="primary" variant="solid" size="sm">
+            Generate Report
+          </Button>
+        </div>
       </div>
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {metrics.map((metric, index) => (
-          <Card key={index} className="bg-[#1e1e1e] shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {[...Array(5)].map((x, i) => (
+          <Card className="overflow-hidden bg-[#1e1e1e]">
+            <CardHeader className="pb-0 pt-4 px-4">
+              <h2 className="text-lg font-semibold">Users</h2>
+            </CardHeader>
+            <CardBody className="px-2 py-1 flex items-center justify-center overflow-hidden">
+              {isLoading ? (
+                <Skeleton className="h-[200px] w-full rounded-lg" />
+              ) : (
+                <ResourceGauce
+                  title={"Users"}
+                  value={66}
+                  total={100}
+                  color={"yellow"}
+                />
+              )}
+            </CardBody>
+            <CardFooter className="px-4 pb-2 text-gray-500">
+              <Link to={"/"} className="text-tiny">
+                Reached {Math.round((66 / 100) * 100)}% of the current usages.
+                Please <span className="text-primary">upgrade</span> for more
+                resources
+              </Link>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Card key={i} className="bg-[#1e1e1e] shadow-sm">
             <CardBody className="p-4">
               {isLoading ? (
                 <Skeleton className="h-6 w-3/4 rounded-lg" />
@@ -80,18 +121,16 @@ export default function DashboardPage() {
                 <>
                   <div className="flex justify-between items-start">
                     <h3 className="text-foreground text-lg font-medium">
-                      {metric.title}
+                      Empathie
                     </h3>
                   </div>
                   <div className="mt-2">
                     <div className="flex items-center gap-2">
-                      <p className="text-2xl font-bold">{metric.value}</p>
-                      <p className={`text-sm mt-1 ${metric.color}`}>
-                        {metric.change}
-                      </p>
+                      <p className="text-2xl font-bold">7/10</p>
+                      <p className={`text-sm mt-1 text-green-500`}>+1.6</p>
                     </div>
                     <span className="text-gray-500 text-sm">
-                      Compared to {metric.lastYear} last year
+                      Compared to last filter
                     </span>
                   </div>
                 </>
@@ -101,160 +140,23 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Resource Usage Gauges */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 overflow-hidden">
-        {resourceUsage.map((resource, index) => (
-          <Card key={index} className="overflow-hidden bg-[#1e1e1e]">
-            <CardHeader className="pb-0 pt-4 px-4">
-              <h2 className="text-lg font-semibold">{resource.title}</h2>
-            </CardHeader>
-            <CardBody className="px-2 py-1 flex items-center justify-center overflow-hidden">
-              {isLoading ? (
-                <Skeleton className="h-[200px] w-full rounded-lg" />
-              ) : (
-                <ResourceGauce
-                  title={resource.title}
-                  value={resource.used}
-                  total={resource.total}
-                  color={resource.color}
-                />
-              )}
-            </CardBody>
-            <CardFooter className="px-4 pb-2 text-xs text-gray-500">
-              <Link to={"/"}>
-                Reached {Math.round((resource.used / resource.total) * 100)}% of
-                the current usages. Please{" "}
-                <span className="text-primary">upgrade</span> for more resources
-              </Link>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-
-      {/* Main Insights Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 auto-rows-[minmax(400px,auto)]">
-        {/* Sentiment vs Performance */}
-        <Card className="col-span-1 md:col-span-2 xl:col-span-3 bg-[#1e1e1e]">
-          <CardHeader className="pb-0 pt-4 px-4 flex justify-between items-center">
-            <h2 className="text-lg font-semibold">
-              Sentiment vs Performance Trend
-            </h2>
-            <div className="flex gap-4">
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-3 h-3 rounded-full bg-[#3B82F6]"></span>
-                <span className="text-gray-600 text-sm">Avg. Performance</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-3 h-3 rounded-full bg-[#10B981]"></span>
-                <span className="text-gray-600 text-sm">Company Sentiment</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardBody className="px-2 py-1 overflow-hidden">
-            {isLoading ? (
-              <Skeleton className="h-[350px] w-full rounded-lg" />
-            ) : (
-              <SentimentPerformanceChart />
-            )}
-          </CardBody>
-          <CardFooter className="px-4 pb-2 text-xs text-gray-500">
-            Monthly correlation between employee performance scores and company
-            sentiment analysis
-          </CardFooter>
-        </Card>
-
-        {/* Review Status */}
-        <Card className="col-span-1 md:col-span-2 lg:col-span-2 xl:col-span-1 bg-[#1e1e1e] overflow-hidden">
-          <CardHeader className="pb-0 pt-4 px-4">
-            <h2 className="text-lg font-semibold">Review Distribution</h2>
-          </CardHeader>
-          <CardBody className="px-2 overflow-hidden">
-            {isLoading ? (
-              <Skeleton className="h-[300px] w-full rounded-lg" />
-            ) : (
-              <ReviewStatusChart />
-            )}
-          </CardBody>
-          <CardFooter className="px-4 pb-2 text-xs text-gray-500">
-            Status of performance reviews across teams
-          </CardFooter>
-        </Card>
-
-        {/* Criteria Performance */}
-        <Card className="col-span-1 md:col-span-2 bg-[#1e1e1e]">
-          <CardHeader className="pb-0 pt-4 px-4">
-            <h2 className="text-lg font-semibold">
-              Evaluation Criteria Performance
-            </h2>
-          </CardHeader>
-          <CardBody className="px-2">
-            {isLoading ? (
-              <Skeleton className="h-[350px] w-full rounded-lg" />
-            ) : (
-              <CriteriaChart />
-            )}
-          </CardBody>
-          <CardFooter className="px-4 pb-2 text-xs text-gray-500">
-            Performance across key evaluation criteria
-          </CardFooter>
-        </Card>
-
-        {/* Monthly Performance */}
+      <div className="grid grid-cols-1 md:grid-cols-2">
         <Card className="col-span-1 md:col-span-2 xl:col-span-2  bg-[#1e1e1e]">
           <CardHeader className="pb-0 pt-4 px-4">
             <h2 className="text-lg font-semibold">Monthly Performance Trend</h2>
           </CardHeader>
           <CardBody className="px-2">
-            {isLoading ? (
-              <Skeleton className="h-[350px] w-full rounded-lg" />
-            ) : (
-              <MonthlyPerformanceChart />
-            )}
+            <CardBody className="px-2">
+              <MonthlyPerformanceChart filter={filterKey} />
+            </CardBody>
           </CardBody>
           <CardFooter className="px-4 pb-2 text-xs text-gray-500">
             2024 monthly performance progression
           </CardFooter>
         </Card>
-
-        {/* Employee Sentiment Correlation */}
-        <Card className="col-span-1 md:col-span-2 xl:col-span-4  bg-[#1e1e1e]">
-          <CardHeader className="pb-0 pt-4 px-4">
-            <h2 className="text-lg font-semibold">
-              Employee Sentiment-Performance Correlation
-            </h2>
-          </CardHeader>
-          <CardBody className="px-2">
-            {isLoading ? (
-              <Skeleton className="h-[350px] w-full rounded-lg" />
-            ) : (
-              <EmployeeSentimentChart />
-            )}
-          </CardBody>
-          <CardFooter className="px-4 pb-2 text-xs text-gray-500">
-            Relationship between individual sentiment scores and performance
-            metrics
-          </CardFooter>
-        </Card>
-
-        {/* Role-Based Sentiment */}
-        <Card className="col-span-1 md:col-span-2 xl:col-span-4  bg-[#1e1e1e]">
-          <CardHeader className="pb-0 pt-4 px-4">
-            <h2 className="text-lg font-semibold">
-              Role-Based Sentiment Distribution
-            </h2>
-          </CardHeader>
-          <CardBody className="px-2">
-            {isLoading ? (
-              <Skeleton className="h-[350px] w-full rounded-lg" />
-            ) : (
-              <RoleSentimentChart />
-            )}
-          </CardBody>
-          <CardFooter className="px-4 pb-2 text-xs text-gray-500">
-            Sentiment analysis distribution across different roles
-          </CardFooter>
-        </Card>
       </div>
+
+      <Divider className="h-4" />
     </div>
   );
 }

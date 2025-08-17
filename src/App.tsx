@@ -24,6 +24,7 @@ import ExternalCompaniesPage from "./pages/private/externalCompanies";
 import ExternalContactsPage from "./pages/private/externalContacts";
 import CompanyPage from "./pages/private/company";
 import TeamsPage from "./pages/private/teams";
+import CompanyDashboardPage from "./pages/private/GeneralOverview";
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
