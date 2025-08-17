@@ -1,8 +1,9 @@
+import CriteriaBarChart from "@/components/charts/CriteriaBarChart";
 import MonthlyPerformanceChart from "@/components/charts/monthlyPerformanceChart";
 import { ResourceGauce } from "@/components/charts/ResourceGauge";
 import { useInsightStore } from "@/store/insightStore";
 import { Button } from "@heroui/button";
-import { Divider, Select, SelectItem, Skeleton } from "@heroui/react";
+import { Divider, Select, SelectItem } from "@heroui/react";
 import { Card, CardHeader, CardBody, CardFooter } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -16,11 +17,18 @@ export default function DashboardPage() {
     isLoadingCriteriaSummary,
     criteriaSummary,
     fetchCriteriaSummary,
+    isloadingDasboardLimitData,
+    getDashboardLimitData,
+    dashboardLimitData,
   } = useInsightStore();
 
   useEffect(() => {
     fetchCriteriaSummary(filterKey);
   }, [filterKey]);
+
+  useEffect(() => {
+    getDashboardLimitData();
+  }, []);
 
   return (
     <div className="flex flex-col gap-6">
@@ -43,30 +51,139 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {[...Array(5)].map((x, i) => (
-          <Card className="overflow-hidden bg-[#1e1e1e]">
-            <CardHeader className="pb-0 pt-4 px-4">
-              <h2 className="text-lg font-semibold">Users</h2>
-            </CardHeader>
-            <CardBody className="px-2 py-1 flex items-center justify-center overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        {dashboardLimitData && (
+          <>
+            {/* First 3: percentage thresholds */}
+            <div className="flex flex-col bg-[#1e1e1e] rounded-lg shadow-sm px-4 py-2">
+              <h1 className="font-semibold text-xl">Employees</h1>
               <ResourceGauce
-                title={"Users"}
-                value={66}
-                total={100}
-                color={"yellow"}
+                title="Users"
+                metric={dashboardLimitData.users}
+                type="count"
               />
-            </CardBody>
-            <CardFooter className="px-4 pb-2 text-gray-500">
-              <Link to={"/"} className="text-tiny">
-                Reached {Math.round((66 / 100) * 100)}% of the current usages.
-                Please <span className="text-primary">upgrade</span> for more
-                resources
+              <div className="text-center mt-2">
+                <p className="text-lg font-semibold">
+                  {dashboardLimitData.users.current}
+                  <span className="text-gray-500"> of </span>
+                  {dashboardLimitData.users.allowed}
+                </p>
+              </div>
+
+              <Link to={"/company"} className="text-tiny text-gray-500 mt-4">
+                Reached{" "}
+                {Math.round(
+                  (dashboardLimitData.users.current /
+                    dashboardLimitData.users.allowed) *
+                    100
+                )}
+                % of the current usages. Please{" "}
+                <span className="text-primary">upgrade</span> for more resources
               </Link>
-            </CardFooter>
-          </Card>
-        ))}
+            </div>
+
+            <div className="flex flex-col bg-[#1e1e1e] rounded-lg shadow-sm px-4 py-2">
+              <h1 className="font-semibold text-xl">Transcripts</h1>
+              <ResourceGauce
+                title="Transcripts"
+                metric={dashboardLimitData.transcripts}
+                type="count"
+              />
+              <div className="text-center mt-2">
+                <p className="text-lg font-semibold">
+                  {dashboardLimitData.transcripts.current}
+                  <span className="text-gray-500"> of </span>
+                  {dashboardLimitData.transcripts.allowed}
+                </p>
+              </div>
+              <Link to={"/company"} className="text-tiny text-gray-500 mt-4">
+                Reached{" "}
+                {Math.round(
+                  (dashboardLimitData.transcripts.current /
+                    dashboardLimitData.transcripts.allowed) *
+                    100
+                )}
+                % of the current usages. Please{" "}
+                <span className="text-primary">upgrade</span> for more resources
+              </Link>
+            </div>
+
+            <div className="flex flex-col bg-[#1e1e1e] rounded-lg shadow-sm px-4 py-2">
+              <h1 className="font-semibold text-xl">Reviews</h1>
+              <ResourceGauce
+                title="Reviews"
+                metric={dashboardLimitData.reviews}
+                type="count"
+              />
+              <div className="text-center mt-2">
+                <p className="text-lg font-semibold">
+                  {dashboardLimitData.reviews.current}
+                  <span className="text-gray-500"> of </span>
+                  {dashboardLimitData.reviews.allowed}
+                </p>
+              </div>
+              <Link to={"/company"} className="text-tiny text-gray-500 mt-4">
+                Reached{" "}
+                {Math.round(
+                  (dashboardLimitData.reviews.current /
+                    dashboardLimitData.reviews.allowed) *
+                    100
+                )}
+                % of the current usages. Please{" "}
+                <span className="text-primary">upgrade</span> for more resources
+              </Link>
+            </div>
+
+            {/* Last 2: score thresholds */}
+            <div className="flex flex-col bg-[#1e1e1e] rounded-lg shadow-sm px-4 py-2">
+              <h1 className="font-semibold text-xl">Performance </h1>
+              <ResourceGauce
+                title="Performance"
+                metric={dashboardLimitData.performance}
+                type="score"
+              />
+              <div className="text-center mt-2">
+                <p className="text-lg font-semibold">
+                  {dashboardLimitData.performance}
+                  <span className="text-gray-500"> of </span>
+                  10
+                </p>
+              </div>
+              <Link
+                to={"/transcripts"}
+                className="text-tiny text-gray-500 mt-4"
+              >
+                Upload more <span className="text-primary">transcripts</span> or
+                submit more <span className="text-primary">reviews</span> to
+                boost this score
+              </Link>
+            </div>
+
+            <div className="flex flex-col bg-[#1e1e1e] rounded-lg shadow-sm px-4 py-2">
+              <h1 className="font-semibold text-xl">Sentiment </h1>
+              <ResourceGauce
+                title="Sentiment"
+                metric={dashboardLimitData.sentiment}
+                type="score"
+              />
+              <div className="text-center mt-2">
+                <p className="text-lg font-semibold">
+                  {dashboardLimitData.sentiment}
+                  <span className="text-gray-500"> of </span>
+                  10
+                </p>
+              </div>
+              <Link
+                to={"/transcripts"}
+                className="text-tiny text-gray-500 mt-4"
+              >
+                Upload more <span className="text-primary">transcripts</span> or
+                submit more <span className="text-primary">reviews</span> to
+                boost this score
+              </Link>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -160,8 +277,8 @@ export default function DashboardPage() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2">
-        <Card className="col-span-1 md:col-span-2 xl:col-span-2  bg-[#1e1e1e]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="bg-[#1e1e1e]">
           <CardHeader className="pb-0 pt-4 px-4">
             <h2 className="text-lg font-semibold">Monthly Performance Trend</h2>
           </CardHeader>
@@ -174,9 +291,21 @@ export default function DashboardPage() {
             2024 monthly performance progression
           </CardFooter>
         </Card>
+        <Card className="bg-[#1e1e1e]">
+          <CardHeader className="pb-0 pt-4 px-4">
+            <h2 className="text-lg font-semibold">Criteria Performance</h2>
+          </CardHeader>
+          <CardBody className="px-2">
+            <CriteriaBarChart
+              criteriaSummary={criteriaSummary}
+              filter={filterKey}
+            />
+          </CardBody>
+          <CardFooter className="px-4 pb-2 text-xs text-gray-500">
+            Current scores for each criterion
+          </CardFooter>
+        </Card>
       </div>
-
-      <Divider className="h-4" />
     </div>
   );
 }

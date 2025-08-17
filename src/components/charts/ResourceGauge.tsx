@@ -2,20 +2,47 @@ import React from "react";
 import Chart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
 
-export interface IResourceGauceProps {
+interface DashboardMetric {
+  current: number;
+  allowed: number;
+}
+
+interface IResourceGauceProps {
   title: string;
-  value: number;
-  total: number;
-  color: string;
+  metric: DashboardMetric | number;
+  type: "count" | "score";
 }
 
 export const ResourceGauce: React.FC<IResourceGauceProps> = ({
   title,
-  value,
-  total,
-  color,
+  metric,
+  type,
 }) => {
+  const isScore = type === "score";
+  const value = isScore
+    ? (metric as number)
+    : (metric as DashboardMetric).current;
+  const total = isScore ? 10 : (metric as DashboardMetric).allowed;
   const percentage = Math.round((value / total) * 100);
+
+  // Pick solid color based on thresholds
+  let gaugeColor = "#22c55e"; // default green
+
+  if (!isScore) {
+    // count type (Users, Transcripts, Reviews)
+    if (percentage < 33)
+      gaugeColor = "#22c55e"; // green
+    else if (percentage < 66)
+      gaugeColor = "#eab308"; // yellow
+    else gaugeColor = "#ef4444"; // red
+  } else {
+    // score type (Performance, Sentiment)
+    if (value < 5)
+      gaugeColor = "#ef4444"; // red
+    else if (value <= 7)
+      gaugeColor = "#eab308"; // yellow
+    else gaugeColor = "#22c55e"; // green
+  }
 
   const options: ApexOptions = {
     chart: {
@@ -37,61 +64,33 @@ export const ResourceGauce: React.FC<IResourceGauceProps> = ({
             fontSize: "16px",
             fontWeight: 600,
             color: "#a1a1aa",
-            offsetY: 60,
+            offsetY: 70,
           },
           value: {
             offsetY: 0,
             fontSize: "28px",
             fontWeight: 700,
             color: "#fff",
-            formatter: function (val) {
-              return `${val}%`;
+            formatter: function () {
+              return isScore ? `${value.toFixed(1)}/10` : `${percentage}%`;
             },
           },
         },
       },
     },
     fill: {
-      type: "gradient",
-      gradient: {
-        shade: "dark",
-        shadeIntensity: 0.15,
-        inverseColors: false,
-        opacityFrom: 1,
-        opacityTo: 1,
-        stops: [0, 50, 65, 91],
-        colorStops: [
-          {
-            offset: 0,
-            color: color,
-            opacity: 1,
-          },
-          {
-            offset: 100,
-            color: color,
-            opacity: 0.6,
-          },
-        ],
-      },
+      colors: [gaugeColor], // solid color only
     },
     stroke: {
       dashArray: 4,
     },
-    colors: [color],
+    colors: [gaugeColor],
     labels: [title],
   };
 
   const series = [percentage];
 
   return (
-    <div className="flex flex-col items-center">
-      <Chart options={options} series={series} type="radialBar" height={200} />
-      <div className="text-center mt-2">
-        <p className="text-lg font-semibold">
-          {value} <span className="text-gray-500">of</span> {total}
-        </p>
-        <p className="text-sm text-gray-500 mt-1">Utilized</p>
-      </div>
-    </div>
+    <Chart options={options} series={series} type="radialBar" height={200} />
   );
 };
