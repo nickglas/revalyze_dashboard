@@ -2,6 +2,7 @@ import api from "@/util/axios";
 import { DailyTrendMetricDTO } from "@/models/dto/insights/daily.trend.metric.dto";
 import { CriterionSummaryDTO } from "@/models/dto/insights/criterion.summary.dto";
 import { DashboardLimitData } from "@/models/dto/insights/gauge.summary.dto";
+import { TeamsDashboardData } from "@/models/dto/insights/teams.dashboard.insights.dto";
 
 export const getTrends = async (
   filter?: string
@@ -21,5 +22,12 @@ export const getCriteriaSummary = async (
 
 export const getDashboardLimitData = async (): Promise<DashboardLimitData> => {
   const res = await api.get(`/api/v1/insights/dashboard-metrics`);
+  return res.data;
+};
+
+export const getDashboardTeamsData = async (): Promise<
+  TeamsDashboardData[]
+> => {
+  const res = await api.get(`/api/v1/insights/teams-dashboard-metrics`);
   return res.data;
 };

@@ -6,22 +6,27 @@ import {
   getTrends,
   getCriteriaSummary,
   getDashboardLimitData,
+  getDashboardTeamsData,
 } from "@/services/insight.service";
 import { CriterionSummaryDTO } from "@/models/dto/insights/criterion.summary.dto";
 import { DashboardLimitData } from "@/models/dto/insights/gauge.summary.dto";
+import { TeamsDashboardData } from "@/models/dto/insights/teams.dashboard.insights.dto";
 
 interface InsightState {
   dailyTrendMetrics: DailyTrendMetricDTO | null;
   criteriaSummary: CriterionSummaryDTO[] | null;
   dashboardLimitData: DashboardLimitData | null;
+  dashboardTeamData: TeamsDashboardData[] | null;
 
   isLoadingTrends: boolean;
   isLoadingCriteriaSummary: boolean;
   isloadingDasboardLimitData: boolean;
+  isloadingdashboardTeamData: boolean;
 
   getDailyTrendMetrics: (filter?: string) => Promise<void>;
   fetchCriteriaSummary: (filter?: string) => Promise<void>;
   getDashboardLimitData: () => Promise<void>;
+  getDashboardTeamData: () => Promise<void>;
 
   reset: () => void;
 }
@@ -32,10 +37,12 @@ export const useInsightStore = create<InsightState>()(
       dailyTrendMetrics: null,
       criteriaSummary: null,
       dashboardLimitData: null,
+      dashboardTeamData: null,
 
       isLoadingTrends: false,
       isLoadingCriteriaSummary: false,
       isloadingDasboardLimitData: false,
+      isloadingdashboardTeamData: false,
 
       async getDailyTrendMetrics(filter?: string) {
         set({ isLoadingTrends: true });
@@ -81,12 +88,29 @@ export const useInsightStore = create<InsightState>()(
         }
       },
 
+      async getDashboardTeamData() {
+        set({ isloadingdashboardTeamData: true });
+        try {
+          const res = await getDashboardTeamsData();
+          set({ dashboardTeamData: res });
+        } catch (err) {
+          toast.error("Failed to fetch dashboard team data");
+          console.error(err);
+          set({ dashboardTeamData: null });
+        } finally {
+          set({ isloadingdashboardTeamData: false });
+        }
+      },
+
       reset: () =>
         set({
           dailyTrendMetrics: null,
           criteriaSummary: null,
+          dashboardTeamData: null,
           isLoadingCriteriaSummary: false,
           isLoadingTrends: false,
+          isloadingDasboardLimitData: false,
+          isloadingdashboardTeamData: false,
         }),
     }),
     {
@@ -96,6 +120,8 @@ export const useInsightStore = create<InsightState>()(
         criteriaSummary: state.criteriaSummary,
         isLoadingCriteriaSummary: state.isLoadingCriteriaSummary,
         isLoadingTrends: state.isLoadingTrends,
+        isloadingDasboardLimitData: state.isloadingDasboardLimitData,
+        isloadingdashboardTeamData: state.isloadingdashboardTeamData,
       }),
     }
   )

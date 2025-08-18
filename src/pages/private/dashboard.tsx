@@ -1,6 +1,7 @@
 import CriteriaBarChart from "@/components/charts/CriteriaBarChart";
 import MonthlyPerformanceChart from "@/components/charts/monthlyPerformanceChart";
 import { ResourceGauce } from "@/components/charts/ResourceGauge";
+import TeamsBarChart from "@/components/charts/TeamBarChart";
 import { useInsightStore } from "@/store/insightStore";
 import { Button } from "@heroui/button";
 import { Divider, Select, SelectItem } from "@heroui/react";
@@ -20,6 +21,9 @@ export default function DashboardPage() {
     isloadingDasboardLimitData,
     getDashboardLimitData,
     dashboardLimitData,
+    dashboardTeamData,
+    getDashboardTeamData,
+    isloadingdashboardTeamData,
   } = useInsightStore();
 
   useEffect(() => {
@@ -28,6 +32,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     getDashboardLimitData();
+    getDashboardTeamData();
   }, []);
 
   return (
@@ -263,7 +268,7 @@ export default function DashboardPage() {
                       )}
                       <span>
                         {isPositive ? "+" : ""}
-                        {criterion.changePercentage}
+                        {criterion.changePercentage}%
                       </span>
                     </div>
                   </div>
@@ -303,6 +308,17 @@ export default function DashboardPage() {
           </CardBody>
           <CardFooter className="px-4 pb-2 text-xs text-gray-500">
             Current scores for each criterion
+          </CardFooter>
+        </Card>
+        <Card className="bg-[#1e1e1e]">
+          <CardHeader className="pb-0 pt-4 px-4">
+            <h2 className="text-lg font-semibold">Teams</h2>
+          </CardHeader>
+          <CardBody className="px-2">
+            <TeamsBarChart teamData={dashboardTeamData} />
+          </CardBody>
+          <CardFooter className="px-4 pb-2 text-xs text-gray-500">
+            Current scores for each team
           </CardFooter>
         </Card>
       </div>
