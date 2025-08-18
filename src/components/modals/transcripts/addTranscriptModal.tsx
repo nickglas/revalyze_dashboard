@@ -20,6 +20,9 @@ import CriteriaWeightsEditor from "@/components/new/CriteriaWeightsEditor";
 import ReviewConfigSelector from "@/components/new/ReviewConfigSelector";
 import ReviewTypeSelector from "@/components/new/ReviewTypeSelector";
 import ReviewAutoStartToggle from "@/components/new/ReviewAutoStartToggle";
+import SearchTeams from "@/components/data/teams/searchTeams";
+import UserTeamSelection from "@/components/data/teams/userTeamSelection";
+import { Team } from "@/models/api/team.api.model";
 
 const MAX_SIZE = 100 * 1024 * 1024; // 100MB
 const CHUNK_SIZE = 1024 * 1024; // 1MB
@@ -57,6 +60,7 @@ export default function AddTranscriptModal() {
     content: "",
     timestamp: getTodayAtMidnight(),
     employeeId: "",
+    teamId: "",
     externalCompanyId: "",
     contactId: "",
     reviewConfigId: undefined,
@@ -74,6 +78,7 @@ export default function AddTranscriptModal() {
         content: "",
         timestamp: getTodayAtMidnight(),
         employeeId: "",
+        teamId: undefined,
         externalCompanyId: undefined,
         contactId: undefined,
         reviewConfigId: undefined,
@@ -362,6 +367,17 @@ export default function AddTranscriptModal() {
                         <EmployeeSelection
                           onChange={(id) => updateField("employeeId", id)}
                           error={errors.employeeId}
+                        />
+
+                        {/* <SearchTeams required label="Assign team" /> */}
+
+                        <UserTeamSelection
+                          required={false}
+                          value={formData["employeeId"]}
+                          label="Assign team"
+                          onChange={(teamId?: string) => {
+                            updateField("teamId", teamId);
+                          }}
                         />
 
                         <CompanyContactSelection

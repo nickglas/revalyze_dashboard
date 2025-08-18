@@ -5,13 +5,17 @@ import * as service from "@/services/user.service";
 import { toast } from "react-toastify";
 import { User } from "@/models/api/user.model";
 import { CreateUserDto } from "@/models/dto/users/create.user.dto";
+import { Team } from "@/models/api/team.api.model";
 
 interface UserState {
   users: User[] | null;
+  selectedUserTeams: Team[] | null;
   meta: PaginationMeta | null;
   isLoading: boolean;
+  isLoadingTeam: boolean;
 
   fetchUsers: (filters: any, page?: number, limit?: number) => Promise<void>;
+  fetchTeams: (userId: string) => Promise<void>;
   createUser: (input: CreateUserDto) => Promise<User>;
   updateUser: (id: string, updates: Partial<User>) => Promise<User>;
   toggleUserStatus: (user: User) => Promise<User | undefined>;
@@ -22,8 +26,10 @@ export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
       users: null,
+      selectedUserTeams: null,
       meta: null,
       isLoading: false,
+      isLoadingTeam: false,
 
       fetchUsers: async (filters: any = {}, page = 1, limit = 20) => {
         set({ isLoading: true });
@@ -32,6 +38,22 @@ export const useUserStore = create<UserState>()(
           set({
             users: res.data,
             meta: res.meta,
+          });
+        } catch (err) {
+          toast.error("Failed to fetch users");
+          console.error(err);
+          set({ users: null, meta: null });
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      fetchTeams: async (userId: string) => {
+        set({ isLoading: true });
+        try {
+          const res = await service.getUserActiveTeams(userId);
+          set({
+            selectedUserTeams: res,
           });
         } catch (err) {
           toast.error("Failed to fetch users");

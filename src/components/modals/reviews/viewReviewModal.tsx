@@ -45,6 +45,15 @@ export default function ViewReviewModal({
   }, [isOpen, reviewId, fetchById]);
 
   const RenderSentiment = () => {
+    if (
+      !selectedReview?.sentimentScore &&
+      selectedReview?.sentimentScore !== 0
+    ) {
+      return (
+        <p className="text-sm text-gray-400">No sentiment data available</p>
+      );
+    }
+
     return (
       <Accordion>
         <AccordionItem
@@ -55,15 +64,15 @@ export default function ViewReviewModal({
               <span className="text-lg font-semibold">Sentiment Analysis</span>
               <Chip
                 color={
-                  selectedReview!.sentimentScore >= 7
+                  selectedReview.sentimentScore >= 7
                     ? "success"
-                    : selectedReview!.sentimentScore >= 5
+                    : selectedReview.sentimentScore >= 5
                       ? "warning"
                       : "danger"
                 }
                 className="text-white"
               >
-                {selectedReview!.sentimentScore}/10
+                {selectedReview.sentimentScore ?? "N/A"}/10
               </Chip>
             </div>
           }
@@ -71,8 +80,8 @@ export default function ViewReviewModal({
           <div>
             <h3 className="text-md font-semibold">Analysis details</h3>
             <p className="text-sm">
-              The customer started worried and became frustrated with the
-              agent's responses and lack of guarantees.
+              {selectedReview.sentimentAnalysis ||
+                "No analysis details available"}
             </p>
           </div>
         </AccordionItem>
@@ -81,14 +90,21 @@ export default function ViewReviewModal({
   };
 
   const RenderPerformance = () => {
+    if (!selectedReview?.criteriaScores?.length) {
+      return (
+        <p className="text-sm text-gray-400">No performance scores available</p>
+      );
+    }
+
     return (
       <div className="flex flex-col gap-2">
         <Accordion>
-          {(selectedReview?.criteriaScores ?? []).map((c) => (
+          {selectedReview.criteriaScores.map((c, idx) => (
             <AccordionItem
+              key={idx}
               title={
                 <div className="flex items-center justify-between">
-                  <h3>{c.criterionName}</h3>
+                  <h3>{c.criterionName || "Unnamed criterion"}</h3>
                   <Chip
                     color={
                       c.score >= 7
@@ -99,7 +115,7 @@ export default function ViewReviewModal({
                     }
                     className="text-white"
                   >
-                    {c.score}/10
+                    {c.score ?? "N/A"}/10
                   </Chip>
                 </div>
               }
@@ -107,17 +123,23 @@ export default function ViewReviewModal({
               <div className="flex flex-col gap-2 ">
                 <div className="flex flex-col gap-2">
                   <h4 className="text-sm font-semibold">Comment:</h4>
-                  <p className="text-xs">{c.comment}</p>
+                  <p className="text-xs">
+                    {c.comment || "No comment provided"}
+                  </p>
                 </div>
                 <div className="flex flex-col gap-2">
                   <h4 className="text-sm font-semibold">Quote:</h4>
                   <div className="border-l-4 border-blue-500 pl-4 py-2 bg-gray-800 rounded-r">
-                    <p className="italic text-gray-300 text-xs">"{c.quote}"</p>
+                    <p className="italic text-gray-300 text-xs">
+                      {c.quote ? `"${c.quote}"` : "No quote available"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
                   <h4 className="text-sm font-semibold">Feedback:</h4>
-                  <p className="text-xs">{c.feedback}</p>
+                  <p className="text-xs">
+                    {c.feedback || "No feedback provided"}
+                  </p>
                 </div>
               </div>
             </AccordionItem>
@@ -142,6 +164,11 @@ export default function ViewReviewModal({
                   <span className="text-sm">Loading review data</span>
                 </div>
               )}
+              {!isLoading && !selectedReview && (
+                <p className="text-center text-gray-400">
+                  No review data found
+                </p>
+              )}
               {!isLoading && selectedReview && (
                 <div>
                   <Tabs
@@ -152,6 +179,7 @@ export default function ViewReviewModal({
                     color="primary"
                     disableAnimation
                   >
+                    {/* OVERVIEW TAB */}
                     <Tab key={"overview"} title={"Overview"}>
                       <Card>
                         <CardHeader className="flex justify-between">
@@ -160,15 +188,15 @@ export default function ViewReviewModal({
                           </h1>
                           <Chip
                             color={
-                              selectedReview.overallScore >= 7
+                              (selectedReview.overallScore ?? 0) >= 7
                                 ? "success"
-                                : selectedReview.overallScore >= 5
+                                : (selectedReview.overallScore ?? 0) >= 5
                                   ? "warning"
                                   : "danger"
                             }
                             className="text-white"
                           >
-                            {selectedReview.overallScore}/10
+                            {selectedReview.overallScore ?? "N/A"}/10
                           </Chip>
                         </CardHeader>
                         <CardBody>
@@ -178,7 +206,8 @@ export default function ViewReviewModal({
                                 Subject:
                               </h2>
                               <p className="text-sm">
-                                {selectedReview.subject}
+                                {selectedReview.subject ||
+                                  "No subject provided"}
                               </p>
                             </div>
                             <div>
@@ -192,6 +221,7 @@ export default function ViewReviewModal({
                                   "Performance based analysis"}
                                 {selectedReview.type === "sentiment" &&
                                   "Sentiment based analysis"}
+                                {!selectedReview.type && "N/A"}
                               </p>
                             </div>
                             <div>
@@ -199,7 +229,8 @@ export default function ViewReviewModal({
                                 Overall feedback:
                               </h2>
                               <p className="text-sm">
-                                {selectedReview.overallFeedback}
+                                {selectedReview.overallFeedback ||
+                                  "No feedback provided"}
                               </p>
                             </div>
                             <div>
@@ -210,30 +241,36 @@ export default function ViewReviewModal({
                                 <div className="flex items-center gap-1 my-2">
                                   <Avatar
                                     name={
-                                      selectedReview.externalCompanyId?.name[0]
+                                      selectedReview.externalCompanyId
+                                        ?.name?.[0] || "?"
                                     }
                                   />
                                   <div className="flex flex-col justify-between">
                                     <span className="text-sm font-semibold">
-                                      {selectedReview.externalCompanyId?.name}
+                                      {selectedReview.externalCompanyId?.name ||
+                                        "Unknown company"}
                                     </span>
                                     <span className="text-tiny">
-                                      {selectedReview.externalCompanyId?.email}
+                                      {selectedReview.externalCompanyId
+                                        ?.email || "No email"}
                                     </span>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-1 my-2">
                                   <Avatar
                                     name={
-                                      selectedReview.contactId?.firstName[0]
+                                      selectedReview.contactId
+                                        ?.firstName?.[0] || "?"
                                     }
                                   />
                                   <div className="flex flex-col justify-between">
                                     <span className="text-sm font-semibold">
-                                      {selectedReview.contactId?.firstName}
+                                      {selectedReview.contactId?.firstName ||
+                                        "Unknown contact"}
                                     </span>
                                     <span className="text-tiny">
-                                      {selectedReview.contactId?.email}
+                                      {selectedReview.contactId?.email ||
+                                        "No email"}
                                     </span>
                                   </div>
                                 </div>
@@ -243,13 +280,13 @@ export default function ViewReviewModal({
                               <div>
                                 <h4 className="text-sm">Transcript Id</h4>
                                 <span className="text-tiny text-gray-500">
-                                  {selectedReview.transcriptId._id}
+                                  {selectedReview.transcriptId?._id || "N/A"}
                                 </span>
                               </div>
                               <div>
                                 <h4 className="text-sm">Review Id</h4>
                                 <span className="text-tiny text-gray-500">
-                                  {selectedReview._id}
+                                  {selectedReview._id || "N/A"}
                                 </span>
                               </div>
                             </div>
@@ -257,6 +294,8 @@ export default function ViewReviewModal({
                         </CardBody>
                       </Card>
                     </Tab>
+
+                    {/* SCORES TAB */}
                     <Tab
                       key={"scores"}
                       title={"Scores"}
@@ -268,7 +307,10 @@ export default function ViewReviewModal({
                         </CardHeader>
                         <CardBody>
                           <Textarea
-                            value={selectedReview.transcriptId.content}
+                            value={
+                              selectedReview.transcriptId?.content ||
+                              "No transcript available"
+                            }
                             isReadOnly
                           />
                         </CardBody>
@@ -294,36 +336,53 @@ export default function ViewReviewModal({
                         </CardBody>
                       </Card>
                     </Tab>
+
+                    {/* CONFIGURATION TAB */}
                     <Tab key={"configuration"} title={"Configuration"}>
                       <Card>
                         <CardHeader className="flex flex-col gap-1">
                           <h1 className="text-xl font-semibold">
-                            {selectedReview.reviewConfig.name}
+                            {selectedReview.reviewConfig?.name ||
+                              "Unnamed config"}
                           </h1>
                           <p className="text-sm text-gray-400">
-                            {selectedReview.reviewConfig.description}
+                            {selectedReview.reviewConfig?.description ||
+                              "No description"}
                           </p>
                         </CardHeader>
                         <CardBody className="flex flex-col gap-6">
                           {/* Criteria */}
-                          <div>
-                            <div className="flex flex-col gap-4">
-                              {selectedReview.reviewConfig.criteria.map((c) => (
-                                <Card key={c.criterionId} className="p-3">
+                          <div className="grid grid-cols-2 gap-4">
+                            {selectedReview.reviewConfig?.criteria?.length ? (
+                              selectedReview.reviewConfig.criteria.map((c) => (
+                                <Card
+                                  key={c.criterionId}
+                                  className="p-3 col-span-1"
+                                >
                                   <div className="flex justify-between items-start">
-                                    <h3 className="text-md font-semibold">
-                                      {c.title}
+                                    <h3 className="text-sm font-semibold">
+                                      {c.title || "Untitled"}
                                     </h3>
-                                    <Chip color="primary" variant="flat">
-                                      {Math.round(c.weight * 100)}%
+                                    <Chip
+                                      color="primary"
+                                      variant="flat"
+                                      className="text-sm"
+                                    >
+                                      {c.weight !== undefined
+                                        ? `${Math.round(c.weight * 100)}%`
+                                        : "N/A"}
                                     </Chip>
                                   </div>
-                                  <p className="text-sm text-gray-300 mt-1">
-                                    {c.description}
+                                  <p className="text-tiny text-gray-300 mt-1">
+                                    {c.description || "No description"}
                                   </p>
                                 </Card>
-                              ))}
-                            </div>
+                              ))
+                            ) : (
+                              <p className="text-sm text-gray-400">
+                                No criteria available
+                              </p>
+                            )}
                           </div>
 
                           {/* Model Settings */}
@@ -337,10 +396,8 @@ export default function ViewReviewModal({
                                   Temperature
                                 </span>
                                 <span className="text-sm">
-                                  {
-                                    selectedReview.reviewConfig.modelSettings
-                                      .temperature
-                                  }
+                                  {selectedReview.reviewConfig?.modelSettings
+                                    ?.temperature ?? "N/A"}
                                 </span>
                               </div>
                               <div className="flex justify-between">
@@ -348,10 +405,8 @@ export default function ViewReviewModal({
                                   Max Tokens
                                 </span>
                                 <span className="text-sm">
-                                  {
-                                    selectedReview.reviewConfig.modelSettings
-                                      .maxTokens
-                                  }
+                                  {selectedReview.reviewConfig?.modelSettings
+                                    ?.maxTokens ?? "N/A"}
                                 </span>
                               </div>
                             </div>

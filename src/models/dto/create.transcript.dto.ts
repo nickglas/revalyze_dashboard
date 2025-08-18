@@ -6,6 +6,7 @@ export interface CriteriaWeight {
 export interface CreateTranscriptDTO {
   content: string;
   employeeId?: string;
+  teamId?: string;
   externalCompanyId?: string;
   contactId?: string;
   timestamp: string;
