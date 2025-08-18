@@ -141,7 +141,7 @@ export default function ReviewsTable() {
       }
 
       const scoreDisplay =
-        scoreValue !== undefined ? `${scoreValue}/10` : "N/A";
+        scoreValue !== undefined ? `${scoreValue.toPrecision(2)}/10` : "N/A";
 
       return {
         id: review._id,
@@ -151,7 +151,7 @@ export default function ReviewsTable() {
         type: capitalize(review.type),
         score: scoreDisplay,
         sentiment: review.sentimentLabel
-          ? `${capitalize(review.sentimentLabel)}${review.sentimentScore ? ` (${review.sentimentScore}/10)` : ""}`
+          ? `${capitalize(review.sentimentLabel)}${review.sentimentScore ? ` (${review.sentimentScore.toPrecision(2)}/10)` : ""}`
           : "N/A",
         reviewStatus: review.reviewStatus,
         createdAt: new Date(review.createdAt),
@@ -242,7 +242,7 @@ export default function ReviewsTable() {
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center ${colorClass}`}
               >
-                <span className="font-semibold">{review.score}</span>
+                <p className="font-semibold text-tiny">{review.score}</p>
               </div>
             </div>
           );
