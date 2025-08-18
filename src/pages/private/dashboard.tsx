@@ -1,6 +1,7 @@
 import CriteriaBarChart from "@/components/charts/CriteriaBarChart";
 import MonthlyPerformanceChart from "@/components/charts/monthlyPerformanceChart";
 import { ResourceGauce } from "@/components/charts/ResourceGauge";
+import SentimentDistributionChart from "@/components/charts/sentimentDistributionChart";
 import TeamsBarChart from "@/components/charts/TeamBarChart";
 import { useInsightStore } from "@/store/insightStore";
 import { Button } from "@heroui/button";
@@ -24,6 +25,9 @@ export default function DashboardPage() {
     dashboardTeamData,
     getDashboardTeamData,
     isloadingdashboardTeamData,
+    sentimentDistributionData,
+    isLoadingSentimentDistributionData,
+    getSentimentDistributionData,
   } = useInsightStore();
 
   useEffect(() => {
@@ -33,6 +37,7 @@ export default function DashboardPage() {
   useEffect(() => {
     getDashboardLimitData();
     getDashboardTeamData();
+    getSentimentDistributionData();
   }, []);
 
   return (
@@ -316,6 +321,17 @@ export default function DashboardPage() {
           </CardHeader>
           <CardBody className="px-2">
             <TeamsBarChart teamData={dashboardTeamData} />
+          </CardBody>
+          <CardFooter className="px-4 pb-2 text-xs text-gray-500">
+            Current scores for each team
+          </CardFooter>
+        </Card>
+        <Card className="bg-[#1e1e1e]">
+          <CardHeader className="pb-0 pt-4 px-4">
+            <h2 className="text-lg font-semibold">Sentiment distribution</h2>
+          </CardHeader>
+          <CardBody className="px-2">
+            <SentimentDistributionChart data={sentimentDistributionData} />
           </CardBody>
           <CardFooter className="px-4 pb-2 text-xs text-gray-500">
             Current scores for each team

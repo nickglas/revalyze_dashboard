@@ -3,6 +3,7 @@ import { DailyTrendMetricDTO } from "@/models/dto/insights/daily.trend.metric.dt
 import { CriterionSummaryDTO } from "@/models/dto/insights/criterion.summary.dto";
 import { DashboardLimitData } from "@/models/dto/insights/gauge.summary.dto";
 import { TeamsDashboardData } from "@/models/dto/insights/teams.dashboard.insights.dto";
+import { SentimentDistributionMetric } from "@/models/dto/insights/sentiment.distribution.dto";
 
 export const getTrends = async (
   filter?: string
@@ -31,3 +32,9 @@ export const getDashboardTeamsData = async (): Promise<
   const res = await api.get(`/api/v1/insights/teams-dashboard-metrics`);
   return res.data;
 };
+
+export const getSentimentDistributionData =
+  async (): Promise<SentimentDistributionMetric> => {
+    const res = await api.get(`/api/v1/insights/sentiment/distribution`);
+    return res.data;
+  };

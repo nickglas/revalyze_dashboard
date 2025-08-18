@@ -7,26 +7,31 @@ import {
   getCriteriaSummary,
   getDashboardLimitData,
   getDashboardTeamsData,
+  getSentimentDistributionData,
 } from "@/services/insight.service";
 import { CriterionSummaryDTO } from "@/models/dto/insights/criterion.summary.dto";
 import { DashboardLimitData } from "@/models/dto/insights/gauge.summary.dto";
 import { TeamsDashboardData } from "@/models/dto/insights/teams.dashboard.insights.dto";
+import { SentimentDistributionMetric } from "@/models/dto/insights/sentiment.distribution.dto";
 
 interface InsightState {
   dailyTrendMetrics: DailyTrendMetricDTO | null;
   criteriaSummary: CriterionSummaryDTO[] | null;
   dashboardLimitData: DashboardLimitData | null;
   dashboardTeamData: TeamsDashboardData[] | null;
+  sentimentDistributionData: SentimentDistributionMetric | null;
 
   isLoadingTrends: boolean;
   isLoadingCriteriaSummary: boolean;
   isloadingDasboardLimitData: boolean;
   isloadingdashboardTeamData: boolean;
+  isLoadingSentimentDistributionData: boolean;
 
   getDailyTrendMetrics: (filter?: string) => Promise<void>;
   fetchCriteriaSummary: (filter?: string) => Promise<void>;
   getDashboardLimitData: () => Promise<void>;
   getDashboardTeamData: () => Promise<void>;
+  getSentimentDistributionData: () => Promise<void>;
 
   reset: () => void;
 }
@@ -38,11 +43,13 @@ export const useInsightStore = create<InsightState>()(
       criteriaSummary: null,
       dashboardLimitData: null,
       dashboardTeamData: null,
+      sentimentDistributionData: null,
 
       isLoadingTrends: false,
       isLoadingCriteriaSummary: false,
       isloadingDasboardLimitData: false,
       isloadingdashboardTeamData: false,
+      isLoadingSentimentDistributionData: false,
 
       async getDailyTrendMetrics(filter?: string) {
         set({ isLoadingTrends: true });
@@ -99,6 +106,20 @@ export const useInsightStore = create<InsightState>()(
           set({ dashboardTeamData: null });
         } finally {
           set({ isloadingdashboardTeamData: false });
+        }
+      },
+
+      async getSentimentDistributionData() {
+        set({ isLoadingSentimentDistributionData: true });
+        try {
+          const res = await getSentimentDistributionData();
+          set({ sentimentDistributionData: res });
+        } catch (err) {
+          toast.error("Failed to fetch sentiment data");
+          console.error(err);
+          set({ sentimentDistributionData: null });
+        } finally {
+          set({ isLoadingSentimentDistributionData: false });
         }
       },
 

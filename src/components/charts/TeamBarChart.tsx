@@ -50,7 +50,7 @@ export default function TeamsBarChart({ teamData }: TeamsBarChartProps) {
       colors: ["#3B82F6", "#10B981"],
       dataLabels: {
         enabled: true,
-        offsetX: -6,
+        offsetX: -20,
         style: {
           fontSize: "12px",
           colors: ["#fff"],
@@ -60,11 +60,7 @@ export default function TeamsBarChart({ teamData }: TeamsBarChartProps) {
           enabled: false,
         },
       },
-      stroke: {
-        show: true,
-        width: 1,
-        colors: ["#fff"],
-      },
+
       tooltip: {
         custom: function ({ series, seriesIndex, dataPointIndex, w }) {
           const team = w.globals.labels[dataPointIndex];
