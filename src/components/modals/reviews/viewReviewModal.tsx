@@ -150,7 +150,7 @@ export default function ViewReviewModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="lg">
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
       <ModalContent>
         {(onClose) => (
           <>
