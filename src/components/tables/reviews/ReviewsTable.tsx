@@ -28,6 +28,7 @@ import {
 } from "../users/userTable";
 import AddReviewModal from "@/components/modals/reviews/addReviewModal";
 import ViewReviewModal from "@/components/modals/reviews/viewReviewModal";
+import DeleteReviewModal from "@/components/modals/reviews/deleteReviewModal";
 
 export const ALL_COLUMNS = [
   { name: "EMPLOYEE", uid: "employeeName", sortable: true },
@@ -86,6 +87,10 @@ export default function ReviewsTable() {
   );
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [reviewToDelete, setReviewToDelete] = useState<string | undefined>(
+    undefined
+  );
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     fetchReviews(
@@ -326,7 +331,17 @@ export default function ReviewsTable() {
                     View Details
                   </DropdownItem>
                   <DropdownItem key="edit">Edit</DropdownItem>
-                  <DropdownItem key="delete">Delete</DropdownItem>
+                  <DropdownItem
+                    key="delete"
+                    className="text-danger"
+                    color="danger"
+                    onPress={() => {
+                      setReviewToDelete(review.id);
+                      setIsDeleteModalOpen(true);
+                    }}
+                  >
+                    Delete
+                  </DropdownItem>
                   <DropdownItem
                     key="analyze"
                     className="text-primary"
@@ -543,6 +558,11 @@ export default function ReviewsTable() {
         reviewId={selectedId}
         isOpen={isViewModalOpen}
         onOpenChange={setIsViewModalOpen}
+      />
+      <DeleteReviewModal
+        reviewId={reviewToDelete}
+        isOpen={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
       />
     </div>
   );

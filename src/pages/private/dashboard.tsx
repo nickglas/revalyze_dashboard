@@ -154,7 +154,7 @@ export default function DashboardPage() {
               />
               <div className="text-center mt-2">
                 <p className="text-lg font-semibold">
-                  {dashboardLimitData.performance}
+                  {dashboardLimitData.performance?.toPrecision(2)}
                   <span className="text-gray-500"> of </span>
                   10
                 </p>
@@ -178,7 +178,7 @@ export default function DashboardPage() {
               />
               <div className="text-center mt-2">
                 <p className="text-lg font-semibold">
-                  {dashboardLimitData.sentiment}
+                  {dashboardLimitData.performance?.toPrecision(2)}
                   <span className="text-gray-500"> of </span>
                   10
                 </p>
@@ -198,21 +198,28 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {criteriaSummary?.map((criterion) => {
-          const changeValue = criterion.changePercentage;
+          // Calculate change over time
+          let changeValue = 0;
+          if (criterion.trend && criterion.trend.length > 1) {
+            const firstValue = criterion.trend[0].score;
+            const lastValue = criterion.trend[criterion.trend.length - 1].score;
+            changeValue = ((lastValue - firstValue) / firstValue) * 100;
+          }
+
           const isPositive = changeValue > 0;
           const isNegative = changeValue < 0;
           const isNeutral = changeValue === 0;
 
           return (
             <Card
-              key={criterion.criterion}
+              key={criterion.criterionName}
               className="bg-[#1e1e1e] shadow-sm h-full"
             >
               <CardBody className="p-4 flex flex-col justify-between h-full">
                 {/* Title Section - Fixed Height */}
                 <div className="mb-4">
                   <h3 className="text-foreground text-base font-medium leading-tight min-h-[2.5rem] flex items-center">
-                    {criterion.criterion}
+                    {criterion.criterionName}
                   </h3>
                 </div>
 
@@ -220,7 +227,7 @@ export default function DashboardPage() {
                 <div className="mt-auto">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-2xl font-bold text-foreground">
-                      {criterion.currentScore}/10
+                      {criterion.avgScore.toFixed(1)}/10
                     </p>
                     <div
                       className={`flex items-center gap-1 text-sm font-medium ${
@@ -273,14 +280,37 @@ export default function DashboardPage() {
                       )}
                       <span>
                         {isPositive ? "+" : ""}
-                        {criterion.changePercentage}%
+                        {changeValue.toFixed(1)}%
                       </span>
                     </div>
                   </div>
                   <span className="text-gray-500 text-sm">
-                    Compared to last {filterKey}
+                    Based on {criterion.reviewCount} reviews
                   </span>
                 </div>
+
+                {/* Trend Chart (Mini) */}
+                {/* {criterion.trend && criterion.trend.length > 1 && (
+                  <div className="mt-2">
+                    <div className="h-8 w-full flex items-end">
+                      {criterion.trend.map((point, index) => (
+                        <div
+                          key={index}
+                          className="flex-1 flex items-end justify-center"
+                          style={{ height: "100%" }}
+                        >
+                          <div
+                            className="bg-blue-500 rounded-t w-1 mx-px"
+                            style={{
+                              height: `${(point.score / 10) * 100}%`,
+                              minHeight: "2px",
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )} */}
               </CardBody>
             </Card>
           );

@@ -33,3 +33,7 @@ export const getById = async (id: string): Promise<ReviewDetailDTO> => {
   const res = await api.get(`/api/v1/reviews/${id}`);
   return res.data;
 };
+
+export const deleteReview = async (id: string): Promise<void> => {
+  await api.delete(`/api/v1/reviews/${id}`);
+};

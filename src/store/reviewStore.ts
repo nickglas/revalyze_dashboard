@@ -12,10 +12,12 @@ interface ReviewState {
   selectedReview: ReviewDetailDTO | null;
   meta: PaginationMeta | null;
   isLoading: boolean;
+  isDeleting: boolean;
 
   fetchReviews: (filters: any, page?: number, limit?: number) => Promise<void>;
   fetchById: (id: string) => Promise<ReviewDetailDTO>;
   createReview: (input: CreateReviewDTO) => Promise<ReviewSummaryDto>;
+  deleteReview: (id: string) => Promise<void>;
   reset: () => void;
 }
 
@@ -27,6 +29,7 @@ export const useReviewStore = create<ReviewState>()(
       isLoading: false,
       reviewDetails: {},
       selectedReview: null,
+      isDeleting: false,
 
       fetchReviews: async (filters: any = {}, page = 1, limit = 5) => {
         set({ isLoading: true });
@@ -89,6 +92,34 @@ export const useReviewStore = create<ReviewState>()(
           throw err;
         } finally {
           set({ isLoading: false });
+        }
+      },
+
+      deleteReview: async (id: string) => {
+        set({ isDeleting: true });
+        try {
+          await service.deleteReview(id);
+          set((state) => ({
+            reviews: state.reviews
+              ? state.reviews.filter((review) => review._id !== id)
+              : null,
+            reviewDetails: Object.fromEntries(
+              Object.entries(state.reviewDetails).filter(([key]) => key !== id)
+            ),
+            selectedReview:
+              state.selectedReview?._id === id ? null : state.selectedReview,
+            meta: state.meta
+              ? { ...state.meta, total: state.meta.total - 1 }
+              : null,
+          }));
+          toast.success("Review deleted successfully");
+        } catch (err: any) {
+          toast.error(
+            err?.response?.data?.message || "Failed to delete review"
+          );
+          throw err;
+        } finally {
+          set({ isDeleting: false });
         }
       },
 

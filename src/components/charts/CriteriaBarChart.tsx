@@ -19,14 +19,26 @@ export default function CriteriaBarChart({
   useEffect(() => {
     if (!criteriaSummary || criteriaSummary.length === 0) return;
 
-    const categories = criteriaSummary.map((c) => c.criterion);
-    const scores = criteriaSummary.map((c) => c.currentScore);
-    const colors = criteriaSummary.map((c) =>
-      c.changePercentage > 0
-        ? "#10B981"
-        : c.changePercentage < 0
-          ? "#EF4444"
-          : "#6B7280"
+    const categories = criteriaSummary.map((c) => c.criterionName);
+    const scores = criteriaSummary.map((c) => c.avgScore);
+
+    // Calculate change percentage based on trend data
+    const changePercentages = criteriaSummary.map((c) => {
+      if (c.trend && c.trend.length > 1) {
+        const firstValue = c.trend[0].score;
+        const lastValue = c.trend[c.trend.length - 1].score;
+        return ((lastValue - firstValue) / firstValue) * 100;
+      }
+      return 0;
+    });
+
+    const colors = changePercentages.map(
+      (change) =>
+        change > 0
+          ? "#10B981" // Green for positive change
+          : change < 0
+            ? "#EF4444" // Red for negative change
+            : "#6B7280" // Gray for no change
     );
 
     setSeries([{ data: scores }]);
@@ -73,15 +85,17 @@ export default function CriteriaBarChart({
         custom: function ({ series, seriesIndex, dataPointIndex, w }) {
           const criterion = w.globals.labels[dataPointIndex];
           const score = series[seriesIndex][dataPointIndex];
-          const change = criteriaSummary[dataPointIndex].changePercentage;
+          const change = changePercentages[dataPointIndex];
           const isPositive = change > 0;
+          const reviewCount = criteriaSummary[dataPointIndex].reviewCount;
 
           return `
             <div class="bg-gray-900 p-2 rounded-lg shadow-lg">
               <div class="text-sm font-bold">${criterion}</div>
-              <div class="text-sm">Score: ${score}/10</div>
-              <div class="text-tiny ${isPositive ? "text-green-500" : "text-red-500"}">
-                Change: ${isPositive ? "+" : ""}${change.toFixed(1)}% compared to last ${filter}
+              <div class="text-sm">Score: ${score.toFixed(1)}/10</div>
+              <div class="text-sm">Based on ${reviewCount} reviews</div>
+              <div class="text-tiny ${isPositive ? "text-green-500" : change < 0 ? "text-red-500" : "text-gray-500"}">
+                ${change !== 0 ? `Change: ${isPositive ? "+" : ""}${change.toFixed(1)}% compared to last ${filter}` : "No change data available"}
               </div>
             </div>
           `;
@@ -99,7 +113,7 @@ export default function CriteriaBarChart({
         },
       },
     });
-  }, [criteriaSummary]);
+  }, [criteriaSummary, filter]);
 
   if (!criteriaSummary || criteriaSummary.length === 0) {
     return (

@@ -1,7 +1,13 @@
 export interface TeamsDashboardData {
   teamId: string;
-  teamName: string;
+  companyId: string;
   avgOverall: number;
   avgSentiment: number;
   reviewCount: number;
+  team: {
+    _id: string;
+    name: string;
+  };
+  createdAt: Date;
+  updatedAt: Date;
 }

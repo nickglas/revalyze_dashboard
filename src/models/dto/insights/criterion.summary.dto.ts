@@ -1,5 +1,13 @@
 export interface CriterionSummaryDTO {
-  criterion: string;
-  currentScore: number;
-  changePercentage: number;
+  criterionName: string;
+  avgScore: number;
+  reviewCount: number;
+
+  trend: [
+    {
+      date: Date;
+      score: number;
+      reviewCount: number;
+    },
+  ];
 }
