@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "keen-slider/keen-slider.min.css";
 @config "../../tailwind.config.js";
 
 /* Ensure html and body take full height */
