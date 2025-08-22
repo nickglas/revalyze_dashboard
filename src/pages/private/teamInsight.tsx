@@ -12,8 +12,8 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { useInsightStore } from "@/store/insightStore";
 import BarChart from "@/components/charts/barChart";
-import TeamCriteriaBarChart from "@/components/charts/TeamCriteriaBarChart";
 import TeamGroupedCriteriaBarChart from "@/components/charts/teamGroupedCriteriaBarChart";
+import TeamCriteriaBarChart from "@/components/charts/teamCriteriaBarChart";
 
 // Sentiment Meter Component
 const SentimentMeter = ({
@@ -76,6 +76,8 @@ export default function TeamInsightsPage() {
   const [filterKey, setFilterKey] = useState<"day" | "week" | "month" | "year">(
     "month"
   );
+  const [teamCriteriaBarChartViewMode, setTeamCriteriaBarChartViewMode] =
+    useState<"groupedTeams" | "groupedCriteria">("groupedTeams");
 
   const {
     dashboardTeamData,
@@ -165,33 +167,46 @@ export default function TeamInsightsPage() {
         </div>
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <Card className="bg-[#1e1e1e]">
-            <CardHeader className="pb-0 pt-4 px-4">
+            <CardHeader className="pb-0 pt-4 px-4 justify-between">
               <h2 className="text-lg font-semibold">
                 Criteria scores per team
               </h2>
+              <Select
+                className="max-w-[200px]"
+                label="view mode"
+                size="sm"
+                defaultSelectedKeys={["groupedCriteria"]}
+                onSelectionChange={(k) => {
+                  switch (k.anchorKey) {
+                    case "groupedCriteria":
+                      setTeamCriteriaBarChartViewMode("groupedCriteria");
+                      break;
+                    case "groupedTeams":
+                      setTeamCriteriaBarChartViewMode("groupedTeams");
+                      break;
+                    default:
+                      setTeamCriteriaBarChartViewMode("groupedCriteria");
+                      break;
+                  }
+                }}
+              >
+                <SelectItem key={"groupedCriteria"}>
+                  Grouped by criteria
+                </SelectItem>
+                <SelectItem key={"groupedTeams"}>Grouped by team</SelectItem>
+              </Select>
             </CardHeader>
             <CardBody className="px-2">
               <CardBody className="px-2">
-                <TeamCriteriaBarChart teams={dashboardTeamData} />
+                {teamCriteriaBarChartViewMode === "groupedCriteria" ? (
+                  <TeamCriteriaBarChart teams={dashboardTeamData} />
+                ) : (
+                  <TeamGroupedCriteriaBarChart teams={dashboardTeamData} />
+                )}
               </CardBody>
             </CardBody>
             <CardFooter className="px-4 pb-2 text-xs text-gray-500">
               2025 monthly performance progression
-            </CardFooter>
-          </Card>
-          <Card className="bg-[#1e1e1e]">
-            <CardHeader className="pb-0 pt-4 px-4">
-              <h2 className="text-lg font-semibold">
-                Criteria scores per team
-              </h2>
-            </CardHeader>
-            <CardBody className="px-2">
-              <CardBody className="px-2">
-                <TeamGroupedCriteriaBarChart teams={dashboardTeamData} />
-              </CardBody>
-            </CardBody>
-            <CardFooter className="px-4 pb-2 text-xs text-gray-500">
-              2024 monthly performance progression
             </CardFooter>
           </Card>
         </div>
