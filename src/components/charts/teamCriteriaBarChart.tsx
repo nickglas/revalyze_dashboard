@@ -42,7 +42,7 @@ export default function TeamCriteriaBarChart({
 
     // Build the series: one per team
     const newSeries = teams.map((team) => ({
-      name: team.team.name,
+      name: team.teamName,
       data: criteriaKeys.map((key) => {
         const value = team[key];
         return typeof value === "number" ? Number(value.toFixed(2)) : 0;

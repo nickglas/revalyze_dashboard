@@ -122,7 +122,7 @@ export default function TeamInsightsPage() {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="text-lg font-bold mb-1">
-                        {teamData.team.name}
+                        {teamData.teamName}
                       </h3>
                       <p className="text-sm text-gray-500 mb-3">
                         Some random description that is not provided in the team
@@ -153,7 +153,9 @@ export default function TeamInsightsPage() {
                     <p className="text-xs text-gray-500">Avg Score</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-xl font-bold">{teamData.avgSentiment}</p>
+                    <p className="text-xl font-bold">
+                      {teamData.avgSentiment.toFixed(1)}
+                    </p>
                     <p className="text-xs text-gray-500">Sentiment</p>
                   </div>
                   <div className="text-center">

@@ -14,7 +14,7 @@ export default function TeamsBarChart({ teamData }: TeamsBarChartProps) {
   useEffect(() => {
     if (!teamData || teamData.length === 0) return;
 
-    const categories = teamData.map((t) => t.team.name);
+    const categories = teamData.map((t) => t.teamName);
     const performanceData = teamData.map((t) => t.avgOverall);
     const sentimentData = teamData.map((t) => t.avgSentiment);
     const reviewCounts = teamData.map((t) => t.reviewCount);

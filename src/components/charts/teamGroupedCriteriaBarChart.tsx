@@ -65,7 +65,7 @@ export default function TeamGroupedCriteriaBarChart({
         enabled: false,
       },
       xaxis: {
-        categories: teams.map((team) => team.team.name),
+        categories: teams.map((team) => team.teamName),
         labels: {
           style: { colors: "#a1a1aa", fontSize: "12px" },
         },
