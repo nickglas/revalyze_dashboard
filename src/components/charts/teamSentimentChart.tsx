@@ -99,8 +99,6 @@ const TeamSentimentChart: React.FC<TeamSentimentChartProps> = ({
     },
     tooltip: {
       theme: "dark",
-      shared: true, // This ensures all series are shown in the same tooltip
-      intersect: false, // This ensures tooltip shows even if not directly hovering over a point
       x: {
         format: "dd MMM yyyy",
       },

@@ -4,7 +4,7 @@ import Chart from "react-apexcharts";
 
 interface DataPoint {
   date: string;
-  avgSentiment: number;
+  avgOverall: number;
   reviewCount: number;
   teamId: string;
 }
@@ -15,20 +15,27 @@ interface Team {
   data: DataPoint[];
 }
 
-interface TeamSentimentChartProps {
+interface TeamPerformanceChartProps {
   teams?: Team[];
 }
 
-const TeamSentimentChart: React.FC<TeamSentimentChartProps> = ({
+const TeamPerformanceChart: React.FC<TeamPerformanceChartProps> = ({
   teams = [],
 }) => {
   // Prepare series data
   const series = teams.map((team) => ({
     name: team.teamName,
-    data: team.data.map((point) => ({
-      x: new Date(point.date).getTime(),
-      y: point.avgSentiment,
-    })),
+    data: team.data.map((point) => {
+      const date = new Date(point.date);
+      // Normalize to YYYY-MM-DD only, ignoring time
+      const normalized = new Date(
+        Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+      );
+      return {
+        x: normalized.getTime(),
+        y: point.avgOverall,
+      };
+    }),
     color: getTeamColor(team.teamId, teams),
   }));
 
@@ -50,7 +57,7 @@ const TeamSentimentChart: React.FC<TeamSentimentChartProps> = ({
       width: 3,
     },
     title: {
-      text: "Sentiment Performance Over Time",
+      text: "Team Performance Over Time",
       align: "left",
       style: {
         color: "#fff",
@@ -86,7 +93,7 @@ const TeamSentimentChart: React.FC<TeamSentimentChartProps> = ({
         },
       },
       title: {
-        text: "Sentiment Score",
+        text: "Average Score",
         style: {
           color: "#fff",
         },
@@ -99,8 +106,8 @@ const TeamSentimentChart: React.FC<TeamSentimentChartProps> = ({
     },
     tooltip: {
       theme: "dark",
-      shared: true, // This ensures all series are shown in the same tooltip
-      intersect: false, // This ensures tooltip shows even if not directly hovering over a point
+      shared: true,
+      intersect: false,
       x: {
         format: "dd MMM yyyy",
       },
@@ -112,4 +119,4 @@ const TeamSentimentChart: React.FC<TeamSentimentChartProps> = ({
   );
 };
 
-export default TeamSentimentChart;
+export default TeamPerformanceChart;

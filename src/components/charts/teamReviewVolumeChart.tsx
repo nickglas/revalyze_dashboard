@@ -4,6 +4,7 @@ import Chart from "react-apexcharts";
 
 interface DataPoint {
   date: string;
+  avgOverall: number;
   avgSentiment: number;
   reviewCount: number;
   teamId: string;
@@ -15,11 +16,11 @@ interface Team {
   data: DataPoint[];
 }
 
-interface TeamSentimentChartProps {
+interface ReviewVolumeTeamChartProps {
   teams?: Team[];
 }
 
-const TeamSentimentChart: React.FC<TeamSentimentChartProps> = ({
+const ReviewVolumeTeamChart: React.FC<ReviewVolumeTeamChartProps> = ({
   teams = [],
 }) => {
   // Prepare series data
@@ -27,7 +28,7 @@ const TeamSentimentChart: React.FC<TeamSentimentChartProps> = ({
     name: team.teamName,
     data: team.data.map((point) => ({
       x: new Date(point.date).getTime(),
-      y: point.avgSentiment,
+      y: point.reviewCount,
     })),
     color: getTeamColor(team.teamId, teams),
   }));
@@ -50,7 +51,7 @@ const TeamSentimentChart: React.FC<TeamSentimentChartProps> = ({
       width: 3,
     },
     title: {
-      text: "Sentiment Performance Over Time",
+      text: "Review Volume Over Time",
       align: "left",
       style: {
         color: "#fff",
@@ -78,19 +79,18 @@ const TeamSentimentChart: React.FC<TeamSentimentChartProps> = ({
       },
     },
     yaxis: {
-      min: 0,
-      max: 10,
       labels: {
         style: {
           colors: "#fff",
         },
       },
       title: {
-        text: "Sentiment Score",
+        text: "Number of Reviews",
         style: {
           color: "#fff",
         },
       },
+      min: 0,
     },
     legend: {
       labels: {
@@ -99,8 +99,8 @@ const TeamSentimentChart: React.FC<TeamSentimentChartProps> = ({
     },
     tooltip: {
       theme: "dark",
-      shared: true, // This ensures all series are shown in the same tooltip
-      intersect: false, // This ensures tooltip shows even if not directly hovering over a point
+      shared: true,
+      intersect: false,
       x: {
         format: "dd MMM yyyy",
       },
@@ -112,4 +112,4 @@ const TeamSentimentChart: React.FC<TeamSentimentChartProps> = ({
   );
 };
 
-export default TeamSentimentChart;
+export default ReviewVolumeTeamChart;

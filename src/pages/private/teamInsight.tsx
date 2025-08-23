@@ -9,11 +9,12 @@ import {
   CardHeader,
   CardFooter,
 } from "@heroui/react";
-import { useNavigate, useParams } from "react-router-dom";
 import { useInsightStore } from "@/store/insightStore";
-import BarChart from "@/components/charts/barChart";
 import TeamGroupedCriteriaBarChart from "@/components/charts/teamGroupedCriteriaBarChart";
 import TeamCriteriaBarChart from "@/components/charts/teamCriteriaBarChart";
+import TeamPerformanceChart from "@/components/charts/teamPerformanceChart";
+import ReviewVolumeTeamChart from "@/components/charts/teamReviewVolumeChart";
+import TeamSentimentChart from "@/components/charts/teamSentimentChart";
 
 // Sentiment Meter Component
 const SentimentMeter = ({
@@ -175,9 +176,8 @@ export default function TeamInsightsPage() {
               </h2>
               <Select
                 className="max-w-[200px]"
-                label="view mode"
                 size="sm"
-                defaultSelectedKeys={["groupedCriteria"]}
+                defaultSelectedKeys={[teamCriteriaBarChartViewMode]}
                 onSelectionChange={(k) => {
                   switch (k.anchorKey) {
                     case "groupedCriteria":
@@ -199,16 +199,56 @@ export default function TeamInsightsPage() {
               </Select>
             </CardHeader>
             <CardBody className="px-2">
-              <CardBody className="px-2">
-                {teamCriteriaBarChartViewMode === "groupedCriteria" ? (
-                  <TeamCriteriaBarChart teams={dashboardTeamData} />
-                ) : (
+              <CardBody className="px-2 overflow-hidden">
+                {teamCriteriaBarChartViewMode === "groupedTeams" ? (
                   <TeamGroupedCriteriaBarChart teams={dashboardTeamData} />
+                ) : (
+                  <TeamCriteriaBarChart teams={dashboardTeamData} />
                 )}
               </CardBody>
             </CardBody>
             <CardFooter className="px-4 pb-2 text-xs text-gray-500">
               2025 monthly performance progression
+            </CardFooter>
+          </Card>
+
+          <Card className="bg-[#1e1e1e]">
+            <CardHeader className="pb-0 pt-4 px-4 justify-between">
+              <h2 className="text-lg font-semibold">
+                Team Performance Over Time
+              </h2>
+            </CardHeader>
+            <CardBody className="px-2 overflow-hidden">
+              <TeamPerformanceChart teams={dashboardTeamData || []} />
+            </CardBody>
+            <CardFooter className="px-4 pb-2 text-xs text-gray-500">
+              2025 performance progression
+            </CardFooter>
+          </Card>
+
+          <Card className="bg-[#1e1e1e]">
+            <CardHeader className="pb-0 pt-4 px-4 justify-between">
+              <h2 className="text-lg font-semibold">
+                Sentiment Performance Over Time
+              </h2>
+            </CardHeader>
+            <CardBody className="px-2 overflow-hidden">
+              <TeamSentimentChart teams={dashboardTeamData || []} />
+            </CardBody>
+            <CardFooter className="px-4 pb-2 text-xs text-gray-500">
+              2025 performance progression
+            </CardFooter>
+          </Card>
+
+          <Card className="bg-[#1e1e1e]">
+            <CardHeader className="pb-0 pt-4 px-4 justify-between">
+              <h2 className="text-lg font-semibold">Review Volume Over Time</h2>
+            </CardHeader>
+            <CardBody className="px-2 overflow-hidden">
+              <ReviewVolumeTeamChart teams={dashboardTeamData || []} />
+            </CardBody>
+            <CardFooter className="px-4 pb-2 text-xs text-gray-500">
+              2025 performance progression
             </CardFooter>
           </Card>
         </div>

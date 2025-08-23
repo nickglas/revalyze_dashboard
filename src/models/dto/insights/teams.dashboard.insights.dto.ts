@@ -1,17 +1,21 @@
 export interface TeamsDashboardData {
   teamId: string;
-  companyId: string;
-  empathie: number;
-  helderheidEnBegrijpelijkheid: number;
-  klanttevredenheid: number;
-  oplossingsgerichtheid: number;
-  professionaliteit: number;
-  responsiviteitLuistervaardigheid: number;
-  tijdsefficientieDoelgerichtheid: number;
+  teamName: string;
   avgOverall: number;
   avgSentiment: number;
   reviewCount: number;
-  teamName: string;
-  createdAt: Date;
-  updatedAt: Date;
+  empathie: number;
+  oplossingsgerichtheid: number;
+  professionaliteit: number;
+  klanttevredenheid: number;
+  sentimentKlant: number;
+  helderheidEnBegrijpelijkheid: number;
+  responsiviteitLuistervaardigheid: number;
+  tijdsefficientieDoelgerichtheid: number;
+  data: {
+    period: Date;
+    avgOverall: number | null;
+    avgSentiment: number | null;
+    reviewCount: number;
+  }[];
 }
