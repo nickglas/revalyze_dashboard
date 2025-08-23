@@ -30,7 +30,7 @@ interface InsightState {
   getDailyTrendMetrics: (filter?: string) => Promise<void>;
   fetchCriteriaSummary: (filter?: string) => Promise<void>;
   getDashboardLimitData: () => Promise<void>;
-  getDashboardTeamData: () => Promise<void>;
+  getDashboardTeamData: (filter?: string) => Promise<void>;
   getSentimentDistributionData: () => Promise<void>;
 
   reset: () => void;
@@ -95,10 +95,10 @@ export const useInsightStore = create<InsightState>()(
         }
       },
 
-      async getDashboardTeamData() {
+      async getDashboardTeamData(filter?: string) {
         set({ isloadingdashboardTeamData: true });
         try {
-          const res = await getDashboardTeamsData();
+          const res = await getDashboardTeamsData(filter);
           set({ dashboardTeamData: res });
         } catch (err) {
           toast.error("Failed to fetch dashboard team data");

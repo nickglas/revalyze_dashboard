@@ -26,11 +26,11 @@ export const getDashboardLimitData = async (): Promise<DashboardLimitData> => {
   return res.data;
 };
 
-export const getDashboardTeamsData = async (): Promise<
-  TeamsDashboardData[]
-> => {
+export const getDashboardTeamsData = async (
+  filter?: string
+): Promise<TeamsDashboardData[]> => {
   const res = await api.get(
-    `/api/v1/insights/teams-dashboard-metrics?filter=week`
+    `/api/v1/insights/teams-dashboard-metrics?filter=${filter || "month"}`
   );
   return res.data;
 };

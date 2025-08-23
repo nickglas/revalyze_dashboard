@@ -25,17 +25,18 @@ const TeamPerformanceChart: React.FC<TeamPerformanceChartProps> = ({
   // Prepare series data
   const series = teams.map((team) => ({
     name: team.teamName,
-    data: team.data.map((point) => {
-      const date = new Date(point.date);
-      // Normalize to YYYY-MM-DD only, ignoring time
-      const normalized = new Date(
-        Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
-      );
-      return {
-        x: normalized.getTime(),
-        y: point.avgOverall,
-      };
-    }),
+    data: team.data
+      .filter((point) => point.avgOverall !== null)
+      .map((point) => {
+        const date = new Date(point.date);
+        const normalized = new Date(
+          Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+        );
+        return {
+          x: normalized.getTime(),
+          y: point.avgOverall,
+        };
+      }),
     color: getTeamColor(team.teamId, teams),
   }));
 

@@ -22,13 +22,14 @@ interface TeamSentimentChartProps {
 const TeamSentimentChart: React.FC<TeamSentimentChartProps> = ({
   teams = [],
 }) => {
-  // Prepare series data
   const series = teams.map((team) => ({
     name: team.teamName,
-    data: team.data.map((point) => ({
-      x: new Date(point.date).getTime(),
-      y: point.avgSentiment,
-    })),
+    data: team.data
+      .filter((point) => point.avgSentiment !== null)
+      .map((point) => ({
+        x: new Date(point.date).getTime(),
+        y: point.avgSentiment,
+      })),
     color: getTeamColor(team.teamId, teams),
   }));
 

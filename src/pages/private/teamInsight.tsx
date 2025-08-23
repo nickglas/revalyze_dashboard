@@ -74,7 +74,7 @@ const SentimentMeter = ({
 
 // Main Component
 export default function TeamInsightsPage() {
-  const [filterKey, setFilterKey] = useState<"day" | "week" | "month" | "year">(
+  const [filterKey, setFilterKey] = useState<"week" | "month" | "year">(
     "month"
   );
   const [teamCriteriaBarChartViewMode, setTeamCriteriaBarChartViewMode] =
@@ -87,8 +87,8 @@ export default function TeamInsightsPage() {
   } = useInsightStore();
 
   useEffect(() => {
-    getDashboardTeamData();
-  }, []);
+    getDashboardTeamData(filterKey);
+  }, [filterKey]);
 
   return (
     <div className="flex flex-col gap-6">

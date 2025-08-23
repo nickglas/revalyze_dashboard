@@ -79,10 +79,12 @@ const ReviewVolumeTeamChart: React.FC<ReviewVolumeTeamChartProps> = ({
       },
     },
     yaxis: {
+      min: 0,
       labels: {
         style: {
           colors: "#fff",
         },
+        formatter: (val: number) => Math.round(val),
       },
       title: {
         text: "Number of Reviews",
@@ -90,7 +92,7 @@ const ReviewVolumeTeamChart: React.FC<ReviewVolumeTeamChartProps> = ({
           color: "#fff",
         },
       },
-      min: 0,
+      forceNiceScale: true,
     },
     legend: {
       labels: {
