@@ -116,7 +116,7 @@ const TeamPerformanceChart: React.FC<TeamPerformanceChartProps> = ({
   };
 
   return (
-    <Chart options={options as any} series={series} type="line" height={350} />
+    <Chart options={options as any} series={series} type="line" height={500} />
   );
 };
 

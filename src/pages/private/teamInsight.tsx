@@ -93,7 +93,7 @@ export default function TeamInsightsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Performance Dashboard</h1>
+        <h1 className="text-2xl font-bold">Team Performance Dashboard</h1>
         <div className="flex gap-4">
           <Select
             defaultSelectedKeys={[filterKey]}

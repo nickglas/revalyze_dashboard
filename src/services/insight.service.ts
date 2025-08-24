@@ -4,6 +4,7 @@ import { CriterionSummaryDTO } from "@/models/dto/insights/criterion.summary.dto
 import { DashboardLimitData } from "@/models/dto/insights/gauge.summary.dto";
 import { TeamsDashboardData } from "@/models/dto/insights/teams.dashboard.insights.dto";
 import { SentimentDistributionMetric } from "@/models/dto/insights/sentiment.distribution.dto";
+import { IEmployeeDashboardData } from "@/models/dto/insights/employee.dashboard.insights.dto";
 
 export const getTrends = async (
   filter?: string
@@ -23,6 +24,13 @@ export const getCriteriaSummary = async (
 
 export const getDashboardLimitData = async (): Promise<DashboardLimitData> => {
   const res = await api.get(`/api/v1/insights/dashboard-metrics`);
+  return res.data;
+};
+
+export const getEmployeeInsights = async (): Promise<
+  IEmployeeDashboardData[]
+> => {
+  const res = await api.get(`/api/v1/insights/employee-dashboard-metrics`);
   return res.data;
 };
 
